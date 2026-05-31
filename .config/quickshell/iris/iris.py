@@ -6,6 +6,7 @@ import argparse
 import math
 import random
 from PIL import Image
+import numpy as np
 
 
 def parse_args():
@@ -171,89 +172,98 @@ def load_image(path):
 
 def sample_palette(img, debug=False):
     w, h = img.size
-    pixels_lab = []
-    pixels_meta = []
 
-    for y in range(h):
-        for x in range(w):
-            r, g, b = img.getpixel((x, y))
-            L, av, bv = rgb_to_lab(r, g, b)
-            hh, s, lv = rgb_to_hsl(r, g, b)
-            lab_c = math.sqrt(av * av + bv * bv)
+    px = np.array(img, dtype=np.float32).reshape(-1, 3)
+    r, g, b = px[:, 0], px[:, 1], px[:, 2]
 
-            cx = abs((x + 0.5) / w - 0.5) * 2.0
-            cy = abs((y + 0.5) / h - 0.5) * 2.0
-            pw = 1.0 - (math.sqrt(cx * cx + cy * cy) / math.sqrt(2.0)) * 0.18
+    rc = np.where(r / 255.0 <= 0.04045, r / 255.0 / 12.92, ((r / 255.0 + 0.055) / 1.055) ** 2.4)
+    gc = np.where(g / 255.0 <= 0.04045, g / 255.0 / 12.92, ((g / 255.0 + 0.055) / 1.055) ** 2.4)
+    bc = np.where(b / 255.0 <= 0.04045, b / 255.0 / 12.92, ((b / 255.0 + 0.055) / 1.055) ** 2.4)
 
-            pixels_lab.append((L, av, bv))
-            pixels_meta.append((hh, s, lv, lab_c, pw))
+    X = rc * 0.4124564 + gc * 0.3575761 + bc * 0.1804375
+    Y = rc * 0.2126729 + gc * 0.7151522 + bc * 0.0721750
+    Z = rc * 0.0193339 + gc * 0.1191920 + bc * 0.9503041
+
+    def f_lab(t):
+        return np.where(t > 0.008856, t ** (1.0 / 3.0), 7.787 * t + 16.0 / 116.0)
+
+    fx = f_lab(X / 0.95047)
+    fy = f_lab(Y)
+    fz = f_lab(Z / 1.08883)
+
+    L_chan = 116.0 * fy - 16.0
+    a_chan = 500.0 * (fx - fy)
+    b_chan = 200.0 * (fy - fz)
+    lab_c  = np.sqrt(a_chan ** 2 + b_chan ** 2)
+
+    mx = px.max(axis=1) / 255.0
+    mn = px.min(axis=1) / 255.0
+    lv = (mx + mn) / 2.0
+
+    denom_s = np.where(lv > 0.5, 2.0 - mx - mn, mx + mn)
+    s_chan   = np.where(mx == mn, 0.0, (mx - mn) / np.maximum(denom_s, 1e-9))
+
+    ri, gi, bi = r / 255.0, g / 255.0, b / 255.0
+    d_chan = mx - mn
+    h_raw  = np.zeros(len(px), dtype=np.float32)
+    mask_r = (mx == ri) & (d_chan > 0)
+    mask_g = (mx == gi) & (d_chan > 0)
+    mask_b = (mx == bi) & (d_chan > 0)
+    h_raw[mask_r] = ((gi[mask_r] - bi[mask_r]) / d_chan[mask_r]) % 6.0
+    h_raw[mask_g] = (bi[mask_g] - ri[mask_g]) / d_chan[mask_g] + 2.0
+    h_raw[mask_b] = (ri[mask_b] - gi[mask_b]) / d_chan[mask_b] + 4.0
+    h_chan = h_raw * 60.0
+
+    ys = np.repeat(np.arange(h, dtype=np.float32), w)
+    xs = np.tile(np.arange(w, dtype=np.float32), h)
+    cx = np.abs((xs + 0.5) / w - 0.5) * 2.0
+    cy = np.abs((ys + 0.5) / h - 0.5) * 2.0
+    pw = 1.0 - (np.sqrt(cx ** 2 + cy ** 2) / math.sqrt(2.0)) * 0.18
+
+    pixels_lab = np.stack([L_chan, a_chan, b_chan], axis=1)
 
     k = 14
     iterations = 14
-    random.seed(42)
-    centers = random.sample(pixels_lab, k)
-    assignments = [0] * len(pixels_lab)
+    rng = np.random.default_rng(42)
+    idx = rng.choice(len(pixels_lab), k, replace=False)
+    centers = pixels_lab[idx].copy()
 
+    assignments = np.zeros(len(pixels_lab), dtype=np.int32)
     for _ in range(iterations):
-        for j, px in enumerate(pixels_lab):
-            best = 0
-            best_d = 1e18
-            for i, c in enumerate(centers):
-                dL = px[0] - c[0]
-                da = px[1] - c[1]
-                db = px[2] - c[2]
-                d = dL * dL + da * da + db * db
-                if d < best_d:
-                    best_d = d
-                    best = i
-            assignments[j] = best
+        dists = np.sum((pixels_lab[:, None, :] - centers[None, :, :]) ** 2, axis=2)
+        assignments = np.argmin(dists, axis=1)
 
-        new_centers = []
+        new_centers = np.zeros_like(centers)
         for i in range(k):
-            cl = [pixels_lab[j] for j in range(len(pixels_lab)) if assignments[j] == i]
-            if not cl:
-                new_centers.append(centers[i])
+            mask = assignments == i
+            if mask.any():
+                new_centers[i] = pixels_lab[mask].mean(axis=0)
             else:
-                new_centers.append((
-                    sum(p[0] for p in cl) / len(cl),
-                    sum(p[1] for p in cl) / len(cl),
-                    sum(p[2] for p in cl) / len(cl),
-                ))
+                new_centers[i] = centers[i]
         centers = new_centers
 
-    accum = [{
-        "Lw": 0.0, "aw": 0.0, "bw": 0.0,
-        "hw": 0.0, "sw": 0.0, "lw": 0.0,
-        "cw": 0.0, "mass": 0.0,
-    } for _ in range(k)]
-
-    for j, px in enumerate(pixels_lab):
-        i = assignments[j]
-        hh, s, lv, lab_c, pw = pixels_meta[j]
-        a = accum[i]
-        a["Lw"]   += px[0]  * pw
-        a["aw"]   += px[1]  * pw
-        a["bw"]   += px[2]  * pw
-        a["hw"]   += hh     * pw
-        a["sw"]   += s      * pw
-        a["lw"]   += lv     * pw
-        a["cw"]   += lab_c  * pw
-        a["mass"] += pw
-
     entries = []
-    for a in accum:
-        m = a["mass"]
-        if m < 1.0:
+    for i in range(k):
+        mask = assignments == i
+        if not mask.any():
             continue
+        w_i = pw[mask]
+        total_w = w_i.sum()
+        if total_w < 1.0:
+            continue
+
+        def wavg(arr, _w=w_i, _tw=total_w):
+            return float((arr[mask] * _w).sum() / _tw)
+
         entries.append({
-            "L": a["Lw"] / m,
-            "a": a["aw"] / m,
-            "b": a["bw"] / m,
-            "h": a["hw"] / m,
-            "s": a["sw"] / m,
-            "l": a["lw"] / m,
-            "c": a["cw"] / m,
-            "mass": m,
+            "L": wavg(L_chan),
+            "a": wavg(a_chan),
+            "b": wavg(b_chan),
+            "h": wavg(h_chan),
+            "s": wavg(s_chan),
+            "l": wavg(lv),
+            "c": wavg(lab_c),
+            "mass": float(total_w),
         })
 
     total_mass = sum(e["mass"] for e in entries) or 1.0
@@ -276,36 +286,51 @@ def sample_palette(img, debug=False):
 
 
 def read_tone(img):
-    w, h = img.size
-    total = lsum = ssum = dark_w = light_w = grey_w = warm_w = cool_w = 0.0
-    very_dark_w = very_light_w = true_black_w = true_white_w = 0.0
+    px = np.array(img, dtype=np.float32).reshape(-1, 3)
+    r, g, b = px[:, 0], px[:, 1], px[:, 2]
 
-    for y in range(h):
-        for x in range(w):
-            r, g, b = img.getpixel((x, y))
-            hh, s, lv = rgb_to_hsl(r, g, b)
-            total  += 1.0
-            lsum   += lv
-            ssum   += s
-            if lv < 0.40: dark_w  += 1.0
-            if lv > 0.60: light_w += 1.0
-            if lv < 0.15: very_dark_w += 1.0
-            if lv > 0.85: very_light_w += 1.0
-            if lv < 0.05: true_black_w += 1.0
-            if lv > 0.95: true_white_w += 1.0
-            if s  < 0.12: grey_w  += 1.0
-            if s  > 0.10:
-                if hh < 65 or hh > 295:
-                    warm_w += 1.0
-                elif 140 < hh < 285:
-                    cool_w += 1.0
-    t = total or 1.0
+    mx = px.max(axis=1) / 255.0
+    mn = px.min(axis=1) / 255.0
+    lv = (mx + mn) / 2.0
+
+    denom_s = np.where(lv > 0.5, 2.0 - mx - mn, mx + mn)
+    s_chan   = np.where(mx == mn, 0.0, (mx - mn) / np.maximum(denom_s, 1e-9))
+
+    ri, gi, bi = r / 255.0, g / 255.0, b / 255.0
+    d_chan = mx - mn
+    h_raw  = np.zeros(len(px), dtype=np.float32)
+    mask_r = (mx == ri) & (d_chan > 0)
+    mask_g = (mx == gi) & (d_chan > 0)
+    mask_b = (mx == bi) & (d_chan > 0)
+    h_raw[mask_r] = ((gi[mask_r] - bi[mask_r]) / d_chan[mask_r]) % 6.0
+    h_raw[mask_g] = (bi[mask_g] - ri[mask_g]) / d_chan[mask_g] + 2.0
+    h_raw[mask_b] = (ri[mask_b] - gi[mask_b]) / d_chan[mask_b] + 4.0
+    h_chan = h_raw * 60.0
+
+    total = float(len(px))
+
+    avg_l            = float(lv.mean())
+    avg_s            = float(s_chan.mean())
+    dark_ratio       = float((lv < 0.40).sum()) / total
+    light_ratio      = float((lv > 0.60).sum()) / total
+    very_dark_ratio  = float((lv < 0.15).sum()) / total
+    very_light_ratio = float((lv > 0.85).sum()) / total
+    true_black_ratio = float((lv < 0.05).sum()) / total
+    true_white_ratio = float((lv > 0.95).sum()) / total
+    grey_ratio       = float((s_chan < 0.12).sum()) / total
+
+    warm_mask  = (s_chan > 0.10) & ((h_chan < 65) | (h_chan > 295))
+    cool_mask  = (s_chan > 0.10) & (h_chan > 140) & (h_chan < 285)
+    warm_w     = float(warm_mask.sum())
+    cool_w     = float(cool_mask.sum())
+    warm_ratio = warm_w / (warm_w + cool_w + 1e-9)
+
     return (
-        lsum / t, ssum / t,
-        dark_w / t, light_w / t, grey_w / t,
-        warm_w / (warm_w + cool_w + 1e-9),
-        very_dark_w / t, very_light_w / t,
-        true_black_w / t, true_white_w / t,
+        avg_l, avg_s,
+        dark_ratio, light_ratio, grey_ratio,
+        warm_ratio,
+        very_dark_ratio, very_light_ratio,
+        true_black_ratio, true_white_ratio,
     )
 
 

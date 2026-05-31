@@ -33,6 +33,7 @@ install_deps() {
     python \
     python-pillow \
     python-pam \
+    python-numpy \
     inotify-tools \
     neovim \
     meson \

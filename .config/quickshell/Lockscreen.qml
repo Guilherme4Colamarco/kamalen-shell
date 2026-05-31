@@ -38,6 +38,15 @@ PanelWindow {
 
     function a(c, o) { return Qt.rgba(c.r, c.g, c.b, o) }
 
+    function getPfpPath() {
+        if (pfpList.length === 0) return ""
+        var idx = UIState.pfpIndex
+        if (idx < 0 || idx >= pfpList.length) return ""
+        var path = pfpList[idx]
+        if (!path || path.length === 0) return ""
+        return path
+    }
+
     function tryAuth() {
         if (password.length === 0 || authenticating) return
         authenticating = true
@@ -287,7 +296,10 @@ PanelWindow {
                     id: pfpImg
                     anchors.fill: parent
                     anchors.margins: 4
-                    source: pfpList.length > 0 ? "file://" + pfpList[UIState.pfpIndex] : ""
+                    source: {
+                        var path = getPfpPath()
+                        return path.length > 0 ? "file://" + path : ""
+                    }
                     fillMode: Image.PreserveAspectCrop
                     sourceSize: Qt.size(320, 320)
                     smooth: true
@@ -306,7 +318,7 @@ PanelWindow {
                     anchors.fill: pfpImg
                     source: pfpImg
                     maskSource: pfpMask
-                    visible: pfpList.length > 0
+                    visible: getPfpPath().length > 0
                 }
 
                 Text {
@@ -314,7 +326,7 @@ PanelWindow {
                     text: "󰀄"
                     color: a(Colors.fg, 0.3)
                     font { pixelSize: 64; family: "JetBrainsMono Nerd Font" }
-                    visible: pfpList.length === 0
+                    visible: getPfpPath().length === 0
                 }
             }
 

@@ -15,14 +15,23 @@ Singleton {
     property color surface: "#1e1e2e"
     property color dim:     "#6c7086"
 
-    Behavior on bg      { ColorAnimation { duration: 500; easing.type: Easing.OutCubic } }
-    Behavior on fg      { ColorAnimation { duration: 500; easing.type: Easing.OutCubic } }
-    Behavior on accent  { ColorAnimation { duration: 500; easing.type: Easing.OutCubic } }
-    Behavior on green   { ColorAnimation { duration: 500; easing.type: Easing.OutCubic } }
-    Behavior on red     { ColorAnimation { duration: 500; easing.type: Easing.OutCubic } }
-    Behavior on yellow  { ColorAnimation { duration: 500; easing.type: Easing.OutCubic } }
-    Behavior on surface { ColorAnimation { duration: 500; easing.type: Easing.OutCubic } }
-    Behavior on dim     { ColorAnimation { duration: 500; easing.type: Easing.OutCubic } }
+    property color _prevBg:      bg
+    property color _prevFg:      fg
+    property color _prevAccent:  accent
+    property color _prevGreen:   green
+    property color _prevRed:     red
+    property color _prevYellow:  yellow
+    property color _prevSurface: surface
+    property color _prevDim:     dim
+
+    Behavior on bg      { ColorAnimation { duration: 300; easing.type: Easing.OutCubic } }
+    Behavior on fg      { ColorAnimation { duration: 300; easing.type: Easing.OutCubic } }
+    Behavior on accent  { ColorAnimation { duration: 300; easing.type: Easing.OutCubic } }
+    Behavior on green   { ColorAnimation { duration: 300; easing.type: Easing.OutCubic } }
+    Behavior on red     { ColorAnimation { duration: 300; easing.type: Easing.OutCubic } }
+    Behavior on yellow  { ColorAnimation { duration: 300; easing.type: Easing.OutCubic } }
+    Behavior on surface { ColorAnimation { duration: 300; easing.type: Easing.OutCubic } }
+    Behavior on dim     { ColorAnimation { duration: 300; easing.type: Easing.OutCubic } }
 
     property bool darkMode: true
     property bool autoMode: true
@@ -33,6 +42,10 @@ Singleton {
     property string nvimColorsPath: Quickshell.env("HOME") + "/.config/nvim/lua/colors.lua"
     property string gtkCssPath:     Quickshell.env("HOME") + "/.config/gtk-4.0/gtk.css"
     property string gtk3CssPath:    Quickshell.env("HOME") + "/.config/gtk-3.0/gtk.css"
+
+    property var _lastParsedData: null
+
+    signal colorsChanged()
 
     function a(c, o) { return Qt.rgba(c.r, c.g, c.b, o) }
 
@@ -55,11 +68,21 @@ Singleton {
 
                 if (shouldBeDark !== darkMode) {
                     darkMode = shouldBeDark
+                    UIState.darkMode = shouldBeDark
                     irisProc.running = false
                     irisProc.running = true
                     return
                 }
             }
+
+            _prevBg      = bg
+            _prevFg      = fg
+            _prevAccent  = accent
+            _prevGreen   = green
+            _prevRed     = red
+            _prevYellow  = yellow
+            _prevSurface = surface
+            _prevDim     = dim
 
             bg      = p.bg
             fg      = p.fg
@@ -69,9 +92,10 @@ Singleton {
             yellow  = p.yellow
             surface = p.surface
             dim     = p.dim
+            
+            _lastParsedData = p
             revision++
-            writeNvimColors(p)
-            writeGtkColors(p)
+            colorsChanged()
         } catch(e) {
             console.log("iris: failed to parse output:", e)
         }
@@ -79,6 +103,7 @@ Singleton {
 
     function applyCurrentMode(dark) {
         darkMode = dark
+        UIState.darkMode = dark
         autoMode = false
         irisProc.running = false
         irisProc.running = true
@@ -186,22 +211,29 @@ Singleton {
     Process {
         id: wallWatch
         command: ["bash", "-c",
-            "prev=''; while true; do " +
-            "cur=$(readlink -f '" + wallpaperPath + "' 2>/dev/null); " +
-            "if [ \"$cur\" != \"$prev\" ] && [ -n \"$cur\" ]; then " +
-            "prev=$cur; echo changed; fi; sleep 1; done"]
+            "inotifywait -m -e close_write,moved_to,create '" + 
+            Quickshell.env("HOME") + "/wallpapers' 2>/dev/null | " +
+            "while read; do readlink -f '" + wallpaperPath + "' 2>/dev/null && sleep 0.1; done"]
         running: true
         stdout: SplitParser {
-            onRead: data => reloadDelay.restart()
+            onRead: data => {
+                var path = data.trim()
+                if (path && path !== _lastWallPath) {
+                    _lastWallPath = path
+                    reloadDelay.restart()
+                }
+            }
         }
         onExited: wallWatchRestart.start()
     }
+
+    property string _lastWallPath: ""
 
     Timer { id: wallWatchRestart; interval: 2000; onTriggered: wallWatch.running = true }
 
     Timer {
         id: reloadDelay
-        interval: 2000
+        interval: 100
         onTriggered: {
             autoMode = true
             runIris()

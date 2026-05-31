@@ -63,6 +63,15 @@ Singleton {
         return "#" + r + g + b
     }
 
+    function interpolateColor(c1, c2, t) {
+        return Qt.rgba(
+            c1.r + (c2.r - c1.r) * t,
+            c1.g + (c2.g - c1.g) * t,
+            c1.b + (c2.b - c1.b) * t,
+            1.0
+        )
+    }
+
     Component.onCompleted: {
         loadSettings()
         loadAppUsage()
@@ -77,22 +86,92 @@ Singleton {
 
     Connections {
         target: Colors
-        function onRevisionChanged() {
-            if (!darkModeLocked) {
-                darkMode = Colors.darkMode
-            }
+        function onColorsChanged() {
+            interpolateKittyColors()
             applyDelay.restart()
         }
     }
 
     Timer {
         id: applyDelay
-        interval: 600
+        interval: 300
         onTriggered: {
-            applyKittyColors()
-            applyKittyOpacity()
             writeKittyConf()
             updateMangoBorderColors()
+            if (Colors._lastParsedData) {
+                Colors.writeNvimColors(Colors._lastParsedData)
+                Colors.writeGtkColors(Colors._lastParsedData)
+            }
+        }
+    }
+
+    property int _kittyStep: 0
+    property int _kittySteps: 10
+
+    function interpolateKittyColors() {
+        _kittyStep = 0
+        kittyInterpolateTimer.restart()
+    }
+
+    Timer {
+        id: kittyInterpolateTimer
+        interval: 30
+        repeat: true
+        onTriggered: {
+            if (_kittyStep >= _kittySteps) {
+                stop()
+                return
+            }
+
+            var t = _kittyStep / (_kittySteps - 1)
+            t = t * t * (3.0 - 2.0 * t)
+
+            var bg      = interpolateColor(Colors._prevBg,      Colors.bg,      t)
+            var fg      = interpolateColor(Colors._prevFg,      Colors.fg,      t)
+            var accent  = interpolateColor(Colors._prevAccent,  Colors.accent,  t)
+            var surface = interpolateColor(Colors._prevSurface, Colors.surface, t)
+            var dim     = interpolateColor(Colors._prevDim,     Colors.dim,     t)
+            var red     = interpolateColor(Colors._prevRed,     Colors.red,     t)
+            var green   = interpolateColor(Colors._prevGreen,   Colors.green,   t)
+            var yellow  = interpolateColor(Colors._prevYellow,  Colors.yellow,  t)
+
+            var bgHex      = toHex(bg)
+            var fgHex      = toHex(fg)
+            var accentHex  = toHex(accent)
+            var surfaceHex = toHex(surface)
+            var dimHex     = toHex(dim)
+            var redHex     = toHex(red)
+            var greenHex   = toHex(green)
+            var yellowHex  = toHex(yellow)
+
+            kittyStepProc.command = ["bash", "-c",
+                "for s in /tmp/kitty-socket-*; do " +
+                "kitty @ --to unix:$s set-colors " +
+                "foreground=" + fgHex + " " +
+                "background=" + bgHex + " " +
+                "cursor=" + accentHex + " " +
+                "selection_foreground=" + bgHex + " " +
+                "selection_background=" + accentHex + " " +
+                "color0=" + surfaceHex + " " +
+                "color8=" + dimHex + " " +
+                "color1=" + redHex + " " +
+                "color9=" + redHex + " " +
+                "color2=" + greenHex + " " +
+                "color10=" + greenHex + " " +
+                "color3=" + yellowHex + " " +
+                "color11=" + yellowHex + " " +
+                "color4=" + accentHex + " " +
+                "color12=" + accentHex + " " +
+                "color5=" + accentHex + " " +
+                "color13=" + accentHex + " " +
+                "color6=" + accentHex + " " +
+                "color14=" + accentHex + " " +
+                "color7=" + fgHex + " " +
+                "color15=" + fgHex +
+                " 2>/dev/null & done; wait"]
+            kittyStepProc.running = true
+
+            _kittyStep++
         }
     }
 
@@ -140,7 +219,6 @@ Singleton {
 
     function toggleDarkMode() {
         darkMode = !darkMode
-        Colors.autoMode = false
         Colors.applyCurrentMode(darkMode)
         saveSettings()
     }
@@ -540,8 +618,8 @@ Singleton {
     }
 
     function saveAppUsage() {
-        var data = JSON.stringify(appUsage)
-        appUsageSaveProc.command = ["bash", "-c", "echo '" + data + "' > " + _appUsagePath]
+        var escaped = JSON.stringify(appUsage).replace(/'/g, "'\\''")
+        appUsageSaveProc.command = ["bash", "-c", "printf '%s' '" + escaped + "' > " + _appUsagePath]
         appUsageSaveProc.running = true
     }
 
@@ -573,46 +651,8 @@ Singleton {
             "for s in /tmp/kitty-socket-*; do " +
             "kitty @ --to unix:$s set-background-opacity " +
             (transparencyEnabled ? "0.8" : "1.0") +
-            " 2>/dev/null; done"]
+            " 2>/dev/null & done; wait"]
         kittyOpacityProc.running = true
-    }
-
-    function applyKittyColors() {
-        var bg      = toHex(Colors.bg)
-        var fg      = toHex(Colors.fg)
-        var accent  = toHex(Colors.accent)
-        var surface = toHex(Colors.surface)
-        var dim     = toHex(Colors.dim)
-        var red     = toHex(Colors.red)
-        var green   = toHex(Colors.green)
-        var yellow  = toHex(Colors.yellow)
-
-        kittyColorsProc.command = ["bash", "-c",
-            "for s in /tmp/kitty-socket-*; do " +
-            "kitty @ --to unix:$s set-colors --all --configured " +
-            "foreground=" + fg + " " +
-            "background=" + bg + " " +
-            "cursor=" + accent + " " +
-            "selection_foreground=" + bg + " " +
-            "selection_background=" + accent + " " +
-            "color0=" + surface + " " +
-            "color8=" + dim + " " +
-            "color1=" + red + " " +
-            "color9=" + red + " " +
-            "color2=" + green + " " +
-            "color10=" + green + " " +
-            "color3=" + yellow + " " +
-            "color11=" + yellow + " " +
-            "color4=" + accent + " " +
-            "color12=" + accent + " " +
-            "color5=" + accent + " " +
-            "color13=" + accent + " " +
-            "color6=" + accent + " " +
-            "color14=" + accent + " " +
-            "color7=" + fg + " " +
-            "color15=" + fg +
-            " 2>/dev/null; done"]
-        kittyColorsProc.running = true
     }
 
     function writeKittyConf() {
@@ -698,7 +738,7 @@ Singleton {
     }
 
     function saveSettings() {
-        var data = JSON.stringify({
+        var data = {
             darkMode:            darkMode,
             darkModeLocked:      darkModeLocked,
             transparencyEnabled: transparencyEnabled,
@@ -711,8 +751,9 @@ Singleton {
             blurProfile:         blurProfile,
             barMode:             barMode,
             borderRadius:        borderRadius
-        })
-        saveProc.command = ["bash", "-c", "echo '" + data + "' > " + _settingsPath]
+        }
+        var escaped = JSON.stringify(data).replace(/'/g, "'\\''")
+        saveProc.command = ["bash", "-c", "printf '%s' '" + escaped + "' > " + _settingsPath]
         saveProc.running = true
     }
 
@@ -722,7 +763,7 @@ Singleton {
 
     Process { id: saveProc }
     Process { id: kittyOpacityProc }
-    Process { id: kittyColorsProc }
+    Process { id: kittyStepProc }
     Process { id: kittyConfProc }
     Process { id: mangoOpacityProc }
     Process { id: mangoBorderProc }
@@ -753,8 +794,8 @@ Singleton {
                     var s = JSON.parse(data.trim())
                     if (s.darkMode !== undefined) {
                         darkMode = s.darkMode
+                        Colors.darkMode = s.darkMode
                         Colors.autoMode = false
-                        Colors.applyCurrentMode(darkMode)
                     }
                     if (s.darkModeLocked      !== undefined) darkModeLocked      = s.darkModeLocked
                     if (s.transparencyEnabled !== undefined) transparencyEnabled = s.transparencyEnabled
@@ -780,7 +821,6 @@ Singleton {
         id: initDelay
         interval: 800
         onTriggered: {
-            applyKittyColors()
             applyKittyOpacity()
             writeKittyConf()
         }

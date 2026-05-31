@@ -176,13 +176,10 @@ Scope {
         id: attachedHideTimer
         interval: 800
         onTriggered: {
-            var dropdownOpen = UIState.activeDropdown === "dashboard" 
-                            || UIState.activeDropdown === "calendar" 
+            var dropdownOpen = UIState.activeDropdown === "dashboard"
+                            || UIState.activeDropdown === "calendar"
                             || UIState.activeDropdown === "media"
-            
-            if (!dropdownOpen) {
-                attachedVisible = false
-            }
+            if (!dropdownOpen) attachedVisible = false
         }
     }
 
@@ -197,10 +194,9 @@ Scope {
         target: UIState
         function onActiveDropdownChanged() {
             if (UIState.barMode === "autohide") {
-                var dropdownOpen = UIState.activeDropdown === "dashboard" 
-                                || UIState.activeDropdown === "calendar" 
+                var dropdownOpen = UIState.activeDropdown === "dashboard"
+                                || UIState.activeDropdown === "calendar"
                                 || UIState.activeDropdown === "music"
-                
                 if (dropdownOpen) {
                     attachedVisible = true
                     attachedHideTimer.stop()
@@ -288,12 +284,12 @@ Scope {
                         SequentialAnimation {
                             id: activePop
                             NumberAnimation { target: pill; property: "scale"; to: 1.22; duration: Animations.snap; easing.type: Easing.OutQuad }
-                            NumberAnimation { target: pill; property: "scale"; to: 1.0; duration: Animations.medium; easing.type: Easing.OutBack; easing.overshoot: Animations.springPower }
+                            NumberAnimation { target: pill; property: "scale"; to: 1.0;  duration: Animations.medium; easing.type: Easing.OutBack; easing.overshoot: Animations.springPower }
                         }
 
                         Rectangle {
                             id: pill
-                            width: tagNum.implicitWidth + (compact ? 14 : 16)
+                            width:  tagNum.implicitWidth + (compact ? 14 : 16)
                             height: compact ? 16 : 18
                             radius: compact ? 8 : 9
                             anchors.centerIn: parent
@@ -341,9 +337,9 @@ Scope {
             opacity: mediaVisible ? 1 : 0
             scale:   mediaVisible ? 1 : 0.86
 
-            Behavior on width   { NumberAnimation { duration: Animations.slow; easing.type: Easing.OutExpo } }
-            Behavior on opacity { NumberAnimation { duration: Animations.medium; easing.type: Easing.OutCubic } }
-            Behavior on scale   { NumberAnimation { duration: Animations.medium; easing.type: Easing.OutBack; easing.overshoot: 1.4 } }
+            Behavior on width   { NumberAnimation { duration: Animations.slow;   easing.type: Easing.OutExpo } }
+            Behavior on opacity { NumberAnimation { duration: Animations.medium;  easing.type: Easing.OutCubic } }
+            Behavior on scale   { NumberAnimation { duration: Animations.medium;  easing.type: Easing.OutBack; easing.overshoot: 1.4 } }
 
             Row {
                 id: centerRow
@@ -358,7 +354,7 @@ Scope {
                         model: 12
                         Rectangle {
                             required property int index
-                            width: 2.5
+                            width:  2.5
                             height: Math.max(3, UIState.cava[index] * (compact ? 13 : 16))
                             radius: 1.25
                             anchors.verticalCenter: parent.verticalCenter
@@ -381,10 +377,10 @@ Scope {
 
                 Item {
                     id: marqueeRoot
-                    property int  maxWidth:   140
-                    property real gap:        36
-                    property real unitWidth:  marqueeA.implicitWidth + gap
-                    property bool scrolling:  marqueeA.implicitWidth > maxWidth
+                    property int  maxWidth:  140
+                    property real gap:       36
+                    property real unitWidth: marqueeA.implicitWidth + gap
+                    property bool scrolling: marqueeA.implicitWidth > maxWidth
 
                     width:  scrolling ? maxWidth : marqueeA.implicitWidth
                     height: compact ? 18 : 22
@@ -398,7 +394,7 @@ Scope {
 
                         Text {
                             id: marqueeA
-                            text: UIState.mediaDisplay
+                            text:  UIState.mediaDisplay
                             color: mediaMa.containsMouse ? a(Colors.fg, 0.85) : a(Colors.fg, UIState.mediaState === "playing" ? 0.55 : 0.32)
                             font { pixelSize: 10; family: "JetBrainsMono Nerd Font" }
                             Behavior on color { ColorAnimation { duration: Animations.fast } }
@@ -408,8 +404,8 @@ Scope {
 
                         Text {
                             id: marqueeB
-                            text: UIState.mediaDisplay
-                            color: mediaMa.containsMouse ? a(Colors.fg, 0.85) : a(Colors.fg, UIState.mediaState === "playing" ? 0.55 : 0.32)
+                            text:    UIState.mediaDisplay
+                            color:   mediaMa.containsMouse ? a(Colors.fg, 0.85) : a(Colors.fg, UIState.mediaState === "playing" ? 0.55 : 0.32)
                             font { pixelSize: 10; family: "JetBrainsMono Nerd Font" }
                             visible: marqueeRoot.scrolling
                             Behavior on color { ColorAnimation { duration: Animations.fast } }
@@ -418,13 +414,13 @@ Scope {
 
                     NumberAnimation {
                         id: marqueeAnim
-                        target: marqueeTrack
+                        target:   marqueeTrack
                         property: "x"
-                        from: 0
-                        to: -marqueeRoot.unitWidth
+                        from:     0
+                        to:       -marqueeRoot.unitWidth
                         duration: marqueeRoot.unitWidth * 24
-                        loops: Animation.Infinite
-                        running: marqueeRoot.scrolling
+                        loops:    Animation.Infinite
+                        running:  marqueeRoot.scrolling
                         easing.type: Easing.Linear
                     }
 
@@ -443,10 +439,10 @@ Scope {
                             bottomMargin: 1
                             horizontalCenter: parent.horizontalCenter
                         }
-                        width: mediaMa.containsMouse ? parent.width + 4 : 0
+                        width:  mediaMa.containsMouse ? parent.width + 4 : 0
                         height: 2
                         radius: 1
-                        color: a(Colors.accent, 0.25)
+                        color:  a(Colors.accent, 0.25)
                         Behavior on width { NumberAnimation { duration: Animations.medium; easing.type: Easing.OutBack; easing.overshoot: Animations.springPower } }
                     }
                 }
@@ -479,7 +475,7 @@ Scope {
                 anchors.verticalCenter: parent.verticalCenter
 
                 Text {
-                    text: wifi ? "󰤨" : "󰤭"
+                    text:  wifi ? "󰤨" : "󰤭"
                     color: wifi ? a(Colors.accent, 0.70) : a(Colors.fg, 0.20)
                     font { pixelSize: 13; family: "JetBrainsMono Nerd Font" }
                     anchors.verticalCenter: parent.verticalCenter
@@ -487,7 +483,7 @@ Scope {
                 }
 
                 Text {
-                    text: bt ? "󰂯" : "󰂲"
+                    text:  bt ? "󰂯" : "󰂲"
                     color: bt ? a(Colors.fg, 0.55) : a(Colors.fg, 0.18)
                     font { pixelSize: 12; family: "JetBrainsMono Nerd Font" }
                     anchors.verticalCenter: parent.verticalCenter
@@ -496,7 +492,7 @@ Scope {
             }
 
             Item {
-                width: volRow.width
+                width:  volRow.width
                 height: compact ? 18 : 22
                 anchors.verticalCenter: parent.verticalCenter
 
@@ -506,7 +502,7 @@ Scope {
                     anchors.centerIn: parent
 
                     Text {
-                        text: volIcon()
+                        text:  volIcon()
                         color: UIState.muted ? a(Colors.fg, 0.18) : volMa.containsMouse ? a(Colors.fg, 0.85) : a(Colors.fg, 0.60)
                         font { pixelSize: 13; family: "JetBrainsMono Nerd Font" }
                         anchors.verticalCenter: parent.verticalCenter
@@ -514,7 +510,7 @@ Scope {
                     }
 
                     Text {
-                        text: UIState.volume
+                        text:  UIState.volume
                         color: UIState.muted ? a(Colors.fg, 0.18) : volMa.containsMouse ? a(Colors.fg, 0.85) : a(Colors.fg, 0.45)
                         font { pixelSize: 10; family: "JetBrainsMono Nerd Font" }
                         anchors.verticalCenter: parent.verticalCenter
@@ -534,7 +530,7 @@ Scope {
             }
 
             Item {
-                width: batRow.width
+                width:  batRow.width
                 height: compact ? 18 : 22
                 anchors.verticalCenter: parent.verticalCenter
 
@@ -544,15 +540,15 @@ Scope {
                     anchors.centerIn: parent
 
                     Text {
-                        text: batIcon()
-                        color: batColor()
+                        text:    batIcon()
+                        color:   batColor()
                         font { pixelSize: 14; family: "JetBrainsMono Nerd Font" }
                         opacity: plug && !batFull ? pulse : 1
                         anchors.verticalCenter: parent.verticalCenter
                     }
 
                     Text {
-                        text: bat + "%"
+                        text:  bat + "%"
                         color: batColor()
                         font { pixelSize: 10; family: "JetBrainsMono Nerd Font" }
                         anchors.verticalCenter: parent.verticalCenter
@@ -570,7 +566,7 @@ Scope {
             }
 
             Item {
-                width: 22
+                width:  22
                 height: 22
                 anchors.verticalCenter: parent.verticalCenter
 
@@ -582,7 +578,7 @@ Scope {
                     radius: width / 2
                     color:  lit ? a(Colors.accent, 0.10) : a(Colors.fg, 0.035)
                     Behavior on width { NumberAnimation { duration: Animations.medium; easing.type: Easing.OutBack; easing.overshoot: Animations.springPower } }
-                    Behavior on color { ColorAnimation { duration: Animations.fast } }
+                    Behavior on color { ColorAnimation  { duration: Animations.fast } }
                 }
 
                 Text {
@@ -615,7 +611,7 @@ Scope {
             screen: modelData
             visible: UIState.barMode === "floating"
             anchors { top: true; left: true; right: true }
-            height: 38
+            implicitHeight: 38
             color: "transparent"
             exclusionMode: ExclusionMode.Exclusive
             WlrLayershell.layer: WlrLayer.Top
@@ -624,12 +620,12 @@ Scope {
             Rectangle {
                 id: floatingBg
                 anchors.fill: parent
-                anchors.topMargin: 5
+                anchors.topMargin:    5
                 anchors.leftMargin:   barReady ? 8 : parent.width * 0.4
                 anchors.rightMargin:  barReady ? 8 : parent.width * 0.4
                 anchors.bottomMargin: 3
                 radius: 12
-                color: a(Colors.bg, UIState.barOpacity)
+                color:  a(Colors.bg, UIState.barOpacity)
                 border.width: 1
                 border.color: a(Colors.fg, 0.06)
                 opacity: barReady ? 1 : 0
@@ -639,7 +635,7 @@ Scope {
                 Behavior on anchors.rightMargin { NumberAnimation { duration: Animations.xslow; easing.type: Easing.OutExpo } }
                 Behavior on opacity { NumberAnimation { duration: Animations.slow; easing.type: Easing.OutCubic } }
                 Behavior on scale   { NumberAnimation { duration: Animations.slow; easing.type: Easing.OutBack; easing.overshoot: Animations.springPower } }
-                Behavior on color   { ColorAnimation { duration: Animations.slow } }
+                Behavior on color   { ColorAnimation  { duration: Animations.slow } }
 
                 BarContent {
                     compact: false
@@ -661,7 +657,7 @@ Scope {
             screen: modelData
             visible: UIState.barMode === "autohide"
             anchors { top: true; left: true; right: true }
-            height: 30
+            implicitHeight: 30
             color: "transparent"
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Top
@@ -675,7 +671,6 @@ Scope {
                 height: 3
                 enabled: !attachedVisible
                 hoverEnabled: true
-
                 onEntered: {
                     attachedVisible = true
                     attachedHideTimer.stop()
@@ -686,8 +681,8 @@ Scope {
                 id: attachedBg
                 anchors.left: parent.left
                 anchors.right: parent.right
-                height: 24
-                y: attachedVisible ? 0 : -height
+                implicitHeight: 24
+                y: attachedVisible ? 0 : -implicitHeight
                 color: a(Colors.bg, UIState.transparencyEnabled ? 0.88 : 1)
                 radius: 0
 
@@ -696,10 +691,10 @@ Scope {
 
                 Rectangle {
                     anchors.bottom: parent.bottom
-                    anchors.left: parent.left
-                    anchors.right: parent.right
+                    anchors.left:   parent.left
+                    anchors.right:  parent.right
                     height: 1
-                    color: a(Colors.fg, 0.07)
+                    color:  a(Colors.fg, 0.07)
                 }
 
                 BarContent {
@@ -731,7 +726,7 @@ Scope {
             screen: modelData
             visible: UIState.barMode === "fixed"
             anchors { top: true; left: true; right: true }
-            height: 24
+            implicitHeight: 24
             color: "transparent"
             exclusionMode: ExclusionMode.Exclusive
             WlrLayershell.layer: WlrLayer.Top
@@ -740,17 +735,17 @@ Scope {
             Rectangle {
                 id: fixedBg
                 anchors.fill: parent
-                color: a(Colors.bg, UIState.transparencyEnabled ? 0.88 : 1)
+                color:  a(Colors.bg, UIState.transparencyEnabled ? 0.88 : 1)
                 radius: 0
 
                 Behavior on color { ColorAnimation { duration: Animations.slow } }
 
                 Rectangle {
                     anchors.bottom: parent.bottom
-                    anchors.left: parent.left
-                    anchors.right: parent.right
+                    anchors.left:   parent.left
+                    anchors.right:  parent.right
                     height: 1
-                    color: a(Colors.fg, 0.07)
+                    color:  a(Colors.fg, 0.07)
                 }
 
                 BarContent {
