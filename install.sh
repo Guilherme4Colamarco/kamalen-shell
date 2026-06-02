@@ -65,10 +65,11 @@ install_deps() {
       mpd-mpris \
       tiramisu \
       gpu-screen-recorder \
+      mangowm-git \
       pokemon-colorscripts-go || echo "some aur packages failed, continuing"
   else
     echo "no aur helper found (yay/paru)"
-    echo "install manually: yay -S quickshell-git awww-git mpvpaper rmpc mpd-mpris tiramisu gpu-screen-recorder pokemon-colorscripts-go"
+    echo "install manually: yay -S mangowm-git quickshell-git awww-git mpvpaper rmpc mpd-mpris tiramisu gpu-screen-recorder pokemon-colorscripts-go"
   fi
 
   install_mango_ext

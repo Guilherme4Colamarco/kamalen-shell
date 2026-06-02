@@ -170,6 +170,11 @@ PanelWindow {
 
         Behavior on opacity { NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
 
+        Rectangle {
+            anchors.fill: parent
+            color: Colors.bg
+        }
+
         Item {
             id: wallpaperLayer
             anchors.fill: parent
@@ -180,7 +185,7 @@ PanelWindow {
                 source: isStatic ? "file://" + wallPath : ""
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
-                cache: false
+                cache: true
                 visible: isStatic
             }
 
