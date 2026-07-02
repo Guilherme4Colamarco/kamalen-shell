@@ -16,6 +16,9 @@ Singleton {
     property int pfpIndex: 0
     property int borderRadius: 16
     property bool locked: false
+    property bool powerMenuVisible: false
+    property bool layoutMenuVisible: false
+    property bool clipboardMenuVisible: false
 
     property int volume: 50
     property bool muted: false
@@ -179,6 +182,42 @@ Singleton {
         locked = true
     }
 
+    function togglePowerMenu() {
+        powerMenuVisible = !powerMenuVisible
+    }
+
+    function showPowerMenu() {
+        powerMenuVisible = true
+    }
+
+    function hidePowerMenu() {
+        powerMenuVisible = false
+    }
+
+    function toggleLayoutMenu() {
+        layoutMenuVisible = !layoutMenuVisible
+    }
+
+    function showLayoutMenu() {
+        layoutMenuVisible = true
+    }
+
+    function hideLayoutMenu() {
+        layoutMenuVisible = false
+    }
+
+    function toggleClipboardMenu() {
+        clipboardMenuVisible = !clipboardMenuVisible
+    }
+
+    function showClipboardMenu() {
+        clipboardMenuVisible = true
+    }
+
+    function hideClipboardMenu() {
+        clipboardMenuVisible = false
+    }
+
     function toggleDropdown(name) {
         activeDropdown = activeDropdown === name ? "" : name
     }
@@ -253,10 +292,21 @@ Singleton {
         }
     }
 
+    property int _pendingBrightness: -1
+
     function setBrightness(v) {
         brightness = v
-        brightSetProc.command = ["brightnessctl", "set", v + "%"]
-        brightSetProc.running = true
+        _pendingBrightness = v
+        _brightSetDebounce.restart()
+    }
+
+    Timer {
+        id: _brightSetDebounce
+        interval: 200
+        onTriggered: {
+            brightSetProc.command = ["ddcutil", "setvcp", "10", "" + _pendingBrightness]
+            brightSetProc.running = true
+        }
     }
 
     function doMedia(action) {
@@ -859,17 +909,15 @@ Singleton {
 
     Process {
         id: brightReadProc
-        command: ["bash", "-c", "brightnessctl -m 2>/dev/null | awk -F, '{gsub(/%/,\"\"); print $4}'"]
+        command: ["bash", "-c", "ddcutil getvcp 10 | grep -oP 'current value =\\s*\\K\\d+' || echo 100"]
         running: true
         stdout: SplitParser { onRead: data => ui.brightness = parseInt(data) || 100 }
     }
 
     Process {
         id: brightWatch
-        command: ["inotifywait", "-m", "-e", "modify", "/sys/class/backlight/intel_backlight/brightness"]
-        running: true
-        stdout: SplitParser { onRead: data => brightDebounce.restart() }
-        onExited: brightWatchRestart.start()
+        command: ["true"]
+        running: false
     }
 
     Timer { id: brightWatchRestart; interval: 1000; onTriggered: brightWatch.running = true }

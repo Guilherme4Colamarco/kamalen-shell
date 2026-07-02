@@ -103,11 +103,11 @@ QtObject {
     }
 
     function getLabel() {
-        if (profile === "snappy")    return "Snappy"
-        if (profile === "calm")      return "Calm"
-        if (profile === "bubbly")    return "Bubbly"
-        if (profile === "extraslow") return "X-Slow"
-        return "None"
+        if (profile === "snappy")    return "Rápido"
+        if (profile === "calm")      return "Calmo"
+        if (profile === "bubbly")    return "Elástico"
+        if (profile === "extraslow") return "Lento"
+        return "Nenhum"
     }
 
     function getIcon() {

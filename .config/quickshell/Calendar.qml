@@ -15,10 +15,10 @@ PanelWindow {
     property int todayYear:  new Date().getFullYear()
     property bool isCurrentMonth: viewMonth === todayMonth && viewYear === todayYear
 
-    property var dayNames:     ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
-    property var monthNames:   ["January", "February", "March", "April", "May", "June",
-                                "July", "August", "September", "October", "November", "December"]
-    property var longDayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    property var dayNames:     ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
+    property var monthNames:   ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+                                "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
+    property var longDayNames: ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"]
 
     property real br:     UIState.borderRadius
     property real brCard: Math.round(br * 0.75)

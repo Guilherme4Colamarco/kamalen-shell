@@ -222,9 +222,9 @@ PanelWindow {
     }
 
     function getPowerModeLabel() {
-        if (powerMode === "power-saver") return "Saver"
-        if (powerMode === "performance") return "Perf"
-        return "Balanced"
+        if (powerMode === "power-saver") return "Economia"
+        if (powerMode === "performance") return "Desemp."
+        return "Equilibrado"
     }
 
     function cycleAnimations() {
@@ -243,10 +243,10 @@ PanelWindow {
     }
 
     function getBlurLabel() {
-        if (UIState.blurProfile === "frosted")  return "Frosted"
-        if (UIState.blurProfile === "balanced") return "Balanced"
-        if (UIState.blurProfile === "subtle")   return "Subtle"
-        return "None"
+        if (UIState.blurProfile === "frosted")  return "Forte"
+        if (UIState.blurProfile === "balanced") return "Médio"
+        if (UIState.blurProfile === "subtle")   return "Suave"
+        return "Nenhum"
     }
 
     function getBlurIcon() {
@@ -270,9 +270,9 @@ PanelWindow {
     }
 
     function getBarModeLabel() {
-        if (UIState.barMode === "floating")  return "Float"
-        if (UIState.barMode === "autohide") return "Hide"
-        return "Fixed"
+        if (UIState.barMode === "floating")  return "Flutuante"
+        if (UIState.barMode === "autohide") return "Ocultar"
+        return "Fixo"
     }
 
     function cycleBorderRadius() {
@@ -289,18 +289,18 @@ PanelWindow {
     }
 
     function getBorderRadiusLabel() {
-        if (UIState.borderRadius === 0)  return "Sharp"
-        if (UIState.borderRadius === 8)  return "Round"
-        return "Rounder"
+        if (UIState.borderRadius === 0)  return "Reto"
+        if (UIState.borderRadius === 8)  return "Arredond."
+        return "Arredondado"
     }
 
     property var quickSettings: [
-        { icon: "󰤨", iconOff: "󰤭", label: "WiFi",    active: () => wifiOn,                        toggle: toggleWifi },
+        { icon: "󰤨", iconOff: "󰤭", label: "Wi-Fi",   active: () => wifiOn,                        toggle: toggleWifi },
         { icon: "󰂯", iconOff: "󰂲", label: "BT",      active: () => btOn,                          toggle: toggleBt },
         { icon: "󰍶", iconOff: "󰍷", label: "DND",     active: () => UIState.dndEnabled,            toggle: UIState.toggleDnd },
-        { icon: "󰽥", iconOff: "", label: "Night",   active: () => nightLightOn,                  toggle: toggleNightLight },
-        { icon: "󰖔", iconOff: "󰖕", label: "Dark",    active: () => UIState.darkMode,              toggle: UIState.toggleDarkMode },
-        { icon: "󱡔", iconOff: "󱡔", label: "Opacity", active: () => UIState.transparencyEnabled,   toggle: UIState.toggleTransparency },
+        { icon: "󰽥", iconOff: "", label: "Noturno", active: () => nightLightOn,                  toggle: toggleNightLight },
+        { icon: "󰖔", iconOff: "󰖕", label: "Escuro",   active: () => UIState.darkMode,              toggle: UIState.toggleDarkMode },
+        { icon: "󱡔", iconOff: "󱡔", label: "Opaco",    active: () => UIState.transparencyEnabled,   toggle: UIState.toggleTransparency },
         { icon: "",  iconOff: "",  label: "",         active: () => Animations.profile !== "none", toggle: cycleAnimations },
         { icon: "",  iconOff: "",  label: "",         active: () => UIState.transparencyEnabled && UIState.blurProfile !== "none", toggle: cycleBlur },
         { icon: "",  iconOff: "",  label: "",         active: () => true,                          toggle: cyclePowerMode },
@@ -481,11 +481,11 @@ PanelWindow {
 
                         Repeater {
                             model: [
-                                { icon: "⏻",  label: "Shutdown", cmd: "systemctl poweroff" },
-                                { icon: "󰜉", label: "Reboot",   cmd: "systemctl reboot" },
-                                { icon: "󰌾", label: "Lock",     cmd: "echo 1 > ~/.cache/qs/lock" },
-                                { icon: "󰒲", label: "Sleep",    cmd: "systemctl suspend" },
-                                { icon: "󰍃", label: "Logout",   cmd: "loginctl terminate-user " + Quickshell.env("USER") }
+                                { icon: "⏻",  label: "Desligar", cmd: "systemctl poweroff" },
+                                { icon: "󰜉", label: "Reiniciar",   cmd: "systemctl reboot" },
+                                { icon: "󰌾", label: "Bloquear",     cmd: "echo 1 > ~/.cache/qs/lock" },
+                                { icon: "󰒲", label: "Suspender",    cmd: "systemctl suspend" },
+                                { icon: "󰍃", label: "Sair",   cmd: "loginctl terminate-user " + Quickshell.env("USER") }
                             ]
 
                             Item {
@@ -708,7 +708,7 @@ PanelWindow {
                     width: parent.width; height: 18
 
                     Text {
-                        text:  "Notifications"
+                        text:  "Notificações"
                         color: a(Colors.fg, 0.45)
                         font { pixelSize: 12; family: "JetBrainsMono Nerd Font"; bold: true }
                         anchors { left: parent.left; verticalCenter: parent.verticalCenter }
@@ -725,7 +725,7 @@ PanelWindow {
                         }
 
                         Text {
-                            text:  UIState.notifications.length > 0 ? "Clear all" : ""
+                            text:  UIState.notifications.length > 0 ? "Limpar tudo" : ""
                             color: clearMa.containsMouse ? Colors.accent : a(Colors.accent, 0.5)
                             font { pixelSize: 10; family: "JetBrainsMono Nerd Font" }
                             Behavior on color { ColorAnimation { duration: Animations.fast } }
@@ -756,7 +756,7 @@ PanelWindow {
                     Text {
                         anchors.centerIn: parent
                         visible: UIState.notifications.length === 0
-                        text:    "All clear 󰸞"
+                        text:    "Tudo limpo 󰸞"
                         color:   a(Colors.fg, 0.15)
                         font { pixelSize: 12; family: "JetBrainsMono Nerd Font" }
                     }
@@ -956,7 +956,7 @@ PanelWindow {
                                         }
 
                                         Text {
-                                            text:    groupDelegate.itemCount > 1 ? "+" + (groupDelegate.itemCount - 1) + " more" : ""
+                                            text:    groupDelegate.itemCount > 1 ? "+" + (groupDelegate.itemCount - 1) + " mais" : ""
                                             color:   a(Colors.accent, 0.5)
                                             font { pixelSize: 9; family: "JetBrainsMono Nerd Font" }
                                             visible: groupDelegate.itemCount > 1
@@ -1102,7 +1102,7 @@ PanelWindow {
                     width: parent.width; height: 28
 
                     Text {
-                        text:  "Choose Avatar"
+                        text:  "Escolher Avatar"
                         color: Colors.fg
                         font { pixelSize: 16; family: "JetBrainsMono Nerd Font"; bold: true }
                         anchors { left: parent.left; verticalCenter: parent.verticalCenter }

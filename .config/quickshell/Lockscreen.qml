@@ -26,7 +26,7 @@ PanelWindow {
     }
     property bool isVideo: ["mp4", "webm", "mkv"].indexOf(wallExt) >= 0
     property bool isGif: wallExt === "gif"
-    property bool isStatic: !isVideo && !isGif
+    property bool isStatic: wallPath !== "" && !isVideo && !isGif
 
     visible: showing
     anchors { top: true; bottom: true; left: true; right: true }
@@ -412,6 +412,56 @@ PanelWindow {
                         to: 360
                         duration: 800
                         loops: Animation.Infinite
+                    }
+                }
+            }
+
+            // Lockscreen Power Actions
+            Row {
+                anchors.horizontalCenter: parent.horizontalCenter
+                spacing: 16
+                opacity: password.length === 0 && !authenticating && !authFailed ? 1 : 0
+                Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+
+                Repeater {
+                    model: [
+                        { icon: "⏻", cmd: "systemctl poweroff", color: "red" },
+                        { icon: "󰜉", cmd: "systemctl reboot", color: "yellow" },
+                        { icon: "󰒲", cmd: "systemctl suspend", color: "accent" }
+                    ]
+                    Item {
+                        width: 44
+                        height: 44
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: width / 2
+                            color: btnMa.containsMouse ? a(Colors[modelData.color], 0.15) : a(Colors.bg, 0.4)
+                            border.width: 1.5
+                            border.color: btnMa.containsMouse ? a(Colors[modelData.color], 0.5) : a(Colors.fg, 0.15)
+                            Behavior on color { ColorAnimation { duration: 150 } }
+                            Behavior on border.color { ColorAnimation { duration: 150 } }
+                        }
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: modelData.icon
+                            color: btnMa.containsMouse ? Colors[modelData.color] : a(Colors.fg, 0.7)
+                            font { pixelSize: 18; family: "JetBrainsMono Nerd Font" }
+                            Behavior on color { ColorAnimation { duration: 150 } }
+                        }
+
+                        MouseArea {
+                            id: btnMa
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                var proc = Qt.createQmlObject('import Quickshell.Io 1.0; Process {}', parent)
+                                proc.command = ["bash", "-c", modelData.cmd]
+                                proc.running = true
+                            }
+                        }
                     }
                 }
             }

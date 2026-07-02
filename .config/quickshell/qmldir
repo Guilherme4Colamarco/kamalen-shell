@@ -9,3 +9,7 @@ Music 1.0 Music.qml
 Calendar 1.0 Calendar.qml
 NotificationPopup 1.0 NotificationPopup.qml
 Lockscreen 1.0 Lockscreen.qml
+PowerMenu 1.0 PowerMenu.qml
+LayoutMenu 1.0 LayoutMenu.qml
+ClipboardMenu 1.0 ClipboardMenu.qml
+PolkitDialog 1.0 PolkitDialog.qml

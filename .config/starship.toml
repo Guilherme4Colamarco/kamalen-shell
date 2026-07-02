@@ -1,11 +1,111 @@
-format = "$directory$character"
+"$schema" = 'https://starship.rs/config-schema.json'
+
+format = """
+[ $os ](bg:color1 fg:color_bg)\
+$username\
+$hostname\
+[](bg:color2 fg:color1)\
+$directory\
+[](bg:color3 fg:color2)\
+$git_branch\
+$git_status\
+[](bg:color4 fg:color3)\
+$c\
+$rust\
+$golang\
+$nodejs\
+$php\
+$java\
+$kotlin\
+$haskell\
+$python\
+$cmd_duration\
+[](fg:color4)\
+$line_break\
+$character"""
+
+palette = 'iris'
+
+[palettes.iris]
+color_bg = '#11111b'
+color1 = '#89b4fa' # Accent (Blue)
+color2 = '#313244' # Surface 1
+color3 = '#45475a' # Surface 2
+color4 = '#cdd6f4' # Text (for the end arrows and language backgrounds)
+text_light = '#cdd6f4'
+text_dark = '#11111b'
+
+[os]
+disabled = false
+style = "bg:color1 fg:color_bg"
+
+[os.symbols]
+Arch = ""
+Ubuntu = ""
+Fedora = ""
+Debian = ""
+
+[username]
+show_always = true
+style_user = "bg:color1 fg:color_bg"
+style_root = "bg:color1 fg:color_bg"
+format = '[$user]($style)'
+
+[hostname]
+ssh_only = false
+style = "bg:color1 fg:color_bg"
+format = '[@$hostname ]($style)'
 
 [directory]
-format = "[$path]($style) "
-style = "blue"
-truncation_length = 0
-home_symbol = ""
+style = "bg:color2 fg:text_light"
+format = "[  $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+
+[git_branch]
+symbol = ""
+style = "bg:color3 fg:text_light"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:color3 fg:text_light"
+format = '[$all_status$ahead_behind ]($style)'
+
+[python]
+symbol = ""
+style = "bg:color4 fg:color_bg"
+format = '[ $symbol $version ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:color4 fg:color_bg"
+format = '[ $symbol $version ]($style)'
+
+[rust]
+symbol = ""
+style = "bg:color4 fg:color_bg"
+format = '[ $symbol $version ]($style)'
+
+[golang]
+symbol = ""
+style = "bg:color4 fg:color_bg"
+format = '[ $symbol $version ]($style)'
+
+[c]
+symbol = ""
+style = "bg:color4 fg:color_bg"
+format = '[ $symbol $version ]($style)'
+
+[cmd_duration]
+style = "bg:color4 fg:color_bg"
+format = '[  $duration ]($style)'
 
 [character]
-success_symbol = "[>](white)"
-error_symbol = "[>](red)"
+success_symbol = "[↪](#a6e3a1)"
+error_symbol = "[↪](#f38ba8)"

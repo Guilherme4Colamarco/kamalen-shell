@@ -235,7 +235,7 @@ PanelWindow {
                         Text {
                             anchors.left: parent.left
                             anchors.verticalCenter: parent.verticalCenter
-                            text:    "Search apps..."
+                            text:    "Pesquisar..."
                             color:   a(Colors.fg, 0.25)
                             font:    parent.font
                             visible: !parent.text && !parent.activeFocus
@@ -525,7 +525,7 @@ PanelWindow {
 
                 Text {
                     anchors.centerIn: parent
-                    text:    query !== "" && filtered.length === 0 ? "No results" : apps.length === 0 ? "Loading..." : ""
+                    text:    query !== "" && filtered.length === 0 ? "Nenhum resultado" : apps.length === 0 ? "Carregando..." : ""
                     color:   a(Colors.fg, 0.2)
                     font { pixelSize: 13; family: "JetBrainsMono Nerd Font" }
                     visible: text !== ""
