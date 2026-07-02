@@ -116,10 +116,9 @@ PanelWindow {
         onClicked: layoutMenu.close()
     }
 
-    // Card Window
     Rectangle {
         id: card
-        width: 580
+        width: 620
         height: 400
         anchors.centerIn: parent
         transformOrigin: Item.Center
