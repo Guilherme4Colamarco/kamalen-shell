@@ -5,6 +5,7 @@ import hashlib
 import argparse
 import math
 import random
+import re
 from PIL import Image
 import numpy as np
 
@@ -785,6 +786,24 @@ def fallback(is_dark):
     }
 
 
+def update_starship(theme):
+    path = os.path.expanduser('~/.config/starship.toml')
+    try:
+        with open(path, 'r') as f:
+            content = f.read()
+        content = re.sub(r'^color_bg = .*', f"color_bg = '{theme['bg']}'", content, flags=re.MULTILINE)
+        content = re.sub(r'^color1 = .*', f"color1 = '{theme.get('accent', theme['fg'])}'", content, flags=re.MULTILINE)
+        content = re.sub(r'^color2 = .*', f"color2 = '{theme['surface']}'", content, flags=re.MULTILINE)
+        content = re.sub(r'^color3 = .*', f"color3 = '{theme['dim']}'", content, flags=re.MULTILINE)
+        content = re.sub(r'^color4 = .*', f"color4 = '{theme['fg']}'", content, flags=re.MULTILINE)
+        content = re.sub(r'^text_light = .*', f"text_light = '{theme['fg']}'", content, flags=re.MULTILINE)
+        content = re.sub(r'^text_dark = .*', f"text_dark = '{theme['bg']}'", content, flags=re.MULTILINE)
+        with open(path, 'w') as f:
+            f.write(content)
+    except Exception as e:
+        pass
+
+
 def main():
     args  = parse_args()
     glass = args.glass == 1
@@ -793,6 +812,10 @@ def main():
     cache_key = get_cache_key(resolved, args.dark, args.glass)
     cached    = check_cache(cache_key)
     if cached:
+        try:
+            update_starship(json.loads(cached))
+        except:
+            pass
         print(cached)
         return
 
@@ -814,6 +837,10 @@ def main():
 
     result = json.dumps(theme)
     write_cache(cache_key, result)
+    try:
+        update_starship(theme)
+    except:
+        pass
     print(result)
 
 

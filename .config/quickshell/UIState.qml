@@ -104,7 +104,6 @@ Singleton {
             if (Colors._lastParsedData) {
                 Colors.writeNvimColors(Colors._lastParsedData)
                 Colors.writeGtkColors(Colors._lastParsedData)
-                Colors.writeStarshipColors(Colors._lastParsedData)
             }
         }
     }

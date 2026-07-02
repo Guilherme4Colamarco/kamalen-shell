@@ -191,19 +191,6 @@ Singleton {
         gtkWriteProc.running = true
     }
 
-    function writeStarshipColors(p) {
-        var script = "sed -i " +
-            "-e \"s/color_bg = .*/color_bg = '" + p.bg + "'/\" " +
-            "-e \"s/color1 = .*/color1 = '" + (p.accent || p.fg) + "'/\" " +
-            "-e \"s/color2 = .*/color2 = '" + p.surface + "'/\" " +
-            "-e \"s/color3 = .*/color3 = '" + p.dim + "'/\" " +
-            "-e \"s/color4 = .*/color4 = '" + p.fg + "'/\" " +
-            "-e \"s/text_light = .*/text_light = '" + p.fg + "'/\" " +
-            "-e \"s/text_dark = .*/text_dark = '" + p.bg + "'/\" " +
-            starshipPath
-
-        starshipWriteProc.command = ["bash", "-c", script]
-        starshipWriteProc.running = true
     }
 
     Process {
@@ -223,7 +210,6 @@ Singleton {
 
     Process { id: nvimWriteProc }
     Process { id: gtkWriteProc }
-    Process { id: starshipWriteProc }
 
     Process {
         id: wallWatch
