@@ -26,23 +26,54 @@ $character"""
 palette = 'iris'
 
 [palettes.iris]
-color_bg = '#11111b'
-color1 = '#89b4fa' # Accent (Blue)
-color2 = '#313244' # Surface 1
-color3 = '#45475a' # Surface 2
-color4 = '#cdd6f4' # Text (for the end arrows and language backgrounds)
-text_light = '#cdd6f4'
-text_dark = '#11111b'
+color_bg = '#222020'
+color1 = '#9ba7bf'
+color2 = '#343232'
+color3 = '#6b6969'
+color4 = '#e1e0e0'
+text_light = '#e1e0e0'
+text_dark = '#222020'
 
 [os]
 disabled = false
 style = "bg:color1 fg:color_bg"
 
 [os.symbols]
+# Distros pedidas
+CachyOS = ""        # não tem icon dedicado, usa o Arch
+Gentoo = ""
+NixOS = ""
+Void = ""
+Zorin = ""
+Mint = ""
+Garuda = ""
+Nobara = ""
+
+# Populares entre ricers
 Arch = ""
-Ubuntu = ""
+Artix = ""
+EndeavourOS = ""
+Manjaro = ""
+Pop = ""
+openSUSE = ""
+Solus = ""
+Alpine = ""
+FreeBSD = ""
+Redhat = ""
+RockyLinux = ""
+AlmaLinux = ""
+Kali = ""
 Fedora = ""
 Debian = ""
+Ubuntu = ""
+
+# Bônus — outras comuns
+CentOS = ""
+Elementary = ""
+SUSE = ""
+
+# Fallback (Unknown)
+Unknown = ""        # Tux genérico pra distros sem icon
 
 [username]
 show_always = true
@@ -51,7 +82,7 @@ style_root = "bg:color1 fg:color_bg"
 format = '[$user]($style)'
 
 [hostname]
-ssh_only = false
+ssh_only = true
 style = "bg:color1 fg:color_bg"
 format = '[@$hostname ]($style)'
 
@@ -108,3 +139,4 @@ format = '[  $duration ]($style)'
 [character]
 success_symbol = "[ ](#a6e3a1)"
 error_symbol = "[✗ ](#f38ba8)"
+vicmd_symbol = "[ ](#f9e2af)"
