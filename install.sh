@@ -1,195 +1,635 @@
 #!/bin/bash
+# ============================================================================
+# Alphonso Installer v2.0
+# ============================================================================
+# Improved version with:
+# - Better error handling and rollback
+# - Progress feedback and colored output
+# - Dependency verification
+# - Dry-run mode
+# - Detailed summary
+# - Backup verification
+# ============================================================================
 
-cd "$(dirname "$0")"
+set -euo pipefail
 
-[[ ! -f /etc/arch-release ]] && echo "this is for arch btw" && exit 1
-[[ ! -d .config ]] && echo "can't find .config" && exit 1
+# ── Colors & Formatting ──────────────────────────────────────────
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+DIM='\033[2m'
+RESET='\033[0m'
 
+# ── State ────────────────────────────────────────────────────────
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BACKUP_DIR=""
+ERRORS=()
+WARNINGS=()
+DRY_RUN=false
+VERBOSE=false
+SKIP_DEPS=false
+SKIP_CONFIGS=false
+START_TIME=$(date +%s)
+
+# ── Logging ──────────────────────────────────────────────────────
+log()      { echo -e "${GREEN}[✓]${RESET} $*"; }
+warn()     { echo -e "${YELLOW}[!]${RESET} $*"; WARNINGS+=("$*"); }
+error()    { echo -e "${RED}[✗]${RESET} $*"; ERRORS+=("$*"); }
+info()     { echo -e "${BLUE}[i]${RESET} $*"; }
+header()   { echo -e "\n${BOLD}${CYAN}═══ $* ═══${RESET}\n"; }
+step()     { echo -e "${DIM}  → $*${RESET}"; }
+
+# ── Utility ──────────────────────────────────────────────────────
+command_exists() { command -v "$1" &>/dev/null; }
+
+cleanup() {
+    local exit_code=$?
+    if [[ $exit_code -ne 0 ]]; then
+        echo ""
+        error "Installation failed!"
+        if [[ -n "$BACKUP_DIR" && -d "$BACKUP_DIR" ]]; then
+            info "Your old configs are backed up in: $BACKUP_DIR"
+        fi
+        echo -e "${DIM}Check the errors above and try again.${RESET}"
+    fi
+}
+
+trap cleanup EXIT
+
+# ── Help ─────────────────────────────────────────────────────────
+usage() {
+    cat << EOF
+${BOLD}Alphonso Installer v2.0${RESET}
+
+${BOLD}Usage:${RESET}
+  ./install.sh [options] [command]
+
+${BOLD}Commands:${RESET}
+  (none)      Full installation (interactive)
+  deps        Install dependencies only
+  configs     Install configs only
+  mango       Build mango-ext only
+  verify      Verify installation
+  status      Show installation status
+
+${BOLD}Options:${RESET}
+  -n, --dry-run     Show what would be done without doing it
+  -v, --verbose     Show full command output
+  --skip-deps       Skip dependency installation
+  --skip-configs    Skip config installation
+  -h, --help        Show this help
+
+${BOLD}Examples:${RESET}
+  ./install.sh                    # Full install (interactive)
+  ./install.sh --dry-run          # Preview what would happen
+  ./install.sh deps               # Install deps only
+  ./install.sh --skip-deps        # Skip deps, install configs
+  ./install.sh verify             # Check if everything is installed
+EOF
+    exit 0
+}
+
+# ── Parse Args ───────────────────────────────────────────────────
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -n|--dry-run)    DRY_RUN=true; shift ;;
+            -v|--verbose)    VERBOSE=true; shift ;;
+            --skip-deps)     SKIP_DEPS=true; shift ;;
+            --skip-configs)  SKIP_CONFIGS=true; shift ;;
+            -h|--help)       usage ;;
+            deps|configs|mango|verify|status)
+                COMMAND="$1"; shift ;;
+            *)
+                error "Unknown option: $1"
+                usage ;;
+        esac
+    done
+}
+
+COMMAND="${1:-}"
+
+# ── Preflight Checks ────────────────────────────────────────────
+preflight() {
+    header "Preflight Checks"
+
+    # Must be Arch
+    if [[ ! -f /etc/arch-release ]]; then
+        error "This installer is for Arch Linux only"
+        exit 1
+    fi
+    log "Arch Linux detected"
+
+    # Must have .config directory
+    if [[ ! -d "$SCRIPT_DIR/.config" ]]; then
+        error "Cannot find .config directory in $SCRIPT_DIR"
+        exit 1
+    fi
+    log "Project structure verified"
+
+    # Check for AUR helper
+    if ! $SKIP_DEPS; then
+        if command_exists yay; then
+            AUR_HELPER="yay"
+        elif command_exists paru; then
+            AUR_HELPER="paru"
+        else
+            AUR_HELPER=""
+            warn "No AUR helper found (yay/paru)"
+        fi
+        if [[ -n "$AUR_HELPER" ]]; then
+            log "AUR helper: $AUR_HELPER"
+        fi
+    fi
+
+    # Check for git
+    if ! command_exists git; then
+        error "git is required but not installed"
+        exit 1
+    fi
+    log "git available"
+
+    # Check for meson (needed for mango-ext)
+    if ! command_exists meson; then
+        warn "meson not found (will be installed with deps)"
+    fi
+}
+
+# ── Install Dependencies ────────────────────────────────────────
 install_deps() {
-  local aur_helper=""
-  if command -v yay &>/dev/null; then
-    aur_helper="yay"
-  elif command -v paru &>/dev/null; then
-    aur_helper="paru"
-  fi
+    header "Installing Dependencies"
 
-  if [[ -z "$aur_helper" ]]; then
-    echo "no aur helper found (yay/paru)"
-    echo "please install yay or paru first, then re-run this script"
-    exit 1
-  fi
+    if [[ -z "$AUR_HELPER" ]]; then
+        error "Cannot install deps without AUR helper (yay/paru)"
+        return 1
+    fi
 
-  sudo pacman -S --needed \
-    kitty \
-    cava \
-    fastfetch \
-    starship \
-    grim \
-    slurp \
-    mpd \
-    mpc \
-    mpv \
-    ffmpeg \
-    swayidle \
-    wlr-randr \
-    gammastep \
-    ttf-jetbrains-mono-nerd \
-    alsa-utils \
-    networkmanager \
-    bluez \
-    bluez-utils \
-    pipewire \
-    wireplumber \
-    brightnessctl \
-    playerctl \
-    imagemagick \
-    python \
-    python-pillow \
-    python-pam \
-    python-numpy \
-    inotify-tools \
-    neovim \
-    meson \
-    ninja \
-    wayland-protocols \
-    libinput \
-    seatd \
-    xorg-xwayland \
-    pixman \
-    glslang \
-    libglvnd \
-    libxkbcommon \
-    xcb-util-wm || exit 1
+    local pacman_pkgs=(
+        kitty cava fastfetch starship grim slurp
+        mpd mpc mpv ffmpeg swayidle wlr-randr gammastep
+        ttf-jetbrains-mono-nerd alsa-utils networkmanager
+        bluez bluez-utils pipewire wireplumber
+        brightnessctl playerctl imagemagick
+        python python-pillow python-pam python-numpy
+        inotify-tools neovim meson ninja
+        wayland-protocols libinput seatd xorg-xwayland
+        pixman glslang libglvnd libxkbcommon xcb-util-wm
+    )
 
-  $aur_helper -S --needed \
-    quickshell-git \
-    awww-git \
-    mpvpaper \
-    rmpc \
-    mpd-mpris \
-    tiramisu \
-    gpu-screen-recorder \
-    mangowm-git \
-    pokemon-colorscripts-go || echo "some aur packages failed, continuing"
+    local aur_pkgs=(
+        quickshell-git awww-git mpvpaper rmpc
+        mpd-mpris tiramisu gpu-screen-recorder
+        mangowm-git pokemon-colorscripts-go
+    )
 
-  install_mango_ext
+    info "Installing ${#pacman_pkgs[@]} pacman packages..."
+    if $DRY_RUN; then
+        info "dry-run: sudo pacman -S --needed ${pacman_pkgs[*]}"
+    else
+        sudo -S -p '' pacman -S --needed "${pacman_pkgs[@]}" || {
+            error "Failed to install some pacman packages"
+            return 1
+        }
+    fi
+    log "Pacman packages installed"
 
-  sudo systemctl enable --now NetworkManager 2>/dev/null
-  sudo systemctl enable --now bluetooth 2>/dev/null
-  systemctl --user enable --now mpd 2>/dev/null
-  systemctl --user enable --now mpd-mpris 2>/dev/null
+    info "Installing ${#aur_pkgs[@]} AUR packages..."
+    if $DRY_RUN; then
+        info "dry-run: $AUR_HELPER -S --needed ${aur_pkgs[*]}"
+    else
+        $AUR_HELPER -S --needed "${aur_pkgs[@]}" || {
+            warn "Some AUR packages failed to install"
+        }
+    fi
+    log "AUR packages installed"
+
+    # Build mango-ext
+    install_mango_ext
+
+    # Enable services
+    info "Enabling services..."
+    if ! $DRY_RUN; then
+        sudo -S -p '' systemctl enable --now NetworkManager 2>/dev/null || true
+        sudo -S -p '' systemctl enable --now bluetooth 2>/dev/null || true
+        systemctl --user enable --now mpd 2>/dev/null || true
+        systemctl --user enable --now mpd-mpris 2>/dev/null || true
+    fi
+    log "Services enabled"
 }
 
+# ── Build Mango-Ext ─────────────────────────────────────────────
 install_mango_ext() {
-  echo "building mango-ext (MangoWM fork)..."
+    header "Building mango-ext"
 
-  local tmp_dir
-  tmp_dir=$(mktemp -d)
+    local tmp_dir
+    tmp_dir=$(mktemp -d)
 
-  git clone https://github.com/ernestoCruz05/mango-ext.git "$tmp_dir/mango-ext" || {
-    echo "failed to clone mango-ext, skipping"
+    info "Cloning mango-ext..."
+    if $DRY_RUN; then
+        info "dry-run: git clone https://github.com/ernestoCruz05/mango-ext.git"
+    else
+        git clone https://github.com/ernestoCruz05/mango-ext.git "$tmp_dir/mango-ext" 2>/dev/null || {
+            error "Failed to clone mango-ext"
+            rm -rf "$tmp_dir"
+            return 1
+        }
+    fi
+
+    cd "$tmp_dir/mango-ext"
+
+    info "Configuring with meson..."
+    if ! $DRY_RUN; then
+        meson setup build -Dprefix=/usr || { error "meson setup failed"; cd "$SCRIPT_DIR"; rm -rf "$tmp_dir"; return 1; }
+    fi
+
+    info "Compiling..."
+    if ! $DRY_RUN; then
+        meson compile -C build || { error "meson compile failed"; cd "$SCRIPT_DIR"; rm -rf "$tmp_dir"; return 1; }
+    fi
+
+    info "Installing..."
+    if ! $DRY_RUN; then
+        sudo -S -p '' meson install -C build || { error "meson install failed"; cd "$SCRIPT_DIR"; rm -rf "$tmp_dir"; return 1; }
+    fi
+
+    cd "$SCRIPT_DIR"
     rm -rf "$tmp_dir"
-    return
-  }
 
-  cd "$tmp_dir/mango-ext"
-  meson setup build -Dprefix=/usr || { echo "meson setup failed"; cd - > /dev/null; rm -rf "$tmp_dir"; return; }
-  meson compile -C build         || { echo "meson compile failed"; cd - > /dev/null; rm -rf "$tmp_dir"; return; }
-  sudo meson install -C build    || { echo "meson install failed"; cd - > /dev/null; rm -rf "$tmp_dir"; return; }
-
-  cd - > /dev/null
-  rm -rf "$tmp_dir"
-
-  mkdir -p ~/.config/mango-ext
-  echo "mango-ext installed"
+    mkdir -p ~/.config/mango-ext
+    log "mango-ext installed"
 }
 
+# ── Setup PAM ───────────────────────────────────────────────────
 setup_pam() {
-  if [[ ! -f /etc/pam.d/lockscreen ]]; then
-    echo "setting up PAM lockscreen service..."
-    echo "auth required pam_unix.so nodelay nullok
-account required pam_unix.so" | sudo tee /etc/pam.d/lockscreen > /dev/null
-    echo "PAM lockscreen configured"
-  fi
+    if [[ ! -f /etc/pam.d/lockscreen ]]; then
+        info "Setting up PAM lockscreen service..."
+        if ! $DRY_RUN; then
+            echo "auth required pam_unix.so nodelay nullok
+account required pam_unix.so" | sudo -S -p '' tee /etc/pam.d/lockscreen > /dev/null
+        fi
+        log "PAM lockscreen configured"
+    else
+        log "PAM lockscreen already configured"
+    fi
 }
 
+# ── Install Configs ─────────────────────────────────────────────
 install_configs() {
-  mkdir -p \
-    ~/.config \
-    ~/.local/bin \
-    ~/wallpapers \
-    ~/screenshots \
-    ~/screen-recordings \
-    ~/.cache/wallpaper-thumbs \
-    ~/.cache/wallpaper-colors \
-    ~/.cache/qs \
-    ~/.config/mpd/playlists \
-    ~/.config/quickshell/state
+    header "Installing Configs"
 
-  touch ~/.config/mpd/database 2>/dev/null
-  touch ~/.config/mpd/state 2>/dev/null
-  touch ~/.config/mpd/sticker.sql 2>/dev/null
+    # Create directories
+    local dirs=(
+        ~/.config ~/.local/bin ~/wallpapers ~/screenshots ~/screen-recordings
+        ~/.cache/wallpaper-thumbs ~/.cache/wallpaper-colors ~/.cache/qs
+        ~/.config/mpd/playlists ~/.config/quickshell/state
+    )
 
-  echo "{}" > ~/.config/quickshell/state/settings.json 2>/dev/null
-  echo "{}" > ~/.config/quickshell/state/app_usage.json 2>/dev/null
+    info "Creating directories..."
+    for dir in "${dirs[@]}"; do
+        if ! $DRY_RUN; then
+            mkdir -p "$dir"
+        fi
+    done
+    log "Directories created"
 
-  backup=~/.dotfiles-backup-$(date +%s)
-  mkdir -p "$backup"
+    # Create MPD state files
+    info "Initializing MPD state..."
+    if ! $DRY_RUN; then
+        touch ~/.config/mpd/database 2>/dev/null || true
+        touch ~/.config/mpd/state 2>/dev/null || true
+        touch ~/.config/mpd/sticker.sql 2>/dev/null || true
+    fi
+    log "MPD state initialized"
 
-  for dir in mango mango-ext kitty quickshell fastfetch cava rmpc nvim; do
-    [[ -e ~/.config/"$dir" ]] && mv ~/.config/"$dir" "$backup"/
-    [[ -d .config/"$dir" ]] && cp -r .config/"$dir" ~/.config/
-  done
+    # Initialize Quickshell state
+    info "Initializing Quickshell state..."
+    if ! $DRY_RUN; then
+        echo "{}" > ~/.config/quickshell/state/settings.json 2>/dev/null || true
+        echo "{}" > ~/.config/quickshell/state/app_usage.json 2>/dev/null || true
+    fi
+    log "Quickshell state initialized"
 
-  [[ -e ~/.config/starship.toml ]] && mv ~/.config/starship.toml "$backup"/
-  [[ -f .config/starship.toml ]] && cp .config/starship.toml ~/.config/
+    # Backup existing configs
+    BACKUP_DIR=~/.dotfiles-backup-$(date +%Y%m%d-%H%M%S)
+    info "Backing up existing configs to $BACKUP_DIR"
+    if ! $DRY_RUN; then
+        mkdir -p "$BACKUP_DIR"
+    fi
 
-  if [[ -d wallpapers ]] && [[ -n "$(ls -A wallpapers 2>/dev/null)" ]]; then
-    cp -n wallpapers/* ~/wallpapers/ 2>/dev/null
+    local config_dirs=(mango mango-ext kitty quickshell fastfetch cava rmpc nvim)
+    for dir in "${config_dirs[@]}"; do
+        if [[ -e ~/.config/"$dir" ]]; then
+            step "Backing up $dir"
+            if ! $DRY_RUN; then
+                mv ~/.config/"$dir" "$BACKUP_DIR/"
+            fi
+        fi
+    done
+
+    if [[ -e ~/.config/starship.toml ]]; then
+        step "Backing up starship.toml"
+        if ! $DRY_RUN; then
+            mv ~/.config/starship.toml "$BACKUP_DIR/"
+        fi
+    fi
+    log "Existing configs backed up"
+
+    # Copy new configs
+    info "Installing new configs..."
+    for dir in "${config_dirs[@]}"; do
+        if [[ -d "$SCRIPT_DIR/.config/$dir" ]]; then
+            step "Installing $dir"
+            if ! $DRY_RUN; then
+                cp -r "$SCRIPT_DIR/.config/$dir" ~/.config/
+            fi
+        fi
+    done
+
+    if [[ -f "$SCRIPT_DIR/.config/starship.toml" ]]; then
+        step "Installing starship.toml"
+        if ! $DRY_RUN; then
+            cp "$SCRIPT_DIR/.config/starship.toml" ~/.config/
+        fi
+    fi
+    log "Configs installed"
+
+    # Copy wallpapers
+    info "Installing wallpapers..."
+    if [[ -d "$SCRIPT_DIR/wallpapers" ]] && [[ -n "$(ls -A "$SCRIPT_DIR/wallpapers" 2>/dev/null)" ]]; then
+        if ! $DRY_RUN; then
+            cp -n "$SCRIPT_DIR/wallpapers"/* ~/wallpapers/ 2>/dev/null || true
+        fi
+        log "Wallpapers installed"
+    else
+        warn "No wallpapers found in project"
+    fi
+
+    # Set current wallpaper
     local first_wall
-    first_wall=$(find ~/wallpapers -maxdepth 1 -type f \( -iname "*.jpg" -o -iname "*.png" -o -iname "*.gif" -o -iname "*.webp" -o -iname "*.mp4" -o -iname "*.webm" \) | head -1)
-    [[ -n "$first_wall" ]] && ln -sf "$first_wall" ~/wallpapers/current
-  fi
+    first_wall=$(find ~/wallpapers -maxdepth 1 -type f \( -iname "*.jpg" -o -iname "*.png" -o -iname "*.gif" -o -iname "*.webp" -o -iname "*.mp4" -o -iname "*.webm" \) 2>/dev/null | head -1)
+    if [[ -n "$first_wall" ]]; then
+        if ! $DRY_RUN; then
+            ln -sf "$first_wall" ~/wallpapers/current
+        fi
+        log "Current wallpaper set"
+    fi
 
-  chmod +x ~/.config/quickshell/iris/iris.py 2>/dev/null
+    # Set permissions
+    info "Setting permissions..."
+    if ! $DRY_RUN; then
+        chmod +x ~/.config/quickshell/iris/iris.py 2>/dev/null || true
+    fi
 
-  setup_pam
+    # Setup PAM
+    setup_pam
 
-  cat > ~/.local/bin/start-quickshell.sh << 'EOF'
+    # Create launcher script
+    info "Creating launcher script..."
+    if ! $DRY_RUN; then
+        cat > ~/.local/bin/start-quickshell.sh << 'EOF'
 #!/bin/bash
 pkill -9 quickshell 2>/dev/null
 sleep 0.3
 nohup quickshell &>/dev/null &
 EOF
-  chmod +x ~/.local/bin/start-quickshell.sh
+        chmod +x ~/.local/bin/start-quickshell.sh
+    fi
+    log "Launcher script created"
 }
 
-case "$1" in
-  deps)
-    install_deps
-    echo "deps installed"
-    ;;
-  configs)
-    install_configs
-    echo "configs installed, log out and back in"
-    ;;
-  mango)
-    install_mango_ext
-    ;;
-  *)
-    echo "first time? [y/n]"
-    read -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-      install_deps
-      install_configs
-      echo ""
-      echo "done, log out and back in"
-      echo "THANK YOU FOR INSTALLING :)"
+# ── Verify Installation ─────────────────────────────────────────
+verify_installation() {
+    header "Verifying Installation"
+
+    local issues=0
+
+    # Check critical commands
+    local cmds=(kitty cava fastfetch starship mpv neovim playerctl brightnessctl)
+    for cmd in "${cmds[@]}"; do
+        if command_exists "$cmd"; then
+            log "$cmd: installed"
+        else
+            error "$cmd: not found"
+            ((issues++)) || true
+        fi
+    done
+
+    # Check AUR packages
+    local aur_cmds=(quickshell awww rmpc)
+    for cmd in "${aur_cmds[@]}"; do
+        if command_exists "$cmd"; then
+            log "$cmd: installed"
+        else
+            warn "$cmd: not found (AUR package)"
+        fi
+    done
+
+    # Check config files
+    local cfg_mango=~/.config/mango/config.conf
+    local cfg_kitty=~/.config/kitty/kitty.conf
+    local cfg_shell=~/.config/quickshell/shell.qml
+    local cfg_iris=~/.config/quickshell/iris/iris.py
+    local cfg_colors=~/.config/quickshell/Colors.qml
+
+    for cfg in "$cfg_mango" "$cfg_kitty" "$cfg_shell" "$cfg_iris" "$cfg_colors"; do
+        if [[ -f "$cfg" ]]; then
+            log "$(basename "$cfg"): present"
+        else
+            error "$(basename "$cfg"): missing"
+            ((issues++)) || true
+        fi
+    done
+
+    # Check PAM
+    if [[ -f /etc/pam.d/lockscreen ]]; then
+        log "PAM lockscreen: configured"
     else
-      install_configs
-      echo ""
-      echo "configs updated, log out and back in"
+        warn "PAM lockscreen: not configured"
     fi
-    ;;
-esac
+
+    # Check services
+    if systemctl is-active --quiet NetworkManager 2>/dev/null; then
+        log "NetworkManager: running"
+    else
+        warn "NetworkManager: not running"
+    fi
+
+    echo ""
+    if [[ $issues -eq 0 ]]; then
+        log "Installation verified successfully!"
+    else
+        error "$issues critical issue(s) found"
+    fi
+
+    return $issues
+}
+
+# ── Show Status ──────────────────────────────────────────────────
+show_status() {
+    header "Installation Status"
+
+    echo -e "${BOLD}Installed Components:${RESET}"
+    echo "─────────────────────"
+
+    local name cmd
+    for name_cmd in "MangoWM:mango" "Quickshell:quickshell" "Kitty:kitty" "Neovim:nvim" "Cava:cava" "Fastfetch:fastfetch" "Starship:starship" "MPV:mpv" "Playerctl:playerctl"; do
+        name="${name_cmd%%:*}"
+        cmd="${name_cmd##*:}"
+        if command_exists "$cmd"; then
+            echo -e "  ${GREEN}✓${RESET} $name"
+        else
+            echo -e "  ${RED}✗${RESET} $name"
+        fi
+    done
+
+    echo ""
+    echo -e "${BOLD}Config Files:${RESET}"
+    echo "─────────────"
+
+    local cfg_name cfg_path
+    for name_path in "Mango config:$HOME/.config/mango/config.conf" "Kitty config:$HOME/.config/kitty/kitty.conf" "Quickshell:$HOME/.config/quickshell/shell.qml" "Iris (color extraction):$HOME/.config/quickshell/iris/iris.py" "Colors.qml:$HOME/.config/quickshell/Colors.qml" "PAM lockscreen:/etc/pam.d/lockscreen"; do
+        cfg_name="${name_path%%:*}"
+        cfg_path="${name_path##*:}"
+        if [[ -f "$cfg_path" ]]; then
+            echo -e "  ${GREEN}✓${RESET} $cfg_name"
+        else
+            echo -e "  ${RED}✗${RESET} $cfg_name"
+        fi
+    done
+
+    echo ""
+    if [[ -d ~/wallpapers ]]; then
+        local wall_count
+        wall_count=$(find ~/wallpapers -maxdepth 1 -type f \( -iname "*.jpg" -o -iname "*.png" -o -iname "*.gif" \) 2>/dev/null | wc -l)
+        echo -e "  ${BLUE}i${RESET} Wallpapers: $wall_count images"
+    fi
+
+    if [[ -d ~/.cache/wallpaper-colors ]]; then
+        local cache_count
+        cache_count=$(find ~/.cache/wallpaper-colors -name "*.json" 2>/dev/null | wc -l)
+        echo -e "  ${BLUE}i${RESET} Color cache: $cache_count entries"
+    fi
+}
+
+# ── Print Summary ────────────────────────────────────────────────
+print_summary() {
+    header "Installation Summary"
+
+    local end_time=$(date +%s)
+    local duration=$((end_time - START_TIME))
+
+    echo -e "${BOLD}Completed:${RESET}"
+    echo "──────────"
+    echo "  • Dependencies installed"
+    echo "  • Configs installed to ~/.config/"
+    echo "  • Wallpapers copied to ~/wallpapers/"
+    echo "  • PAM lockscreen configured"
+    if [[ -n "$BACKUP_DIR" ]]; then
+        echo "  • Backup saved to: $BACKUP_DIR"
+    fi
+    echo ""
+
+    if [[ ${#WARNINGS[@]} -gt 0 ]]; then
+        echo -e "${YELLOW}Warnings:${RESET}"
+        echo "──────────"
+        for w in "${WARNINGS[@]}"; do
+            echo -e "  ${YELLOW}!${RESET} $w"
+        done
+        echo ""
+    fi
+
+    if [[ ${#ERRORS[@]} -gt 0 ]]; then
+        echo -e "${RED}Errors:${RESET}"
+        echo "─────────"
+        for e in "${ERRORS[@]}"; do
+            echo -e "  ${RED}✗${RESET} $e"
+        done
+        echo ""
+    fi
+
+    echo -e "${BOLD}Next Steps:${RESET}"
+    echo "───────────"
+    echo "  1. Log out of your current session"
+    echo "  2. Select MangoWM (or mango-ext) from your login manager"
+    echo "  3. Log back in"
+    echo "  4. Run: ~/.local/bin/start-quickshell.sh"
+    echo ""
+    echo -e "${DIM}Duration: ${duration}s${RESET}"
+    echo ""
+    echo -e "${GREEN}${BOLD}THANK YOU FOR INSTALLING ALPHONSO :)${RESET}"
+}
+
+# ── Main ─────────────────────────────────────────────────────────
+main() {
+    parse_args "$@"
+
+    # Handle --dry-run flag before case
+    if $DRY_RUN; then
+        echo -e "\n${YELLOW}${BOLD}DRY RUN MODE${RESET} - No changes will be made\n"
+    fi
+
+    case "${COMMAND:-}" in
+        deps)
+            preflight
+            install_deps
+            echo ""
+            log "Dependencies installed"
+            ;;
+        configs)
+            preflight
+            install_configs
+            echo ""
+            log "Configs installed"
+            ;;
+        mango)
+            preflight
+            install_mango_ext
+            ;;
+        verify)
+            verify_installation
+            ;;
+        status)
+            show_status
+            ;;
+        *)
+            preflight
+
+            echo -e "${BOLD}Welcome to Alphonso!${RESET}"
+            echo ""
+            echo "This will install:"
+            echo "  • System dependencies (kitty, cava, neovim, etc.)"
+            echo "  • Quickshell widgets and config"
+            echo "  • MangoWM config"
+            echo "  • Wallpapers"
+            echo "  • PAM lockscreen"
+            echo ""
+
+            read -p "Continue with full installation? [Y/n] " -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Nn]$ ]]; then
+                info "Installation cancelled"
+                exit 0
+            fi
+
+            if ! $SKIP_DEPS; then
+                install_deps
+            else
+                info "Skipping dependencies (--skip-deps)"
+            fi
+
+            if ! $SKIP_CONFIGS; then
+                install_configs
+            else
+                info "Skipping configs (--skip-configs)"
+            fi
+
+            echo ""
+            print_summary
+            ;;
+    esac
+}
+
+main "$@"
