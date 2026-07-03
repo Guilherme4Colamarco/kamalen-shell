@@ -21,6 +21,7 @@ $haskell\
 $python\
 $cmd_duration\
 [](fg:color4)\
+$shell\
 $character"""
 
 palette = 'iris'
@@ -140,3 +141,12 @@ format = '[  $duration ]($style)'
 success_symbol = "[ ](#a6e3a1)"
 error_symbol = "[✗ ](#f38ba8)"
 vicmd_symbol = "[ ](#f9e2af)"
+
+[shell]
+disabled = false
+format = "[$indicator]($style) "
+style = "bold fg:color1"
+fish_indicator = "󰈺"
+zsh_indicator = ""
+bash_indicator = ""
+unknown_indicator = ""

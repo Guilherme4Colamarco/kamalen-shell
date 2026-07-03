@@ -23,21 +23,6 @@ Scope {
 
     property bool attachedVisible: false
 
-    property string activeShell: {
-        var shellPath = Quickshell.env("SHELL") || ""
-        if (shellPath.indexOf("fish") !== -1) return "fish"
-        if (shellPath.indexOf("zsh") !== -1) return "zsh"
-        if (shellPath.indexOf("bash") !== -1) return "bash"
-        return "sh"
-    }
-
-    function shellIcon() {
-        if (activeShell === "fish") return "󰈺"
-        if (activeShell === "zsh") return ""
-        if (activeShell === "bash") return ""
-        return ""
-    }
-
     function a(c, o) { return Qt.rgba(c.r, c.g, c.b, o) }
 
     function parseTagOutput(data) {
@@ -586,15 +571,8 @@ Scope {
             }
 
             Row {
-                spacing: 8
+                spacing: 6
                 anchors.verticalCenter: parent.verticalCenter
-
-                Text {
-                    text:  shellIcon()
-                    color: a(Colors.fg, 0.45)
-                    font { pixelSize: 12; family: "JetBrainsMono Nerd Font" }
-                    anchors.verticalCenter: parent.verticalCenter
-                }
 
                 Text {
                     text:  wifi ? "󰤨" : "󰤭"
