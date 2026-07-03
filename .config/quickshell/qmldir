@@ -1,6 +1,7 @@
 singleton Colors 1.0 Colors.qml
 singleton UIState 1.0 UIState.qml
 singleton Animations 1.0 Animations.qml
+singleton L10n 1.0 L10n.qml
 Bar 1.0 Bar.qml
 Dashboard 1.0 Dashboard.qml
 Launcher 1.0 Launcher.qml
@@ -13,3 +14,5 @@ PowerMenu 1.0 PowerMenu.qml
 LayoutMenu 1.0 LayoutMenu.qml
 ClipboardMenu 1.0 ClipboardMenu.qml
 PolkitDialog 1.0 PolkitDialog.qml
+TrayPopup 1.0 TrayPopup.qml
+singleton TrayState 1.0 TrayState.qml

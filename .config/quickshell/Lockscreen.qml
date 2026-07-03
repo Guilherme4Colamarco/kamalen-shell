@@ -138,9 +138,16 @@ PanelWindow {
             if (h === 0) h = 12
             timeText = h + ":" + (m < 10 ? "0" : "") + m + " " + ampm
 
-            var days   = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
-            var months = ["January","February","March","April","May","June","July","August","September","October","November","December"]
-            dateText = days[now.getDay()] + ", " + months[now.getMonth()] + " " + now.getDate()
+            var lang = L10n.lang
+            if (lang === "pt") {
+                var daysPt = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"]
+                var monthsPt = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
+                dateText = daysPt[now.getDay()] + ", " + now.getDate() + " de " + monthsPt[now.getMonth()]
+            } else {
+                var daysEn = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+                var monthsEn = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+                dateText = daysEn[now.getDay()] + ", " + monthsEn[now.getMonth()] + " " + now.getDate()
+            }
         }
     }
 

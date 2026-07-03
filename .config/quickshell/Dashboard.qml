@@ -222,9 +222,9 @@ PanelWindow {
     }
 
     function getPowerModeLabel() {
-        if (powerMode === "power-saver") return "Economia"
-        if (powerMode === "performance") return "Desemp."
-        return "Equilibrado"
+        if (powerMode === "power-saver") return L10n.tr("economy", "Power Saver")
+        if (powerMode === "performance") return L10n.tr("performance", "Perform.")
+        return L10n.tr("balanced", "Balanced")
     }
 
     function cycleAnimations() {
@@ -243,10 +243,10 @@ PanelWindow {
     }
 
     function getBlurLabel() {
-        if (UIState.blurProfile === "frosted")  return "Forte"
-        if (UIState.blurProfile === "balanced") return "Médio"
-        if (UIState.blurProfile === "subtle")   return "Suave"
-        return "Nenhum"
+        if (UIState.blurProfile === "frosted")  return L10n.tr("frosted", "Strong")
+        if (UIState.blurProfile === "balanced") return L10n.tr("balanced_blur", "Medium")
+        if (UIState.blurProfile === "subtle")   return L10n.tr("subtle", "Subtle")
+        return L10n.tr("none", "None")
     }
 
     function getBlurIcon() {
@@ -270,9 +270,9 @@ PanelWindow {
     }
 
     function getBarModeLabel() {
-        if (UIState.barMode === "floating")  return "Flutuante"
-        if (UIState.barMode === "autohide") return "Ocultar"
-        return "Fixo"
+        if (UIState.barMode === "floating")  return L10n.tr("floating", "Floating")
+        if (UIState.barMode === "autohide") return L10n.tr("autohide", "Autohide")
+        return L10n.tr("fixed", "Fixed")
     }
 
     function cycleBorderRadius() {
@@ -289,18 +289,18 @@ PanelWindow {
     }
 
     function getBorderRadiusLabel() {
-        if (UIState.borderRadius === 0)  return "Reto"
-        if (UIState.borderRadius === 8)  return "Arredond."
-        return "Arredondado"
+        if (UIState.borderRadius === 0)  return L10n.tr("flat", "Flat")
+        if (UIState.borderRadius === 8)  return L10n.tr("rounded_short", "Round.")
+        return L10n.tr("rounded", "Rounded")
     }
 
     property var quickSettings: [
         { icon: "󰤨", iconOff: "󰤭", label: "Wi-Fi",   active: () => wifiOn,                        toggle: toggleWifi },
         { icon: "󰂯", iconOff: "󰂲", label: "BT",      active: () => btOn,                          toggle: toggleBt },
         { icon: "󰍶", iconOff: "󰍷", label: "DND",     active: () => UIState.dndEnabled,            toggle: UIState.toggleDnd },
-        { icon: "󰽥", iconOff: "", label: "Noturno", active: () => nightLightOn,                  toggle: toggleNightLight },
-        { icon: "󰖔", iconOff: "󰖕", label: "Escuro",   active: () => UIState.darkMode,              toggle: UIState.toggleDarkMode },
-        { icon: "󱡔", iconOff: "󱡔", label: "Opaco",    active: () => UIState.transparencyEnabled,   toggle: UIState.toggleTransparency },
+        { icon: "󰽥", iconOff: "", label: L10n.tr("nightlight", "Night"), active: () => nightLightOn,                  toggle: toggleNightLight },
+        { icon: "󰖔", iconOff: "󰖕", label: L10n.tr("darkmode", "Dark"),   active: () => UIState.darkMode,              toggle: UIState.toggleDarkMode },
+        { icon: "󱡔", iconOff: "󱡔", label: L10n.tr("opaque", "Opaque"),    active: () => UIState.transparencyEnabled,   toggle: UIState.toggleTransparency },
         { icon: "",  iconOff: "",  label: "",         active: () => Animations.profile !== "none", toggle: cycleAnimations },
         { icon: "",  iconOff: "",  label: "",         active: () => UIState.transparencyEnabled && UIState.blurProfile !== "none", toggle: cycleBlur },
         { icon: "",  iconOff: "",  label: "",         active: () => true,                          toggle: cyclePowerMode },
@@ -481,11 +481,11 @@ PanelWindow {
 
                         Repeater {
                             model: [
-                                { icon: "⏻",  label: "Desligar", cmd: "systemctl poweroff" },
-                                { icon: "󰜉", label: "Reiniciar",   cmd: "systemctl reboot" },
-                                { icon: "󰌾", label: "Bloquear",     cmd: "echo 1 > ~/.cache/qs/lock" },
-                                { icon: "󰒲", label: "Suspender",    cmd: "systemctl suspend" },
-                                { icon: "󰍃", label: "Sair",   cmd: "loginctl terminate-user " + Quickshell.env("USER") }
+                                { icon: "⏻",  label: L10n.tr("poweroff", "Power Off"), cmd: "systemctl poweroff" },
+                                { icon: "󰜉", label: L10n.tr("reboot", "Reboot"),   cmd: "systemctl reboot" },
+                                { icon: "󰌾", label: L10n.tr("lock", "Lock"),     cmd: "echo 1 > ~/.cache/qs/lock" },
+                                { icon: "󰒲", label: L10n.tr("suspend", "Suspend"),    cmd: "systemctl suspend" },
+                                { icon: "󰍃", label: L10n.tr("logout", "Log Out"),   cmd: "loginctl terminate-user " + Quickshell.env("USER") }
                             ]
 
                             Item {

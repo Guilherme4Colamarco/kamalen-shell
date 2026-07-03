@@ -252,12 +252,12 @@ PanelWindow {
                     width: parent.width - 150
                     spacing: 2
                     Text {
-                        text: "Área de Transferência"
+                        text: L10n.tr("clipboard", "Clipboard")
                         color: Colors.fg
                         font { pixelSize: 15; family: "JetBrainsMono Nerd Font"; bold: true }
                     }
                     Text {
-                        text: filteredItems.length + " itens encontrados"
+                        text: filteredItems.length + " " + L10n.tr("items_found", "items found")
                         color: a(Colors.fg, 0.4)
                         font { pixelSize: 10; family: "JetBrainsMono Nerd Font" }
                     }
@@ -278,7 +278,7 @@ PanelWindow {
 
                     Text {
                         anchors.centerIn: parent
-                        text: "Limpar Tudo"
+                        text: L10n.tr("clear_all", "Clear All")
                         color: clearAllMa.containsMouse ? Colors.red : a(Colors.fg, 0.6)
                         font { pixelSize: 10; family: "JetBrainsMono Nerd Font"; bold: true }
                     }
@@ -329,7 +329,7 @@ PanelWindow {
                         Text {
                             anchors.left: parent.left
                             anchors.verticalCenter: parent.verticalCenter
-                            text:    "Pesquisar..."
+                            text:    L10n.tr("search_placeholder", "Search...")
                             color:   a(Colors.fg, 0.25)
                             font:    parent.font
                             visible: !parent.text && !parent.activeFocus
@@ -573,14 +573,14 @@ PanelWindow {
 
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: "Limpar o histórico?"
+                    text: L10n.tr("clear_history_title", "Clear History?")
                     color: Colors.fg
                     font { pixelSize: 14; family: "JetBrainsMono Nerd Font"; bold: true }
                 }
 
                 Text {
                     width: parent.width
-                    text: "Isso excluirá permanentemente todos os itens salvos."
+                    text: L10n.tr("clear_history_body", "This will permanently delete all saved items.")
                     color: a(Colors.fg, 0.45)
                     font { pixelSize: 11; family: "JetBrainsMono Nerd Font" }
                     horizontalAlignment: Text.AlignHCenter
@@ -602,7 +602,7 @@ PanelWindow {
 
                         Text {
                             anchors.centerIn: parent
-                            text: "Cancelar"
+                            text: L10n.tr("cancel", "Cancel")
                             color: Colors.fg
                             font { pixelSize: 11; family: "JetBrainsMono Nerd Font"; bold: true }
                         }
@@ -625,7 +625,7 @@ PanelWindow {
 
                         Text {
                             anchors.centerIn: parent
-                            text: "Limpar Tudo"
+                            text: L10n.tr("clear_all", "Clear All")
                             color: deleteConfirmMa.containsMouse ? Colors.bg : Colors.red
                             font { pixelSize: 11; family: "JetBrainsMono Nerd Font"; bold: true }
                         }

@@ -156,12 +156,12 @@ PanelWindow {
                 Column {
                     spacing: 2
                     Text {
-                        text: "Layouts do Tiling"
+                        text: L10n.tr("tiling_layouts", "Tiling Layouts")
                         color: Colors.fg
                         font { pixelSize: 15; family: "JetBrainsMono Nerd Font"; bold: true }
                     }
                     Text {
-                        text: "Layout ativo: " + (activeLayoutAbbr ? activeLayoutAbbr : "Nenhum")
+                        text: L10n.tr("active_layout", "Active Layout: ") + (activeLayoutAbbr ? activeLayoutAbbr : L10n.tr("no_active_layout", "None"))
                         color: a(Colors.fg, 0.4)
                         font { pixelSize: 10; family: "JetBrainsMono Nerd Font" }
                     }
@@ -266,8 +266,8 @@ PanelWindow {
 
                 Text {
                     anchors.centerIn: parent
-                    text: "Teclas Vim (HJKL) ou Setas para navegar • Enter para selecionar • Atalhos no topo-esquerdo • ESC para fechar"
-                    color: a(Colors.fg, 0.25)
+                    text: L10n.tr("navigation_hint", "Vim Keys (HJKL) or Arrows to navigate • Enter to select • Shortcuts top-left • ESC to close")
+                    color: a(Colors.fg, 0.3)
                     font { pixelSize: 9; family: "JetBrainsMono Nerd Font" }
                 }
             }

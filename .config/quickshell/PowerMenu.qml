@@ -84,11 +84,11 @@ PanelWindow {
 
                 Repeater {
                     model: [
-                        { icon: "⏻", label: "Desligar", cmd: "systemctl poweroff", color: "red" },
-                        { icon: "󰜉", label: "Reiniciar", cmd: "systemctl reboot", color: "yellow" },
-                        { icon: "󰒲", label: "Suspender", cmd: "systemctl suspend", color: "accent" },
-                        { icon: "󰍃", label: "Sair", cmd: "loginctl terminate-user " + Quickshell.env("USER"), color: "fg" },
-                        { icon: "󰌾", label: "Bloquear", cmd: "echo 1 > ~/.cache/qs/lock; sleep 0.1", color: "dim" }
+                        { icon: "⏻", label: L10n.tr("poweroff", "Power Off"), cmd: "systemctl poweroff", color: "red" },
+                        { icon: "󰜉", label: L10n.tr("reboot", "Reboot"), cmd: "systemctl reboot", color: "yellow" },
+                        { icon: "󰒲", label: L10n.tr("suspend", "Suspend"), cmd: "systemctl suspend", color: "accent" },
+                        { icon: "󰍃", label: L10n.tr("logout", "Log Out"), cmd: "loginctl terminate-user " + Quickshell.env("USER"), color: "fg" },
+                        { icon: "󰌾", label: L10n.tr("lock", "Lock"), cmd: "echo 1 > ~/.cache/qs/lock; sleep 0.1", color: "dim" }
                     ]
 
                     Rectangle {
