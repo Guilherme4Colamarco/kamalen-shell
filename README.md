@@ -1,42 +1,50 @@
 <div align="center">
 
+**English (en)** • [Português (pt-BR)](README.pt-BR.md)
+
+</div>
+
+---
+
+<div align="center">
+
 # 🦎 Kamalen Shell
 
-![Status](https://img.shields.io/badge/Status-Desenvolvimento-green?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Active-green?style=flat-square)
 ![WM](https://img.shields.io/badge/WM-MangoWM-e8a87c?style=flat-square)
 ![Wayland](https://img.shields.io/badge/Protocol-Wayland-ffbc42?style=flat-square&logo=wayland&logoColor=white)
 ![Engine](https://img.shields.io/badge/Colors-Iris%20Engine-89b4fa?style=flat-square)
 
 <br>
 
-> 🎨 **Um setup dinâmico e responsivo para MangoWM que muda de cor como um camaleão, adaptando-se a qualquer papel de parede instantaneamente.**
+> 🎨 **A dynamic and responsive setup for MangoWM that changes colors like a chameleon, adapting to any wallpaper instantly.**
 
 </div>
 
 ---
 
-## 📢 O Conceito
+## 📢 The Concept
 
-A maioria dos setups/rices de Linux são feitos sob medida para funcionar com apenas um papel de parede e uma paleta de cores estática. O **Kamalen Shell** quebra essa barreira: ele foi desenhado para extrair cores de qualquer imagem que você definir como wallpaper e espalhar essa paleta dinamicamente por todo o seu sistema.
+Most Linux rices/setups are custom-built to work with only one specific wallpaper and a static color palette. **Kamalen Shell** breaks this barrier: it is designed to extract colors from whatever image you set as a wallpaper and propagate this palette dynamically across your entire system.
 
-Não importa a imagem que você jogue nele, 90% das vezes ele vai gerar um tema coeso e agradável sem que você precise abrir um único arquivo de configuração. Ele também conta com 5 perfis diferentes de animação (bubbly, calm, snappy, extraslow, none) para se adaptar ao seu ritmo de uso.
+No matter what image you throw at it, 90% of the time it will generate a cohesive and pleasing theme without you having to open a single configuration file. It also features 5 different animation profiles (bubbly, calm, snappy, extraslow, none) to adapt to your workflow.
 
 ---
 
-## 🚀 O que tem de legal?
+## 🚀 What's actually cool?
 
-* **Extração Inteligente de Cores** — Um script em Python (`iris.py`) usa agrupamento K-Means no espaço de cores LAB para identificar os tons dominantes do papel de parede ativo. Ele gera cores de fundo, texto, acentos e até paleta de sintaxe de código, aplicando instantaneamente em:
-  - **Kitty** (via socket em tempo real, sem reiniciar)
-  - **Neovim** (cria um color scheme Lua dinâmico)
-  - **GTK 3/4** (escreve CSS direto nas pastas de tema)
-  - **MangoWM** (atualiza a cor das bordas das janelas)
-  - **Starship Prompt** (sincroniza o prompt do seu terminal)
+* **Smart Color Extraction** — A Python script (`iris.py`) uses K-Means clustering in LAB color space to identify the dominant tones of the active wallpaper. It generates background, foreground, accent, and even code syntax highlighting colors, applying them instantly to:
+  - **Kitty** (via socket in real time, no restart needed)
+  - **Neovim** (creates a dynamic Lua color scheme)
+  - **GTK 3/4** (writes CSS directly to theme folders)
+  - **MangoWM** (updates window border colors)
+  - **Starship Prompt** (syncs your terminal prompt)
 
-* **Seletor de Wallpaper 3D** — Chega de grades chatas. Navegue pelos seus wallpapers em um carrossel 3D cilíndrico que reproduz GIFs e vídeos na carta central. Pressione `R` para escolher um aleatório!
+* **3D Wallpaper Picker** — No more boring grids. Navigate your wallpapers in a cylindrical 3D carousel that plays GIFs and videos in the center card. Press `R` to pick a random one!
 
-* **Tela de Bloqueio Integrada** — Desenhada em Quickshell, suporta wallpapers em vídeo/GIF com efeito de desfoque (blur) dinâmico, usa PAM do Python para autenticação super rápida e exibe animações em caso de senha incorreta.
+* **Integrated Lockscreen** — Built in Quickshell, it supports video/GIF wallpapers with a dynamic blur effect, uses Python PAM for super-fast authentication, and displays animations for incorrect password attempts.
 
-* **Totalmente Modular** — Altere velocidades de animação, ligue/desligue transparências, mude o raio das bordas das janelas ou altere o estilo da barra com cliques simples no painel.
+* **Fully Modular** — Change animation speeds, toggle transparency, adjust window border radius, or change the bar style with simple clicks on the panel.
 
 ---
 
@@ -55,25 +63,25 @@ Não importa a imagem que você jogue nele, 90% das vezes ele vai gerar um tema 
 
 ---
 
-## 🛠️ O Stack
+## 🛠️ The Stack
 
-| Componente | Ferramenta |
+| Component | Tool |
 |---|---|
-| **Window Manager** | [mango-ext](https://github.com/ernestoCruz05/mango-ext) (Fork aprimorado do MangoWM) |
-| **Painéis / Widgets** | [Quickshell](https://github.com/outfoxxed/quickshell) (QML reativo) |
+| **Window Manager** | [mango-ext](https://github.com/ernestoCruz05/mango-ext) (Enhanced fork of MangoWM) |
+| **Panels / Widgets** | [Quickshell](https://github.com/outfoxxed/quickshell) (Reactive QML) |
 | **Terminal** | Kitty |
-| **Editor de Texto** | Neovim |
-| **Tela de Bloqueio** | Quickshell + python-pam |
-| **Notificações** | Tiramisu redirecionado para o Quickshell |
+| **Text Editor** | Neovim |
+| **Lockscreen** | Quickshell + python-pam |
+| **Notifications** | Tiramisu redirected to Quickshell |
 | **Wallpaper Daemon** | awww-daemon |
 | **Video Wallpapers** | mpvpaper |
-| **Visualizador de Áudio** | Cava (12 barras de frequência) |
+| **Audio Visualizer** | Cava (12 frequency bars) |
 
 ---
 
-## 📥 Instalação
+## 📥 Installation
 
-O script de instalação foi desenvolvido e testado no **Arch Linux** (e derivados como CachyOS).
+The installation script was developed and tested on **Arch Linux** (and derivatives like CachyOS).
 
 ```bash
 git clone https://github.com/Guilherme4Colamarco/kamalen-shell.git
@@ -82,127 +90,127 @@ chmod +x install.sh
 ./install.sh
 ```
 
-### O que o instalador faz:
-- Instala todas as dependências do sistema e compila o `mango-ext` automaticamente.
-- Faz backup seguro das suas configurações antigas em `~/.dotfiles-backup-<timestamp>`.
-- Copia todas as configurações para a pasta `~/.config/`.
-- Configura o serviço de autenticação PAM para a tela de bloqueio.
-- Cria os diretórios necessários de cache e estado.
+### What the installer does:
+- Installs all system dependencies and compiles `mango-ext` automatically.
+- Safely backs up your old configurations to `~/.dotfiles-backup-<timestamp>`.
+- Copies everything to `~/.config/`.
+- Configures the PAM authentication service for the lockscreen.
+- Creates the required cache and state directories.
 
-**Próximos Passos após instalar:**
-1. Faça logout da sua sessão atual.
-2. Na tela de login, selecione **MangoWM** (ou mango-ext).
-3. Faça login.
-4. Execute `~/.config/scripts/random-wallpaper.sh` para definir seu primeiro tema de cores!
-
----
-
-## ✨ Recursos em Destaque
-
-### 🎨 Extração de Cores (Iris Engine)
-O script `iris.py` cuida de todo o trabalho pesado. Ele redimensiona a imagem para otimizar a velocidade, analisa a distribuição espacial das cores e gera paletas ideais (incluindo cores escuras ou claras automáticas). Tudo é salvo em cache de forma que voltar a um papel de parede anterior seja instantâneo.
-
-### 🎞️ Perfis de Animação
-Você pode mudar a personalidade do sistema no painel de controle escolhendo entre 5 perfis:
-- **bubbly**: Super dinâmico, quicando e com efeitos elásticos (padrão).
-- **calm**: Transições suaves e lentas estilo macOS.
-- **snappy**: Rápido, seco e responsivo.
-- **extraslow**: Movimentos bem cadenciados e elegantes.
-- **none**: Transições instantâneas (sem animações).
-
-### 🔒 Tela de Bloqueio
-Exibe relógio, data e foto de perfil. Reproduz o mesmo vídeo ou GIF de fundo do seu desktop de forma contínua com efeito blur. Conta com indicador de comprimento de senha e animação de vibração caso erre a autenticação.
-*(Nota de Segurança: Um `killall quickshell` contorna a tela de bloqueio. É um bloqueio visual e de conveniência, não um cofre de alta segurança).*
-
-### 🖼️ Seletor de Wallpaper 3D
-Ativado com `Super + W`. Use `H/L` ou as setas para rodar o cilindro de papéis de parede. Ao parar sobre um vídeo ou GIF, ele começa a tocar na tela. Pressione `Enter` para aplicar o tema e a cor do sistema mudará em menos de 2 segundos.
-
-### 🎵 Controle de Mídia
-Widget drop-down no topo central que mostra o que está tocando via `playerctl` (Spotify, Firefox, mpv, etc.). Suporta barra de progresso interativa, títulos com scroll lateral automático, e dois estilos de visualização: **Vinyl mode** (disco giratório com capa do álbum) e **GIF mode** (GIFs dinâmicos sincronizados com a música). Cava com 12 barras renderizado na base.
-
-### 📊 Painel Geral (Dashboard)
-Painel lateral direito que abriga foto de perfil, tempo de atividade do PC, menu de energia e 11 botões rápidos de controle (Wi-Fi, Bluetooth, DND, Transparências, Modos de energia, Modos de animação e raio de borda). Também centraliza as notificações organizadas e agrupadas por aplicativo.
+**Next steps after installing:**
+1. Log out of your current session.
+2. Select **MangoWM** (or mango-ext) from your login manager.
+3. Log back in.
+4. Run `~/.config/scripts/random-wallpaper.sh` to set your first color theme!
 
 ---
 
-## ⌨️ Atalhos Principais
+## ✨ Features in Detail
 
-| Atalho | Ação |
+### 🎨 Color Extraction (Iris Engine)
+The `iris.py` script handles all the heavy lifting. It downscales the image to optimize processing speed, analyzes the spatial distribution of colors, and generates ideal palettes (including auto dark/light modes). Everything is cached, making returning to a previous wallpaper instantaneous.
+
+### 🎞️ Animation Profiles
+You can change the system personality on the control panel by choosing from 5 profiles:
+- **bubbly**: Bouncy, springy, overshooting transitions (default).
+- **calm**: Slow, smooth, macOS-style transitions.
+- **snappy**: Fast, clean, and highly responsive.
+- **extraslow**: Graceful and slow-paced movements.
+- **none**: Instant transitions (no animations).
+
+### 🔒 Lockscreen
+Displays clock, date, and profile picture. Plays the same video or GIF background as your desktop with a continuous blur effect. Features password length dots and a shake animation for failed authentication attempts.
+*(Security Note: `killall quickshell` bypasses the lockscreen. It is a visual convenience lock, not a high-security vault).*
+
+### 🖼️ 3D Wallpaper Picker
+Activated with `Super + W`. Use `H/L` or arrow keys to rotate the wallpaper cylinder. Hovering over a video or GIF starts playback on the card. Press `Enter` to apply, and the system colors will update in under 2 seconds.
+
+### 🎵 Media Control
+A top-center drop-down widget that shows playback status via `playerctl` (Spotify, Firefox, mpv, etc.). Supports interactive progress bars, scrolling marquee titles, and two visualization modes: **Vinyl mode** (spinning vinyl record with album art overlay) and **GIF mode** (dynamic GIFs synced to the music). A 12-bar Cava visualizer is rendered at the base.
+
+### 📊 Dashboard
+A right-side panel housing your profile picture, system uptime, power menu, and 11 quick setting tiles (Wi-Fi, Bluetooth, DND, Transparency, Power profiles, Animation profiles, and border radius). It also groups notifications by app.
+
+---
+
+## ⌨️ Key Bindings (Main List)
+
+| Binding | Action |
 |---|---|
-| `Super + Enter` | Abrir terminal (Kitty) |
-| `Super + Shift + Enter` | Abrir terminal flutuante |
-| `Super + D` | Lançador de aplicativos |
-| `Super + W` | Seletor de Wallpaper 3D |
-| `Super + E` | Gerenciador de Arquivos (Thunar) |
-| `Super + X` | Bloquear Tela |
-| `Super + M` | Maximizar/Restaurar Janela |
-| `Super + Shift + Q` | Fechar janela focada |
-| `Super + Shift + Espaço`| Alternar janela entre flutuante/tiling |
-| `Super + F` | Tela Cheia (Fullscreen) |
-| `Super + H/J/K/L` | Focar janelas (esquerda, baixo, cima, direita) |
-| `Super + Shift + H/J/K/L`| Mover janelas físicas de lugar |
-| `Super + CTRL + H/J/K/L` | Redimensionar janela ativa |
-| `Super + 1-5` | Mudar de área de trabalho |
-| `Super + Shift + 1-5` | Enviar janela para outra área de trabalho |
-| `Super + T` | Layout Tiling (Dwindle) |
-| `Super + Shift + T` | Layout Tiling (Tile clássico) |
-| `Super + C` | Layout Canvas (Área infinita) |
-| `Super + S` | Layout Scroller (Páginas horizontais) |
+| `Super + Enter` | Open terminal (Kitty) |
+| `Super + Shift + Enter` | Open floating terminal |
+| `Super + D` | App launcher |
+| `Super + W` | 3D Wallpaper Picker |
+| `Super + E` | File Manager (Thunar) |
+| `Super + X` | Lock Screen |
+| `Super + M` | Maximize/Restore Window |
+| `Super + Shift + Q` | Close focused window |
+| `Super + Shift + Space` | Toggle floating/tiling |
+| `Super + F` | Fullscreen |
+| `Super + H/J/K/L` | Focus window (left, down, up, right) |
+| `Super + Shift + H/J/K/L` | Move window position |
+| `Super + CTRL + H/J/K/L` | Resize active window |
+| `Super + 1-5` | Switch workspace |
+| `Super + Shift + 1-5` | Send window to workspace |
+| `Super + T` | Tiling layout (Dwindle) |
+| `Super + Shift + T` | Tiling layout (Classic Tile) |
+| `Super + C` | Canvas layout (Infinite workspace) |
+| `Super + S` | Scroller layout (Horizontal pages) |
 
 ---
 
-## 📂 Estrutura de Arquivos
+## 📂 File Structure
 
 ```
 ~/.config/quickshell/
-├── iris/iris.py              # Script principal de extração de cores
+├── iris/iris.py              # Main color extraction script
 ├── state/
-│   ├── settings.json         # Persistência de configurações ativas
-│   └── app_usage.json        # Frequência de uso de apps para o launcher
+│   ├── settings.json         # Settings persistence (dark mode, profiles, etc.)
+│   └── app_usage.json        # Launcher usage data
 ├── assets/
-│   ├── pfps/                 # Avatares de perfil
-│   └── gifs/                 # GIFs animados para o reprodutor de mídia
-├── Colors.qml                # Singleton gerenciador de paletas
-├── UIState.qml               # Gerenciador global de estados
-├── Animations.qml            # Definição física dos perfis de animações
-├── Dashboard.qml             # Painel de controle lateral
-├── Launcher.qml              # Menu de aplicativos (Rofi-like)
-├── Wallpaper.qml             # Carrossel 3D de papéis de parede
-├── Music.qml                 # Reprodutor de mídia interativo
-├── Calendar.qml              # Calendário e relógio da barra
-├── Lockscreen.qml            # Tela de bloqueio
-├── NotificationPopup.qml     # Banners de notificação flutuantes
-└── Bar.qml                   # Barra de status superior
+│   ├── pfps/                 # Profile pictures
+│   └── gifs/                 # Media widget animated GIFs
+├── Colors.qml                # Palette manager singleton
+├── UIState.qml               # Global state manager
+├── Animations.qml            # Animation profile physics definitions
+├── Dashboard.qml             # Right side control panel
+├── Launcher.qml              # Application menu
+├── Wallpaper.qml             # 3D wallpaper carousel
+├── Music.qml                 # Music controller widget
+├── Calendar.qml              # Status bar calendar and clock
+├── Lockscreen.qml            # Lockscreen panel
+├── NotificationPopup.qml     # Toast banners
+└── Bar.qml                   # Top status bar panel
 
 ~/.config/mango/
-└── config.conf               # Configurações gerais do MangoWM
+└── config.conf               # MangoWM general settings
 ```
 
 ---
 
-## ⚠️ Problemas Conhecidos
+## ⚠️ Known Issues
 
-- **Bandeja do Sistema (System Tray):** Algumas aplicações exigem que a barra seja iniciada sob uma sessão de aplicação completa Qt para os menus do clique direito renderizarem. Se a bandeja sumir ou não responder, reinicie a barra usando `quickshell & disown`.
-- **Extração de cor extrema:** Imagens puramente pretas, brancas ou com gradientes excessivamente complexos podem ocasionalmente gerar cores de acento de baixo contraste. O recomendado é usar imagens fotográficas ou ilustrações bem definidas.
-- **Primeiro Carregamento de Wallpapers:** A primeira inicialização do carrossel pode demorar um pouco enquanto as miniaturas (thumbnails) são geradas em cache em segundo plano.
-
----
-
-## 🤝 Créditos
-
-- **[MangoWM](https://github.com/mangowm/mango):** O compositor Wayland que serve de fundação.
-- **[mango-ext](https://github.com/ernestoCruz05/mango-ext):** Pelas extensões incríveis de janelas e tiling.
-- **[Quickshell](https://github.com/outfoxxed/quickshell):** O motor QML flexível por trás da barra e componentes.
-- A comunidade do **r/unixporn** pelas inspirações estéticas e ideias infinitas.
+- **System Tray:** Some applications require starting the bar under a full Qt application session for right-click context menus to render. If the tray disappears or hangs, restart the bar with `quickshell & disown`.
+- **Extreme Color Extraction:** Wallpapers that are completely black, white, or have excessively complex gradients might occasionally yield low-contrast accent colors. Photographic or graphic illustrations are recommended.
+- **Initial Wallpaper Loading:** The first run of the carousel might experience a slight delay while thumbnails are generated in the background.
 
 ---
 
-## 📄 Licença
+## 🤝 Credits
 
-Este projeto está sob a licença MIT. Sinta-se livre para usar, estudar, modificar e distribuir.
+- **[MangoWM](https://github.com/mangowm/mango):** The foundational Wayland compositor.
+- **[mango-ext](https://github.com/ernestoCruz05/mango-ext):** For amazing window and tiling extensions.
+- **[Quickshell](https://github.com/outfoxxed/quickshell):** The flexible QML engine powering the panels.
+- The **r/unixporn** community for endless aesthetic inspiration.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License. Feel free to use, study, modify, and distribute it.
 
 <div align="center">
 
-*Mude de papel de parede e assista a mágica acontecer. 🦎🎨*
+*Change your wallpaper and watch the magic happen. 🦎🎨*
 
 </div>
