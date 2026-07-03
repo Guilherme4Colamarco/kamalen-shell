@@ -1,6 +1,6 @@
-# SPECIFICATION - Alphonso Improvements
+# SPECIFICATION - Kamalen Shell Improvements
 
-**Project:** Alphonso (MangoWM Rice/Dotfiles)
+**Project:** Kamalen Shell (MangoWM Rice/Dotfiles)
 **Goal:** Improve code quality, documentation, testing, and maintainability
 
 ---
@@ -75,7 +75,7 @@
 ### 3.1 Component Structure
 
 ```
-Alphonso/
+kamalen-shell/
 ├── .config/
 │   ├── quickshell/
 │   │   ├── iris/iris.py          # Color extraction

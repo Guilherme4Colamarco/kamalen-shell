@@ -1,4 +1,4 @@
-# Alphonso
+# Kamalen Shell
 
 Probably the best dots for MangoWM. 
 
@@ -62,8 +62,8 @@ Switch wallpapers in the picker, watch everything recolor in real time. It's wei
 I've only tested this on my laptop. It'll probably work on yours too. **Install script only works on Arch, btw.**
 
 ```bash
-git clone https://github.com/Harman1307/Alphonso.git
-cd Alphonso
+git clone https://github.com/Guilherme4Colamarco/kamalen-shell.git
+cd kamalen-shell
 chmod +x install.sh
 ./install.sh
 ```

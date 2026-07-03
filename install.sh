@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================================
-# Alphonso Installer v2.0
+# Kamalen Shell Installer v2.0
 # ============================================================================
 # Improved version with:
 # - Better error handling and rollback
@@ -62,7 +62,7 @@ trap cleanup EXIT
 # ── Help ─────────────────────────────────────────────────────────
 usage() {
     cat << EOF
-${BOLD}Alphonso Installer v2.0${RESET}
+${BOLD}Kamalen Shell Installer v2.0${RESET}
 
 ${BOLD}Usage:${RESET}
   ./install.sh [options] [command]
@@ -559,7 +559,7 @@ print_summary() {
     echo ""
     echo -e "${DIM}Duration: ${duration}s${RESET}"
     echo ""
-    echo -e "${GREEN}${BOLD}THANK YOU FOR INSTALLING ALPHONSO :)${RESET}"
+    echo -e "${GREEN}${BOLD}THANK YOU FOR INSTALLING KAMALEN SHELL :)${RESET}"
 }
 
 # ── Main ─────────────────────────────────────────────────────────
@@ -597,7 +597,7 @@ main() {
         *)
             preflight
 
-            echo -e "${BOLD}Welcome to Alphonso!${RESET}"
+            echo -e "${BOLD}Welcome to Kamalen Shell!${RESET}"
             echo ""
             echo "This will install:"
             echo "  • System dependencies (kitty, cava, neovim, etc.)"
