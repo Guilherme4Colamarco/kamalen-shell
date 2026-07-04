@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 import Quickshell.Services.SystemTray
+import Quickshell.Io
 
 Item {
     id: root
@@ -80,6 +81,9 @@ Item {
     signal launcherAppLaunchRequested(var app)
     signal launcherMoveSelectionRequested(int delta)
     signal workspaceSwitchRequested(int index)
+
+    Process { id: wifiToggleProc }
+    Process { id: btToggleProc }
 
     function normalizedSeconds(value) {
         if (!isFinite(value) || value <= 0)
@@ -374,78 +378,236 @@ Item {
 
                 ColumnLayout {
                     Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
-                    spacing: 6
+                    Layout.preferredWidth: 160
+                    spacing: 8
 
-                    // WiFi
+                    // 1. Volume Slider
                     Item {
-                        Layout.alignment: Qt.AlignRight
-                        Layout.preferredWidth: wifiRow.width
-                        Layout.preferredHeight: wifiRow.height
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 14
 
-                        Row {
-                            id: wifiRow
-                            spacing: 4
+                        RowLayout {
+                            anchors.fill: parent
+                            spacing: 6
 
                             MIcon {
-                                name: root.wifiConnected ? (root.wifiSsid === "Ethernet" ? "󰈀" : (root.wifiSignal >= 70 ? "󰤨" : root.wifiSignal >= 40 ? "󰤥" : "󰤢")) : "󰤮"
-                                size: 16
-                                color: root.wifiConnected ? Colors.accent : a(Colors.fg, 0.3)
-                                anchors.verticalCenter: parent.verticalCenter
+                                name: root.muted ? "󰝟" : (root.volume < 50 ? "󰖀" : "󰕾")
+                                size: 12
+                                color: Colors.accent
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+
+                            Item {
+                                id: volTrack
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+
+                                Rectangle {
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    height: 4
+                                    radius: 2
+                                    color: a(Colors.fg, 0.1)
+                                }
+
+                                Rectangle {
+                                    anchors.left: parent.left
+                                    width: parent.width * (root.volume / 100)
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    height: 4
+                                    radius: 2
+                                    color: Colors.accent
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    
+                                    function updateValue(mouse) {
+                                        var pct = Math.max(0, Math.min(1, mouse.x / width));
+                                        UIState.setVolume(Math.round(pct * 100));
+                                    }
+                                    onPressed: mouse => updateValue(mouse)
+                                    onPositionChanged: mouse => {
+                                        if (pressed) updateValue(mouse)
+                                    }
+                                }
                             }
 
                             Text {
-                                text: root.wifiConnected ? root.wifiSsid : "Desconectado"
-                                color: root.wifiConnected ? Colors.fg : a(Colors.fg, 0.35)
+                                text: root.volume + "%"
+                                color: a(Colors.fg, 0.45)
                                 font.family: root.fontFamily
-                                font.pixelSize: 12
+                                font.pixelSize: 8
                                 font.bold: true
-                                anchors.verticalCenter: parent.verticalCenter
+                                Layout.alignment: Qt.AlignVCenter
                             }
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            anchors.margins: -4
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.wifiSettingsRequested()
                         }
                     }
 
-                    // Bluetooth
+                    // 2. Brightness Slider
                     Item {
-                        Layout.alignment: Qt.AlignRight
-                        Layout.preferredWidth: btRow.width
-                        Layout.preferredHeight: btRow.height
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 14
 
-                        Row {
-                            id: btRow
-                            spacing: 4
+                        RowLayout {
+                            anchors.fill: parent
+                            spacing: 6
 
                             MIcon {
-                                name: "󰂯"
-                                size: 16
-                                color: root.btConnected ? Colors.accent : (root.btEnabled ? Colors.fg : a(Colors.fg, 0.3))
-                                anchors.verticalCenter: parent.verticalCenter
+                                name: UIState.brightness < 30 ? "󰃞" : (UIState.brightness < 70 ? "󰃟" : "󰃠")
+                                size: 12
+                                color: Colors.accent
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+
+                            Item {
+                                id: brightTrack
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+
+                                Rectangle {
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    height: 4
+                                    radius: 2
+                                    color: a(Colors.fg, 0.1)
+                                }
+
+                                Rectangle {
+                                    anchors.left: parent.left
+                                    width: parent.width * (UIState.brightness / 100)
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    height: 4
+                                    radius: 2
+                                    color: Colors.accent
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    
+                                    function updateValue(mouse) {
+                                        var pct = Math.max(0, Math.min(1, mouse.x / width));
+                                        UIState.setBrightness(Math.round(pct * 100));
+                                    }
+                                    onPressed: mouse => updateValue(mouse)
+                                    onPositionChanged: mouse => {
+                                        if (pressed) updateValue(mouse)
+                                    }
+                                }
                             }
 
                             Text {
-                                text: root.btConnected ? (root.btBattery >= 0 ? root.btDeviceName + " " + root.btBattery + "%" : root.btDeviceName) : (root.btEnabled ? "Ativo" : "Inativo")
-                                color: root.btConnected ? Colors.fg : a(Colors.fg, 0.35)
+                                text: UIState.brightness + "%"
+                                color: a(Colors.fg, 0.45)
                                 font.family: root.fontFamily
-                                font.pixelSize: 12
+                                font.pixelSize: 8
                                 font.bold: true
-                                elide: Text.ElideRight
-                                anchors.verticalCenter: parent.verticalCenter
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+                        }
+                    }
+
+                    // 3. Toggles Row (Wifi and BT)
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 8
+
+                        // Wi-Fi Button
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 22
+                            radius: 6
+                            color: root.wifiConnected ? a(Colors.accent, 0.15) : a(Colors.fg, 0.05)
+                            border.width: root.wifiConnected ? 1 : 0
+                            border.color: a(Colors.accent, 0.3)
+
+                            RowLayout {
+                                anchors.centerIn: parent
+                                spacing: 4
+
+                                MIcon {
+                                    name: root.wifiConnected ? (root.wifiSsid === "Ethernet" ? "󰈀" : "󰤨") : "󰤮"
+                                    size: 11
+                                    color: root.wifiConnected ? Colors.accent : a(Colors.fg, 0.4)
+                                }
+
+                                Text {
+                                    text: root.wifiConnected ? (root.wifiSsid === "Ethernet" ? "Cabo" : root.wifiSsid) : "Off"
+                                    color: root.wifiConnected ? Colors.fg : a(Colors.fg, 0.4)
+                                    font.family: root.fontFamily
+                                    font.pixelSize: 8
+                                    font.bold: true
+                                    elide: Text.ElideRight
+                                    Layout.maximumWidth: 60
+                                }
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                onClicked: function(mouse) {
+                                    if (mouse.button === Qt.RightButton) {
+                                        root.wifiSettingsRequested();
+                                    } else {
+                                        wifiToggleProc.command = ["nmcli", "radio", "wifi", root.wifiConnected ? "off" : "on"]
+                                        wifiToggleProc.running = true
+                                    }
+                                }
                             }
                         }
 
-                        MouseArea {
-                            anchors.fill: parent
-                            anchors.margins: -4
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.btSettingsRequested()
+                        // Bluetooth Button
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 22
+                            radius: 6
+                            color: root.btConnected ? a(Colors.accent, 0.15) : a(Colors.fg, 0.05)
+                            border.width: root.btConnected ? 1 : 0
+                            border.color: a(Colors.accent, 0.3)
+
+                            RowLayout {
+                                anchors.centerIn: parent
+                                spacing: 4
+
+                                MIcon {
+                                    name: "󰂯"
+                                    size: 11
+                                    color: root.btConnected ? Colors.accent : a(Colors.fg, 0.4)
+                                }
+
+                                Text {
+                                    text: root.btConnected ? (root.btBattery >= 0 ? root.btBattery + "%" : "On") : "Off"
+                                    color: root.btConnected ? Colors.fg : a(Colors.fg, 0.4)
+                                    font.family: root.fontFamily
+                                    font.pixelSize: 8
+                                    font.bold: true
+                                    elide: Text.ElideRight
+                                    Layout.maximumWidth: 60
+                                }
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                onClicked: function(mouse) {
+                                    if (mouse.button === Qt.RightButton) {
+                                        root.btSettingsRequested();
+                                    } else {
+                                        btToggleProc.command = ["bluetoothctl", "power", root.btConnected ? "off" : "on"]
+                                        btToggleProc.running = true
+                                    }
+                                }
+                            }
                         }
                     }
                 }
