@@ -1,9 +1,11 @@
+//@ pragma UseQApplication
 import Quickshell
 import Quickshell.Io
 import QtQuick
 
 ShellRoot {
     Bar {}
+    DynamicIsland {}
 
     Variants {
         model: Quickshell.screens
@@ -30,10 +32,11 @@ ShellRoot {
         Calendar { property var modelData; screen: modelData }
     }
 
-    Variants {
-        model: Quickshell.screens
-        NotificationPopup { property var modelData; screen: modelData }
-    }
+    // Desativado em favor da DynamicIsland
+    // Variants {
+    //     model: Quickshell.screens
+    //     NotificationPopup { property var modelData; screen: modelData }
+    // }
 
     Variants {
         model: Quickshell.screens

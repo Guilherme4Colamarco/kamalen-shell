@@ -362,10 +362,7 @@ Scope {
             width: mediaVisible ? centerRow.implicitWidth : 0
             height: parent.height
 
-            property bool mediaVisible: UIState.hasMedia
-                                     && UIState.mediaDisplay !== ""
-                                     && UIState.mediaState !== ""
-                                     && UIState.mediaState !== "stopped"
+            property bool mediaVisible: false
 
             opacity: mediaVisible ? 1 : 0
             scale:   mediaVisible ? 1 : 0.86
