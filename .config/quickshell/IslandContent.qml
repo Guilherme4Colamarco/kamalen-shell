@@ -124,7 +124,7 @@ Item {
         visible: opacity > 0
 
         // ── Modo Normal: Workspace + App + Clock ──────────────────────
-        Row {
+        RowLayout {
             id: idleRow
             anchors.verticalCenter: parent.verticalCenter
             anchors.left: parent.left
@@ -142,7 +142,7 @@ Item {
                 color: a(Colors.accent, 0.10)
                 border.width: 1
                 border.color: a(Colors.accent, 0.20)
-                anchors.verticalCenter: parent.verticalCenter
+                Layout.alignment: Qt.AlignVCenter
 
                 Text {
                     id: wsNum
@@ -164,7 +164,7 @@ Item {
                 font.bold: true
                 elide: Text.ElideRight
                 Layout.fillWidth: true
-                anchors.verticalCenter: parent.verticalCenter
+                Layout.alignment: Qt.AlignVCenter
             }
 
             // Clock
@@ -174,7 +174,7 @@ Item {
                 font.family: root.fontFamily
                 font.pixelSize: 17
                 font.bold: true
-                anchors.verticalCenter: parent.verticalCenter
+                Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
             }
         }
 
