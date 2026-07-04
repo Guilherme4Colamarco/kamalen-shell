@@ -18,6 +18,8 @@ Scope {
     property int volume: UIState.volume
     property bool muted: UIState.muted
     property bool volumeIndicatorVisible: false
+    property int indicatorLevel: root.volume
+    property bool indicatorMuted: root.muted
     property bool playing: UIState.mediaState === "playing"
     property bool pointerInside: false
     property bool pinnedOpen: false
@@ -121,7 +123,7 @@ Scope {
     }
 
     function targetY() {
-        return root.visualMode === "idle" && !root.interactionOpen ? 0 : 0;
+        return 0;
     }
 
     function hold(milliseconds) {
@@ -203,6 +205,8 @@ Scope {
     function showVolume(level, isMuted) {
         root.volume = Math.max(0, Math.min(100, Number(level)));
         root.muted = isMuted;
+        root.indicatorLevel = root.volume;
+        root.indicatorMuted = root.muted;
         root.title = root.muted ? "Mudo" : "Volume";
         root.volumeIndicatorVisible = true;
         volumeIndicatorTimer.restart();
@@ -213,8 +217,8 @@ Scope {
     }
 
     function showBrightness(level) {
-        root.volume = Math.max(0, Math.min(100, Number(level)));
-        root.muted = false;
+        root.indicatorLevel = Math.max(0, Math.min(100, Number(level)));
+        root.indicatorMuted = false;
         root.title = "Brilho";
         root.volumeIndicatorVisible = true;
         volumeIndicatorTimer.restart();
@@ -609,6 +613,8 @@ Scope {
                 volume: root.volume
                 muted: root.muted
                 volumeIndicatorVisible: root.volumeIndicatorVisible
+                indicatorLevel: root.indicatorLevel
+                indicatorMuted: root.indicatorMuted
                 playing: root.playing
                 canGoPrevious: root.mediaCanGoPrevious
                 canTogglePlaying: root.mediaCanTogglePlaying
@@ -648,9 +654,7 @@ Scope {
                 onNextRequested: UIState.doMedia("next")
                 onShuffleRequested: UIState.doMedia("shuffle") // Se suportado pelo player
                 onLoopRequested: UIState.doMedia("loop-cycle")
-                onFavoriteRequested: {
-                    // Feedback de favoritar
-                }
+                onFavoriteRequested: UIState.doMedia("favorite")
                 onDismissRequested: {
                     root.mediaHoverSuppressed = true;
                     root.showIdle();

@@ -14,6 +14,8 @@ Item {
     property int volume: 0
     property bool muted: false
     property bool volumeIndicatorVisible: false
+    property int indicatorLevel: 0
+    property bool indicatorMuted: false
     property bool playing: false
     property bool canGoPrevious: false
     property bool canTogglePlaying: false
@@ -39,9 +41,16 @@ Item {
     property bool btConnected: false
     property string btDeviceName: ""
     property int btBattery: -1
+    property int workspace: 1
+    property var workspaceOccupied: [false,false,false,false,false]
+    property string focusedApp: ""
     property string timeText: ""
     property string dateText: ""
     property string fontFamily: "JetBrainsMono Nerd Font"
+    property string launcherQuery: ""
+    property int launcherSelected: 0
+    property var launcherTopApps: []
+    property var launcherFiltered: []
     
     readonly property bool expanded: mode !== "idle" || forceExpanded
     
@@ -63,6 +72,11 @@ Item {
     signal btSettingsRequested
     signal seekRequested(real position)
     signal handleStyleRequested(string style)
+    signal launcherSearchChanged(string query)
+    signal launcherCloseRequested
+    signal launcherAppLaunchRequested(var app)
+    signal launcherMoveSelectionRequested(int delta)
+    signal workspaceSwitchRequested(int index)
 
     transformOrigin: Item.Top
 
@@ -338,7 +352,7 @@ Item {
 
             onPaint: {
                 const ctx = getContext("2d");
-                const progress = root.muted ? 0 : Math.max(0, Math.min(1, root.volume / 100));
+                const progress = root.indicatorMuted ? 0 : Math.max(0, Math.min(1, root.indicatorLevel / 100));
 
                 ctx.reset();
                 ctx.clearRect(0, 0, width, height);
@@ -372,11 +386,11 @@ Item {
             Connections {
                 target: root
 
-                function onVolumeChanged() {
+                function onIndicatorLevelChanged() {
                     volumeTrace.requestPaint();
                 }
 
-                function onMutedChanged() {
+                function onIndicatorMutedChanged() {
                     volumeTrace.requestPaint();
                 }
 
@@ -424,6 +438,9 @@ Item {
             btConnected: root.btConnected
             btDeviceName: root.btDeviceName
             btBattery: root.btBattery
+            workspace: root.workspace
+            workspaceOccupied: root.workspaceOccupied
+            focusedApp: root.focusedApp
             timeText: root.timeText
             dateText: root.dateText
             onPreviousRequested: root.previousRequested()
@@ -437,6 +454,15 @@ Item {
             onBtSettingsRequested: root.btSettingsRequested()
             onSeekRequested: position => root.seekRequested(position)
             onHandleStyleRequested: style => root.handleStyleRequested(style)
+            launcherQuery: root.launcherQuery
+            launcherSelected: root.launcherSelected
+            launcherTopApps: root.launcherTopApps
+            launcherFiltered: root.launcherFiltered
+            onLauncherSearchChanged: query => root.launcherSearchChanged(query)
+            onLauncherCloseRequested: root.launcherCloseRequested()
+            onLauncherAppLaunchRequested: app => root.launcherAppLaunchRequested(app)
+            onLauncherMoveSelectionRequested: delta => root.launcherMoveSelectionRequested(delta)
+            onWorkspaceSwitchRequested: index => root.workspaceSwitchRequested(index)
         }
     }
 
