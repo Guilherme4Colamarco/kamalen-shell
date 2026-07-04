@@ -182,6 +182,7 @@ Scope {
     }
 
     function showNotification(summary, message, app) {
+        if (UIState.dndEnabled) return;
         root.appName = app || "Notificação";
         root.title = summary || "Nova notificação";
         root.body = message || "";
@@ -552,7 +553,7 @@ Scope {
 
         screen: root.focusedScreen()
         color: "transparent"
-        exclusiveZone: root.visualMode === "launcher" ? root.launcherHeight + 8 : root.reservedZone
+        exclusiveZone: root.reservedZone
         exclusionMode: ExclusionMode.Normal
         implicitHeight: root.visualMode === "launcher" ? root.launcherHeight + 8 : root.windowHeight
         visible: UIState.activeDropdown !== "dashboard" && !UIState.lockedState

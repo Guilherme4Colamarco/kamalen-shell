@@ -312,96 +312,112 @@ Item {
                 onHandleStyleRequested: style => root.handleStyleRequested(style)
             }
 
-            // Row com Workspace dots e System Tray
-            RowLayout {
+            // Container com Workspace dots e System Tray
+            Item {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 23
 
-                // Espaçador para manter os dots centralizados
-                Item {
-                    Layout.preferredWidth: trayRow.width
-                    Layout.fillHeight: true
-                    visible: trayRow.width > 0
-                }
-
-                // Workspace dots
-                Row {
-                    Layout.alignment: Qt.AlignHCenter
-                    spacing: 8
-
-                    Repeater {
-                        model: 5
-
-                        Rectangle {
-                            required property int index
-                            width: root.workspace === index + 1 ? 21 : 10
-                            height: 10
-                            radius: 5
-                            color: root.workspace === index + 1
-                                ? Colors.accent
-                                : root.workspaceOccupied[index]
-                                    ? a(Colors.fg, 0.25)
-                                    : a(Colors.fg, 0.08)
-                            border.width: root.workspace === index + 1 ? 0 : 1
-                            border.color: a(Colors.fg, 0.12)
-
-                            Behavior on width { NumberAnimation { duration: Animations.snap; easing.type: Easing.OutCubic } }
-                            Behavior on color { ColorAnimation { duration: Animations.fast } }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                anchors.margins: -4
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: root.workspaceSwitchRequested(index + 1)
-                            }
-                        }
+                MouseArea {
+                    anchors.fill: parent
+                    acceptedButtons: Qt.NoButton
+                    onWheel: wheel => {
+                        var newWS = (wheel.angleDelta.y > 0) ? (root.workspace - 1) : (root.workspace + 1)
+                        if (newWS < 1) newWS = 5
+                        if (newWS > 5) newWS = 1
+                        root.workspaceSwitchRequested(newWS)
                     }
                 }
 
-                // System Tray icons
-                Row {
-                    id: trayRow
-                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                    spacing: 5
+                RowLayout {
+                    id: wsRowLayout
+                    anchors.fill: parent
 
-                    Repeater {
-                        model: SystemTray.items
-                        delegate: Rectangle {
-                            id: trayItem
-                            required property var modelData
+                    // Espaçador para manter os dots centralizados
+                    Item {
+                        Layout.preferredWidth: trayRow.width
+                        Layout.fillHeight: true
+                        visible: trayRow.width > 0
+                    }
 
-                            width: 29
-                            height: 22
-                            radius: 5
-                            color: trayArea.containsMouse ? Qt.rgba(Colors.fg.r, Colors.fg.g, Colors.fg.b, 0.10) : "transparent"
-                            anchors.verticalCenter: parent.verticalCenter
+                    // Workspace dots
+                    Row {
+                        Layout.alignment: Qt.AlignHCenter
+                        spacing: 8
 
-                            Behavior on color {
-                                ColorAnimation { duration: Animations.fast }
+                        Repeater {
+                            model: 5
+
+                            Rectangle {
+                                required property int index
+                                width: root.workspace === index + 1 ? 21 : 10
+                                height: 10
+                                radius: 5
+                                color: root.workspace === index + 1
+                                    ? Colors.accent
+                                    : root.workspaceOccupied[index]
+                                        ? a(Colors.fg, 0.25)
+                                        : a(Colors.fg, 0.08)
+                                border.width: root.workspace === index + 1 ? 0 : 1
+                                border.color: a(Colors.fg, 0.12)
+
+                                Behavior on width { NumberAnimation { duration: Animations.snap; easing.type: Easing.OutCubic } }
+                                Behavior on color { ColorAnimation { duration: Animations.fast } }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    anchors.margins: -4
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: root.workspaceSwitchRequested(index + 1)
+                                }
                             }
+                        }
+                    }
 
-                            Image {
-                                anchors.centerIn: parent
-                                width: 16; height: 16
-                                source: trayItem.modelData.icon || ""
-                                smooth: true; mipmap: true
-                                visible: source !== ""
-                            }
+                    // System Tray icons
+                    Row {
+                        id: trayRow
+                        Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                        spacing: 5
 
-                            MouseArea {
-                                id: trayArea
-                                anchors.fill: parent
-                                acceptedButtons: Qt.LeftButton | Qt.RightButton
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: function(mouse) {
-                                    if (mouse.button === Qt.RightButton && trayItem.modelData.hasMenu) {
-                                        var win = trayItem.QsWindow.window
-                                        var pos = trayItem.mapToItem(trayItem.QsWindow.contentItem, 0, trayItem.height)
-                                        if (win) TrayState.show(trayItem.modelData, win, pos.x, pos.y)
-                                    } else if (mouse.button === Qt.LeftButton) {
-                                        trayItem.modelData.activate()
+                        Repeater {
+                            model: SystemTray.items
+                            delegate: Rectangle {
+                                id: trayItem
+                                required property var modelData
+
+                                width: 29
+                                height: 22
+                                radius: 5
+                                color: trayArea.containsMouse ? Qt.rgba(Colors.fg.r, Colors.fg.g, Colors.fg.b, 0.10) : "transparent"
+                                anchors.verticalCenter: parent.verticalCenter
+
+                                Behavior on color {
+                                    ColorAnimation { duration: Animations.fast }
+                                }
+
+                                Image {
+                                    anchors.centerIn: parent
+                                    width: 16; height: 16
+                                    source: trayItem.modelData.icon || ""
+                                    smooth: true; mipmap: true
+                                    visible: source !== ""
+                                }
+
+                                MouseArea {
+                                    id: trayArea
+                                    anchors.fill: parent
+                                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: function(mouse) {
+                                        if (mouse.button === Qt.RightButton && trayItem.modelData.hasMenu) {
+                                            var win = trayItem.QsWindow.window
+                                            var pos = trayItem.mapToItem(trayItem.QsWindow.contentItem, 0, trayItem.height)
+                                            if (win) TrayState.show(trayItem.modelData, win, pos.x, pos.y)
+                                        } else if (mouse.button === Qt.LeftButton) {
+                                            trayItem.modelData.activate()
+                                        }
                                     }
                                 }
                             }
@@ -1428,13 +1444,14 @@ Item {
 
                         // Grid of 4 toggle buttons
                         Grid {
+                            id: settingsGrid
                             Layout.fillWidth: true
-                            columns: 2
+                            columns: width > 200 ? 2 : 1
                             spacing: 8
 
                             // Button 1: DND
                             Rectangle {
-                                width: (parent.width - 8) / 2
+                                width: settingsGrid.columns === 2 ? (settingsGrid.width - settingsGrid.spacing) / 2 : settingsGrid.width
                                 height: 42
                                 radius: 8
                                 color: UIState.dndEnabled ? a(Colors.accent, 0.15) : a(Colors.fg, 0.05)
@@ -1470,7 +1487,7 @@ Item {
 
                             // Button 2: Dark Mode
                             Rectangle {
-                                width: (parent.width - 8) / 2
+                                width: settingsGrid.columns === 2 ? (settingsGrid.width - settingsGrid.spacing) / 2 : settingsGrid.width
                                 height: 42
                                 radius: 8
                                 color: UIState.darkMode ? a(Colors.accent, 0.15) : a(Colors.fg, 0.05)
@@ -1506,7 +1523,7 @@ Item {
 
                             // Button 3: Transparência
                             Rectangle {
-                                width: (parent.width - 8) / 2
+                                width: settingsGrid.columns === 2 ? (settingsGrid.width - settingsGrid.spacing) / 2 : settingsGrid.width
                                 height: 42
                                 radius: 8
                                 color: UIState.transparencyEnabled ? a(Colors.accent, 0.15) : a(Colors.fg, 0.05)
@@ -1542,7 +1559,7 @@ Item {
 
                             // Button 4: Random Wallpaper
                             Rectangle {
-                                width: (parent.width - 8) / 2
+                                width: settingsGrid.columns === 2 ? (settingsGrid.width - settingsGrid.spacing) / 2 : settingsGrid.width
                                 height: 42
                                 radius: 8
                                 color: a(Colors.fg, 0.05)
