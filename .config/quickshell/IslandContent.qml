@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
+import Quickshell.Services.SystemTray
 
 Item {
     id: root
@@ -38,9 +39,20 @@ Item {
     property bool btConnected: false
     property string btDeviceName: ""
     property int btBattery: -1
+    property int workspace: 1
+    property var workspaceOccupied: [false,false,false,false,false]
+    property string focusedApp: ""
     property string timeText: ""
     property string dateText: ""
     property string fontFamily: "JetBrainsMono Nerd Font"
+    property string launcherQuery: ""
+    property int launcherSelected: 0
+    property var launcherTopApps: []
+    property var launcherFiltered: []
+
+    onModeChanged: {
+        if (mode === "launcher") launcherFocusDelay.start()
+    }
 
     readonly property color primaryText: Colors.fg
     readonly property color secondaryText: a(Colors.fg, 0.55)
@@ -63,6 +75,11 @@ Item {
     signal btSettingsRequested
     signal seekRequested(real position)
     signal handleStyleRequested(string style)
+    signal launcherSearchChanged(string query)
+    signal launcherCloseRequested
+    signal launcherAppLaunchRequested(var app)
+    signal launcherMoveSelectionRequested(int delta)
+    signal workspaceSwitchRequested(int index)
 
     function normalizedSeconds(value) {
         if (!isFinite(value) || value <= 0)
@@ -93,7 +110,7 @@ Item {
         return minutes + ":" + secondText;
     }
 
-    // 1. Mídia minimizada (pílula ociosa ativa)
+    // 1. Pílula ociosa: workspace + app name + clock (ou mídia quando tocando)
     Item {
         id: collapsedBumpMedia
 
@@ -101,14 +118,70 @@ Item {
         opacity: root.mode === "idle" && !root.forceExpanded && root.handleStyle === "bump" ? 1 : 0
         visible: opacity > 0
 
+        // ── Modo Normal: Workspace + App + Clock ──────────────────────
+        Row {
+            id: idleRow
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.left: parent.left
+            anchors.leftMargin: 17
+            anchors.right: parent.right
+            anchors.rightMargin: 17
+            spacing: 10
+            visible: !root.mediaAvailable
+
+            // Workspace indicator
+            Rectangle {
+                width: wsNum.implicitWidth + 10
+                height: 23
+                radius: 12
+                color: a(Colors.accent, 0.10)
+                border.width: 1
+                border.color: a(Colors.accent, 0.20)
+                anchors.verticalCenter: parent.verticalCenter
+
+                Text {
+                    id: wsNum
+                    anchors.centerIn: parent
+                    text: root.workspace
+                    color: Colors.accent
+                    font.family: root.fontFamily
+                    font.pixelSize: 16
+                    font.bold: true
+                }
+            }
+
+            // App name
+            Text {
+                text: root.focusedApp !== "" ? root.focusedApp : "Kamalen"
+                color: a(Colors.fg, 0.65)
+                font.family: root.fontFamily
+                font.pixelSize: 17
+                font.bold: true
+                elide: Text.ElideRight
+                Layout.fillWidth: true
+                anchors.verticalCenter: parent.verticalCenter
+            }
+
+            // Clock
+            Text {
+                text: root.timeText
+                color: a(Colors.fg, 0.50)
+                font.family: root.fontFamily
+                font.pixelSize: 17
+                font.bold: true
+                anchors.verticalCenter: parent.verticalCenter
+            }
+        }
+
+        // ── Modo Mídia: Art + Track + Clock ──────────────────────────
         Rectangle {
             id: collapsedCover
 
-            x: 9
-            y: 4
-            width: 14
-            height: 14
-            radius: 5
+            x: 16
+            y: 6
+            width: 23
+            height: 23
+            radius: 9
             color: a(Colors.accent, 0.05)
             border.width: 1
             border.color: a(Colors.accent, 0.15)
@@ -146,8 +219,8 @@ Item {
                     model: 3
 
                     Rectangle {
-                        width: 2
-                        height: root.playing ? (5 + index * 2) : 4
+                        width: 3
+                        height: root.playing ? (7 + index * 3) : 5
                         radius: 1
                         color: root.playing ? Colors.accent : a(Colors.fg, 0.35)
 
@@ -156,13 +229,13 @@ Item {
                             loops: Animation.Infinite
 
                             NumberAnimation {
-                                to: 4 + index
+                                to: 5 + index
                                 duration: 280 + index * 70
                                 easing.type: Easing.InOutSine
                             }
 
                             NumberAnimation {
-                                to: 8 - index
+                                to: 10 - index
                                 duration: 320 + index * 70
                                 easing.type: Easing.InOutSine
                             }
@@ -199,18 +272,19 @@ Item {
         }
 
         Text {
-            anchors.left: root.mediaAvailable ? collapsedCover.right : parent.left
-            anchors.leftMargin: root.mediaAvailable ? 9 : 0
+            anchors.left: collapsedCover.right
+            anchors.leftMargin: 12
             anchors.right: parent.right
-            anchors.rightMargin: root.mediaAvailable ? 9 : 0
+            anchors.rightMargin: 12
             anchors.verticalCenter: parent.verticalCenter
-            text: root.timeText
+            text: root.title !== "" ? root.title : root.timeText
             color: root.primaryText
-            horizontalAlignment: root.mediaAvailable ? Text.AlignLeft : Text.AlignHCenter
+            horizontalAlignment: Text.AlignLeft
             elide: Text.ElideRight
             font.family: root.fontFamily
-            font.pixelSize: 11
+            font.pixelSize: 14
             font.bold: true
+            visible: root.mediaAvailable
         }
 
         Behavior on opacity {
@@ -233,9 +307,9 @@ Item {
             anchors.fill: parent
             anchors.leftMargin: 16
             anchors.rightMargin: 16
-            anchors.topMargin: 6
-            anchors.bottomMargin: 7
-            spacing: 2
+            anchors.topMargin: 8
+            anchors.bottomMargin: 9
+            spacing: 3
 
             HandleStyleSwitch {
                 handleStyle: root.handleStyle
@@ -244,6 +318,41 @@ Item {
                 fontFamily: root.fontFamily
                 showBattery: true
                 onHandleStyleRequested: style => root.handleStyleRequested(style)
+            }
+
+            // Workspace dots
+            Row {
+                Layout.alignment: Qt.AlignHCenter
+                spacing: 8
+
+                Repeater {
+                    model: 5
+
+                    Rectangle {
+                        required property int index
+                        width: root.workspace === index + 1 ? 21 : 10
+                        height: 10
+                        radius: 5
+                        color: root.workspace === index + 1
+                            ? Colors.accent
+                            : root.workspaceOccupied[index]
+                                ? a(Colors.fg, 0.25)
+                                : a(Colors.fg, 0.08)
+                        border.width: root.workspace === index + 1 ? 0 : 1
+                        border.color: a(Colors.fg, 0.12)
+
+                        Behavior on width { NumberAnimation { duration: Animations.snap; easing.type: Easing.OutCubic } }
+                        Behavior on color { ColorAnimation { duration: Animations.fast } }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            anchors.margins: -4
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.workspaceSwitchRequested(index + 1)
+                        }
+                    }
+                }
             }
 
             RowLayout {
@@ -261,7 +370,7 @@ Item {
                         color: root.primaryText
                         elide: Text.ElideRight
                         font.family: root.fontFamily
-                        font.pixelSize: 22
+                        font.pixelSize: 29
                         font.bold: true
                     }
 
@@ -271,14 +380,14 @@ Item {
                         color: root.secondaryText
                         elide: Text.ElideRight
                         font.family: root.fontFamily
-                        font.pixelSize: 10
+                        font.pixelSize: 13
                         font.bold: true
                     }
                 }
 
                 ColumnLayout {
                     Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
-                    spacing: 5
+                    spacing: 6
 
                     // WiFi
                     Item {
@@ -292,7 +401,7 @@ Item {
 
                             MIcon {
                                 name: root.wifiConnected ? (root.wifiSsid === "Ethernet" ? "󰈀" : (root.wifiSignal >= 70 ? "󰤨" : root.wifiSignal >= 40 ? "󰤥" : "󰤢")) : "󰤮"
-                                size: 12
+                                size: 16
                                 color: root.wifiConnected ? Colors.accent : a(Colors.fg, 0.3)
                                 anchors.verticalCenter: parent.verticalCenter
                             }
@@ -301,7 +410,7 @@ Item {
                                 text: root.wifiConnected ? root.wifiSsid : "Desconectado"
                                 color: root.wifiConnected ? Colors.fg : a(Colors.fg, 0.35)
                                 font.family: root.fontFamily
-                                font.pixelSize: 9
+                                font.pixelSize: 12
                                 font.bold: true
                                 anchors.verticalCenter: parent.verticalCenter
                             }
@@ -328,7 +437,7 @@ Item {
 
                             MIcon {
                                 name: "󰂯"
-                                size: 12
+                                size: 16
                                 color: root.btConnected ? Colors.accent : (root.btEnabled ? Colors.fg : a(Colors.fg, 0.3))
                                 anchors.verticalCenter: parent.verticalCenter
                             }
@@ -337,7 +446,7 @@ Item {
                                 text: root.btConnected ? (root.btBattery >= 0 ? root.btDeviceName + " " + root.btBattery + "%" : root.btDeviceName) : (root.btEnabled ? "Ativo" : "Inativo")
                                 color: root.btConnected ? Colors.fg : a(Colors.fg, 0.35)
                                 font.family: root.fontFamily
-                                font.pixelSize: 9
+                                font.pixelSize: 12
                                 font.bold: true
                                 elide: Text.ElideRight
                                 anchors.verticalCenter: parent.verticalCenter
@@ -350,6 +459,56 @@ Item {
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: root.btSettingsRequested()
+                        }
+                    }
+                }
+            }
+
+            // System Tray icons
+            Row {
+                Layout.fillWidth: true
+                Layout.topMargin: 5
+                spacing: 5
+
+                Repeater {
+                    model: SystemTray.items
+                    delegate: Rectangle {
+                        id: trayItem
+                        required property var modelData
+
+                        width: 29
+                        height: 22
+                        radius: 5
+                        color: trayArea.containsMouse ? Qt.rgba(Colors.fg.r, Colors.fg.g, Colors.fg.b, 0.10) : "transparent"
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        Behavior on color {
+                            ColorAnimation { duration: Animations.fast }
+                        }
+
+                        Image {
+                            anchors.centerIn: parent
+                            width: 16; height: 16
+                            source: trayItem.modelData.icon || ""
+                            smooth: true; mipmap: true
+                            visible: source !== ""
+                        }
+
+                        MouseArea {
+                            id: trayArea
+                            anchors.fill: parent
+                            acceptedButtons: Qt.LeftButton | Qt.RightButton
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: function(mouse) {
+                                if (mouse.button === Qt.RightButton && trayItem.modelData.hasMenu) {
+                                    var win = trayItem.QsWindow.window
+                                    var pos = trayItem.mapToItem(trayItem.QsWindow.contentItem, 0, trayItem.height)
+                                    if (win) TrayState.show(trayItem.modelData, win, pos.x, pos.y)
+                                } else if (mouse.button === Qt.LeftButton) {
+                                    trayItem.modelData.activate()
+                                }
+                            }
                         }
                     }
                 }
@@ -815,6 +974,339 @@ Item {
                         cursorShape: Qt.PointingHandCursor
                         onClicked: root.favoriteRequested()
                     }
+                }
+            }
+        }
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: Animations.fast
+            }
+        }
+    }
+
+    // 5. Launcher — Search + App Grid
+    Item {
+        id: launcherContent
+        anchors.fill: parent
+        opacity: root.mode === "launcher" ? 1 : 0
+        visible: opacity > 0
+
+        Timer {
+            id: launcherFocusDelay
+            interval: 80
+            repeat: false
+            onTriggered: launcherSearchInput.forceActiveFocus()
+        }
+
+        Column {
+            anchors.fill: parent
+            anchors.margins: 14
+            spacing: 10
+
+            // Search bar
+            Rectangle {
+                width: parent.width
+                height: 40
+                radius: 10
+                color: a(Colors.surface, 0.7)
+                border.width: 1
+                border.color: launcherSearchInput.activeFocus ? a(Colors.accent, 0.5) : a(Colors.fg, 0.06)
+
+                Behavior on border.color { ColorAnimation { duration: Animations.fast } }
+
+                Row {
+                    anchors.fill: parent
+                    anchors.leftMargin: 12
+                    anchors.rightMargin: 10
+                    spacing: 8
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: ""
+                        color: launcherSearchInput.activeFocus ? Colors.accent : a(Colors.fg, 0.3)
+                        font.family: root.fontFamily
+                        font.pixelSize: 14
+                        font.bold: true
+                    }
+
+                    TextInput {
+                        id: launcherSearchInput
+                        width: parent.width - 60
+                        anchors.verticalCenter: parent.verticalCenter
+                        color: Colors.fg
+                        font.family: root.fontFamily
+                        font.pixelSize: 13
+                        font.bold: true
+                        selectByMouse: true
+                        clip: true
+                        maximumLength: 60
+
+                        Text {
+                            anchors.left: parent.left
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: "Pesquisar apps..."
+                            color: a(Colors.fg, 0.2)
+                            font: parent.font
+                            visible: !parent.text && !parent.activeFocus
+                        }
+
+                        onTextChanged: root.launcherSearchChanged(text)
+
+                        Keys.onPressed: function(event) {
+                            if (event.key === Qt.Key_Down) {
+                                root.launcherMoveSelectionRequested(1);
+                                event.accepted = true;
+                            } else if (event.key === Qt.Key_Up) {
+                                root.launcherMoveSelectionRequested(-1);
+                                event.accepted = true;
+                            } else if (event.key === Qt.Key_Right) {
+                                root.launcherMoveSelectionRequested(1);
+                                event.accepted = true;
+                            } else if (event.key === Qt.Key_Left) {
+                                root.launcherMoveSelectionRequested(-1);
+                                event.accepted = true;
+                            } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                                var list = root.launcherQuery === "" ? root.launcherTopApps : root.launcherFiltered;
+                                if (list.length > 0 && root.launcherSelected < list.length)
+                                    root.launcherAppLaunchRequested(list[root.launcherSelected]);
+                                event.accepted = true;
+                            } else if (event.key === Qt.Key_Escape) {
+                                root.launcherCloseRequested();
+                                event.accepted = true;
+                            }
+                        }
+                    }
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: "󰅖"
+                        color: clearLauncherMa.containsMouse ? Colors.fg : a(Colors.fg, 0.25)
+                        font.family: root.fontFamily
+                        font.pixelSize: 11
+                        visible: launcherSearchInput.text.length > 0
+
+                        MouseArea {
+                            id: clearLauncherMa
+                            anchors.fill: parent
+                            anchors.margins: -6
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: { launcherSearchInput.text = ""; launcherSearchInput.forceActiveFocus() }
+                        }
+                    }
+                }
+            }
+
+            // App grid (no query) / Filtered list (query active)
+            Item {
+                width: parent.width
+                height: parent.height - 50
+
+                // Top apps grid — 4 columns
+                Grid {
+                    id: launcherGrid
+                    anchors.fill: parent
+                    columns: 4
+                    spacing: 6
+                    visible: root.launcherQuery === "" && root.launcherTopApps && root.launcherTopApps.length > 0
+
+                    Repeater {
+                        model: root.launcherTopApps
+
+                        Rectangle {
+                            id: gridCell
+                            required property int index
+                            required property var modelData
+
+                            width: (launcherGrid.width - 18) / 4
+                            height: (launcherGrid.height - 12) / 2
+                            radius: 10
+                            color: index === root.launcherSelected
+                                ? a(Colors.accent, 0.12)
+                                : gridCellMa.containsMouse ? a(Colors.fg, 0.05) : a(Colors.surface, 0.35)
+                            border.width: index === root.launcherSelected ? 1 : 0
+                            border.color: a(Colors.accent, 0.4)
+                            scale: gridCellMa.pressed ? 0.92 : 1
+
+                            Behavior on color { ColorAnimation { duration: Animations.fast } }
+                            Behavior on scale { NumberAnimation { duration: Animations.snap; easing.type: Easing.OutBack; easing.overshoot: 1.5 } }
+
+                            Column {
+                                anchors.centerIn: parent
+                                spacing: 6
+
+                                Rectangle {
+                                    width: 36
+                                    height: 36
+                                    radius: 9
+                                    color: a(Colors.fg, 0.05)
+                                    anchors.horizontalCenter: parent.horizontalCenter
+
+                                    Image {
+                                        anchors.centerIn: parent
+                                        width: 24
+                                        height: 24
+                                        source: {
+                                            var icon = gridCell.modelData.icon
+                                            if (!icon || icon === "") return "image://icon/application-x-executable"
+                                            if (icon.indexOf("/") === 0) return "file://" + icon
+                                            return "image://icon/" + icon
+                                        }
+                                        fillMode: Image.PreserveAspectFit
+                                        asynchronous: true
+                                        cache: true
+                                    }
+                                }
+
+                                Text {
+                                    text: gridCell.modelData.name
+                                    color: index === root.launcherSelected ? Colors.accent : Colors.fg
+                                    font.family: root.fontFamily
+                                    font.pixelSize: 9
+                                    font.bold: index === root.launcherSelected
+                                    width: gridCell.width - 8
+                                    horizontalAlignment: Text.AlignHCenter
+                                    elide: Text.ElideRight
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                }
+                            }
+
+                            MouseArea {
+                                id: gridCellMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.launcherAppLaunchRequested(gridCell.modelData)
+                                onContainsMouseChanged: { if (containsMouse) root.launcherSelected = gridCell.index }
+                            }
+                        }
+                    }
+                }
+
+                // Filtered results list
+                ListView {
+                    id: launcherList
+                    anchors.fill: parent
+                    clip: true
+                    spacing: 3
+                    model: root.launcherFiltered
+                    visible: root.launcherQuery !== ""
+                    boundsBehavior: Flickable.StopAtBounds
+                    highlightMoveDuration: Animations.snap
+
+                    highlight: Rectangle {
+                        radius: 8
+                        color: a(Colors.accent, 0.10)
+                        border.width: 1
+                        border.color: a(Colors.accent, 0.3)
+                    }
+
+                    add: Transition {
+                        ParallelAnimation {
+                            NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Animations.medium; easing.type: Easing.OutCubic }
+                            NumberAnimation { property: "x"; from: 12; to: 0; duration: Animations.medium; easing.type: Easing.OutExpo }
+                        }
+                    }
+
+                    displaced: Transition {
+                        NumberAnimation { property: "y"; duration: Animations.fast; easing.type: Easing.OutExpo }
+                    }
+
+                    delegate: Rectangle {
+                        id: listDelegate
+                        required property int index
+                        required property var modelData
+
+                        width: launcherList.width
+                        height: 42
+                        radius: 8
+                        color: "transparent"
+
+                        Row {
+                            anchors.fill: parent
+                            anchors.leftMargin: 10
+                            anchors.rightMargin: 10
+                            spacing: 10
+
+                            Rectangle {
+                                width: 28
+                                height: 28
+                                radius: 7
+                                color: a(Colors.fg, 0.04)
+                                anchors.verticalCenter: parent.verticalCenter
+
+                                Image {
+                                    anchors.centerIn: parent
+                                    width: 18
+                                    height: 18
+                                    source: {
+                                        var icon = listDelegate.modelData.icon
+                                        if (!icon || icon === "") return "image://icon/application-x-executable"
+                                        if (icon.indexOf("/") === 0) return "file://" + icon
+                                        return "image://icon/" + icon
+                                    }
+                                    fillMode: Image.PreserveAspectFit
+                                    asynchronous: true
+                                    cache: true
+                                }
+                            }
+
+                            Column {
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: 1
+                                width: parent.width - 56
+
+                                Text {
+                                    text: listDelegate.modelData.name
+                                    color: listDelegate.index === root.launcherSelected ? Colors.accent : Colors.fg
+                                    font.family: root.fontFamily
+                                    font.pixelSize: 11
+                                    font.bold: listDelegate.index === root.launcherSelected
+                                    width: parent.width
+                                    elide: Text.ElideRight
+                                }
+
+                                Text {
+                                    text: listDelegate.modelData.desc || ""
+                                    color: a(Colors.fg, 0.25)
+                                    font.family: root.fontFamily
+                                    font.pixelSize: 8
+                                    width: parent.width
+                                    elide: Text.ElideRight
+                                    visible: text !== ""
+                                }
+                            }
+
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: "↵"
+                                color: Colors.accent
+                                font.family: root.fontFamily
+                                font.pixelSize: 11
+                                font.bold: true
+                                visible: listDelegate.index === root.launcherSelected
+                            }
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.launcherAppLaunchRequested(listDelegate.modelData)
+                            onContainsMouseChanged: { if (containsMouse) root.launcherSelected = listDelegate.index }
+                        }
+                    }
+                }
+
+                // Empty state
+                Text {
+                    anchors.centerIn: parent
+                    text: root.launcherQuery !== "" && root.launcherFiltered.length === 0 ? "Nenhum resultado" : ""
+                    color: a(Colors.fg, 0.18)
+                    font.family: root.fontFamily
+                    font.pixelSize: 12
+                    visible: text !== ""
                 }
             }
         }
