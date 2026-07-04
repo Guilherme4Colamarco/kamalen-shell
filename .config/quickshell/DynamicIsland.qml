@@ -30,14 +30,14 @@ Scope {
     readonly property bool mediaCanGoPrevious: true
     readonly property bool mediaCanTogglePlaying: true
     readonly property bool mediaCanGoNext: true
-    readonly property real mediaPosition: UIState.mediaPosition
-    readonly property real mediaLength: UIState.mediaLength
-    readonly property bool mediaShuffleSupported: true
-    readonly property bool mediaShuffleActive: UIState.mediaShuffle
-    readonly property bool mediaLoopSupported: true
-    readonly property string mediaLoopStateText: UIState.mediaLoop === "track" ? "ONE" : (UIState.mediaLoop === "playlist" ? "ALL" : "OFF")
-    readonly property bool mediaLoopActive: UIState.mediaLoop !== "none"
-    readonly property bool mediaCanSeek: UIState.mediaLength > 0
+    readonly property real mediaPosition: UIState.mediaPos
+    readonly property real mediaLength: UIState.mediaLen
+    readonly property bool mediaShuffleSupported: false
+    readonly property bool mediaShuffleActive: false
+    readonly property bool mediaLoopSupported: false
+    readonly property string mediaLoopStateText: "OFF"
+    readonly property bool mediaLoopActive: false
+    readonly property bool mediaCanSeek: UIState.mediaLen > 0
 
     // WiFi
     property string wifiSsid: ""
