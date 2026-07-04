@@ -312,36 +312,99 @@ Item {
                 onHandleStyleRequested: style => root.handleStyleRequested(style)
             }
 
-            // Workspace dots
-            Row {
-                Layout.alignment: Qt.AlignHCenter
-                spacing: 8
+            // Row com Workspace dots e System Tray
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 23
 
-                Repeater {
-                    model: 5
+                // Espaçador para manter os dots centralizados
+                Item {
+                    Layout.preferredWidth: trayRow.width
+                    Layout.fillHeight: true
+                    visible: trayRow.width > 0
+                }
 
-                    Rectangle {
-                        required property int index
-                        width: root.workspace === index + 1 ? 21 : 10
-                        height: 10
-                        radius: 5
-                        color: root.workspace === index + 1
-                            ? Colors.accent
-                            : root.workspaceOccupied[index]
-                                ? a(Colors.fg, 0.25)
-                                : a(Colors.fg, 0.08)
-                        border.width: root.workspace === index + 1 ? 0 : 1
-                        border.color: a(Colors.fg, 0.12)
+                // Workspace dots
+                Row {
+                    Layout.alignment: Qt.AlignHCenter
+                    spacing: 8
 
-                        Behavior on width { NumberAnimation { duration: Animations.snap; easing.type: Easing.OutCubic } }
-                        Behavior on color { ColorAnimation { duration: Animations.fast } }
+                    Repeater {
+                        model: 5
 
-                        MouseArea {
-                            anchors.fill: parent
-                            anchors.margins: -4
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.workspaceSwitchRequested(index + 1)
+                        Rectangle {
+                            required property int index
+                            width: root.workspace === index + 1 ? 21 : 10
+                            height: 10
+                            radius: 5
+                            color: root.workspace === index + 1
+                                ? Colors.accent
+                                : root.workspaceOccupied[index]
+                                    ? a(Colors.fg, 0.25)
+                                    : a(Colors.fg, 0.08)
+                            border.width: root.workspace === index + 1 ? 0 : 1
+                            border.color: a(Colors.fg, 0.12)
+
+                            Behavior on width { NumberAnimation { duration: Animations.snap; easing.type: Easing.OutCubic } }
+                            Behavior on color { ColorAnimation { duration: Animations.fast } }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                anchors.margins: -4
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.workspaceSwitchRequested(index + 1)
+                            }
+                        }
+                    }
+                }
+
+                // System Tray icons
+                Row {
+                    id: trayRow
+                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                    spacing: 5
+
+                    Repeater {
+                        model: SystemTray.items
+                        delegate: Rectangle {
+                            id: trayItem
+                            required property var modelData
+
+                            width: 29
+                            height: 22
+                            radius: 5
+                            color: trayArea.containsMouse ? Qt.rgba(Colors.fg.r, Colors.fg.g, Colors.fg.b, 0.10) : "transparent"
+                            anchors.verticalCenter: parent.verticalCenter
+
+                            Behavior on color {
+                                ColorAnimation { duration: Animations.fast }
+                            }
+
+                            Image {
+                                anchors.centerIn: parent
+                                width: 16; height: 16
+                                source: trayItem.modelData.icon || ""
+                                smooth: true; mipmap: true
+                                visible: source !== ""
+                            }
+
+                            MouseArea {
+                                id: trayArea
+                                anchors.fill: parent
+                                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: function(mouse) {
+                                    if (mouse.button === Qt.RightButton && trayItem.modelData.hasMenu) {
+                                        var win = trayItem.QsWindow.window
+                                        var pos = trayItem.mapToItem(trayItem.QsWindow.contentItem, 0, trayItem.height)
+                                        if (win) TrayState.show(trayItem.modelData, win, pos.x, pos.y)
+                                    } else if (mouse.button === Qt.LeftButton) {
+                                        trayItem.modelData.activate()
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -614,55 +677,7 @@ Item {
                 }
             }
 
-            // System Tray icons
-            Row {
-                Layout.fillWidth: true
-                Layout.topMargin: 5
-                spacing: 5
 
-                Repeater {
-                    model: SystemTray.items
-                    delegate: Rectangle {
-                        id: trayItem
-                        required property var modelData
-
-                        width: 29
-                        height: 22
-                        radius: 5
-                        color: trayArea.containsMouse ? Qt.rgba(Colors.fg.r, Colors.fg.g, Colors.fg.b, 0.10) : "transparent"
-                        anchors.verticalCenter: parent.verticalCenter
-
-                        Behavior on color {
-                            ColorAnimation { duration: Animations.fast }
-                        }
-
-                        Image {
-                            anchors.centerIn: parent
-                            width: 16; height: 16
-                            source: trayItem.modelData.icon || ""
-                            smooth: true; mipmap: true
-                            visible: source !== ""
-                        }
-
-                        MouseArea {
-                            id: trayArea
-                            anchors.fill: parent
-                            acceptedButtons: Qt.LeftButton | Qt.RightButton
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: function(mouse) {
-                                if (mouse.button === Qt.RightButton && trayItem.modelData.hasMenu) {
-                                    var win = trayItem.QsWindow.window
-                                    var pos = trayItem.mapToItem(trayItem.QsWindow.contentItem, 0, trayItem.height)
-                                    if (win) TrayState.show(trayItem.modelData, win, pos.x, pos.y)
-                                } else if (mouse.button === Qt.LeftButton) {
-                                    trayItem.modelData.activate()
-                                }
-                            }
-                        }
-                    }
-                }
-            }
         }
 
         Behavior on opacity {
