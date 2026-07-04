@@ -60,6 +60,7 @@ Scope {
     property int launcherSelected: 0
     property var launcherApps: []
     property var launcherFiltered: []
+    property var launcherTopApps: []
     property var _launcherAppsBuild: []
 
     readonly property bool interactionOpen: root.mode === "idle" && (root.pointerInside || root.pinnedOpen)
