@@ -225,13 +225,14 @@ Item {
 
                     Rectangle {
                         width: 3
-                        height: root.playing ? Math.max(3, 3 + UIState.cava[[1, 5, 9][index]] * 10) : 5
+                        height: root.playing ? Math.max(3, 4 + UIState.cava[[1, 5, 9][index]] * 12) : 5
                         radius: 1
                         color: root.playing ? Colors.accent : a(Colors.fg, 0.35)
 
                         Behavior on height {
-                            NumberAnimation { duration: 50; easing.type: Easing.OutQuad }
+                            NumberAnimation { duration: 60; easing.type: Easing.OutQuad }
                         }
+                        Behavior on color { ColorAnimation { duration: Animations.fast } }
                     }
                 }
             }
@@ -487,11 +488,29 @@ Item {
                                     anchors.verticalCenter: parent.verticalCenter
                                     height: 4
                                     radius: 2
-                                    color: Colors.accent
+                                    color: root.muted ? a(Colors.accent, 0.4) : Colors.accent
+                                }
+
+                                // Handle visual
+                                Rectangle {
+                                    x: parent.width * (root.volume / 100) - 5
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 10
+                                    height: 10
+                                    radius: 5
+                                    color: Colors.fg
+                                    border.width: 1
+                                    border.color: Colors.accent
+                                    visible: volTrackArea.containsMouse || volTrackArea.pressed
+                                    scale: volTrackArea.pressed ? 1.2 : 1.0
+
+                                    Behavior on scale { NumberAnimation { duration: Animations.snap; easing.type: Easing.OutBack } }
                                 }
 
                                 MouseArea {
+                                    id: volTrackArea
                                     anchors.fill: parent
+                                    anchors.margins: -3
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
                                     
@@ -556,8 +575,26 @@ Item {
                                     color: Colors.accent
                                 }
 
+                                // Handle visual
+                                Rectangle {
+                                    x: parent.width * (UIState.brightness / 100) - 5
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 10
+                                    height: 10
+                                    radius: 5
+                                    color: Colors.fg
+                                    border.width: 1
+                                    border.color: Colors.accent
+                                    visible: brightTrackArea.containsMouse || brightTrackArea.pressed
+                                    scale: brightTrackArea.pressed ? 1.2 : 1.0
+
+                                    Behavior on scale { NumberAnimation { duration: Animations.snap; easing.type: Easing.OutBack } }
+                                }
+
                                 MouseArea {
+                                    id: brightTrackArea
                                     anchors.fill: parent
+                                    anchors.margins: -3
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
                                     
@@ -704,6 +741,13 @@ Item {
         opacity: root.mode === "notify" ? 1 : 0
         visible: opacity > 0
 
+        // Animação de entrada: slide da direita + fade
+        transform: Translate { x: root.mode === "notify" ? 0 : 20 }
+
+        Behavior on opacity {
+            NumberAnimation { duration: Animations.medium; easing.type: Easing.OutCubic }
+        }
+
         Rectangle {
             Layout.preferredWidth: 32
             Layout.preferredHeight: 32
@@ -818,13 +862,14 @@ Item {
 
                     Rectangle {
                         width: 4
-                        height: root.playing ? Math.max(8, 8 + UIState.cava[[1, 5, 9][index]] * 24) : 10
+                        height: root.playing ? Math.max(8, 10 + UIState.cava[[1, 5, 9][index]] * 28) : 10
                         radius: 2
                         color: root.playing ? Colors.accent : a(Colors.fg, 0.3)
 
                         Behavior on height {
-                            NumberAnimation { duration: 50; easing.type: Easing.OutQuad }
+                            NumberAnimation { duration: 60; easing.type: Easing.OutQuad }
                         }
+                        Behavior on color { ColorAnimation { duration: Animations.fast } }
                     }
                 }
             }
@@ -898,10 +943,21 @@ Item {
                         property: "x"
                         from: 0
                         to: -titleMarqueeRoot.unitWidth
-                        duration: titleMarqueeRoot.unitWidth * 25
+                        duration: titleMarqueeRoot.unitWidth * 22
                         loops: Animation.Infinite
                         running: titleMarqueeRoot.scrolling && root.playing
                         easing.type: Easing.Linear
+                    }
+
+                    // Pausa de 1.5s antes de reiniciar o scroll
+                    Timer {
+                        id: titleMarqueePause
+                        interval: 1500
+                        repeat: false
+                        onTriggered: {
+                            if (titleMarqueeRoot.scrolling && root.playing)
+                                titleMarqueeAnim.start()
+                        }
                     }
 
                     onWidthChanged: {
@@ -983,6 +1039,8 @@ Item {
                     font.family: root.fontFamily
                     font.pixelSize: 9
                     font.bold: true
+
+                    Behavior on color { ColorAnimation { duration: Animations.fast } }
                 }
 
                 Rectangle {
@@ -997,14 +1055,16 @@ Item {
                         width: parent.width * root.mediaProgress
                         height: parent.height
                         radius: parent.radius
-                        color: Colors.accent
+                        color: root.playing ? Colors.accent : a(Colors.accent, 0.5)
 
                         Behavior on width {
                             NumberAnimation {
-                                duration: 260
+                                duration: root.playing ? 800 : 260
                                 easing.type: Easing.OutCubic
                             }
                         }
+
+                        Behavior on color { ColorAnimation { duration: Animations.fast } }
                     }
 
                     MouseArea {
@@ -1099,17 +1159,21 @@ Item {
                     Layout.preferredWidth: 28
                     Layout.preferredHeight: 28
                     radius: 12
-                    color: playPauseMouse.containsMouse && root.canTogglePlaying ? a(Colors.accent, 0.15) : a(Colors.accent, 0.05)
+                    color: playPauseMouse.containsMouse && root.canTogglePlaying ? a(Colors.accent, 0.20) : a(Colors.accent, 0.05)
                     border.width: 1
                     border.color: root.canTogglePlaying ? a(Colors.accent, 0.25) : "transparent"
                     opacity: root.canTogglePlaying ? 1 : 0.35
 
+                    Behavior on color { ColorAnimation { duration: Animations.fast } }
+
                     MIcon {
                         anchors.centerIn: parent
                         name: root.playing ? "󰏤" : "󰐊"
-                        size: 15
+                        size: playPauseMouse.containsMouse && root.canTogglePlaying ? 17 : 15
                         color: Colors.fg
                         bold: true
+
+                        Behavior on size { NumberAnimation { duration: Animations.snap; easing.type: Easing.OutBack } }
                     }
 
                     MouseArea {

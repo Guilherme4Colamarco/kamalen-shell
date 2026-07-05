@@ -80,14 +80,19 @@ Item {
 
     transformOrigin: Item.Top
 
-    // Anti-corner left: smooth concave curve merging island into screen edge
+    // Shoulder size scales with surface height for proportional look
+    readonly property real shoulderW: Math.max(8, Math.min(width * 0.06, 20))
+    readonly property real shoulderH: Math.max(6, Math.min(height * 0.4, 13))
+
+    // Anti-corner left: concave shoulder merging island into screen edge.
+    // Size scales dynamically with island dimensions (DPI/scale-safe).
     Shape {
         id: antiCornerLeft
 
         x: -antiCornerLeft.width
         y: 0
-        width: root.antiCornerRadius
-        height: root.antiCornerRadius * 0.65
+        width: root.shoulderW
+        height: root.shoulderH
         opacity: root.antiCornerRadius > 0 ? 1 : 0
         visible: opacity > 0
         antialiasing: true
@@ -114,21 +119,21 @@ Item {
             NumberAnimation { duration: Animations.medium; easing.type: Easing.OutCubic }
         }
         Behavior on width {
-            NumberAnimation { duration: Animations.slow; easing.type: Easing.OutCubic }
+            NumberAnimation { duration: 330; easing.type: Easing.OutBack; easing.overshoot: 1.1 }
         }
         Behavior on height {
-            NumberAnimation { duration: Animations.slow; easing.type: Easing.OutCubic }
+            NumberAnimation { duration: 330; easing.type: Easing.OutBack; easing.overshoot: 1.1 }
         }
     }
 
-    // Anti-corner right: smooth concave curve merging island into screen edge
+    // Anti-corner right: mirror of left
     Shape {
         id: antiCornerRight
 
         x: root.width
         y: 0
-        width: root.antiCornerRadius
-        height: root.antiCornerRadius * 0.65
+        width: root.shoulderW
+        height: root.shoulderH
         opacity: root.antiCornerRadius > 0 ? 1 : 0
         visible: opacity > 0
         antialiasing: true
@@ -155,10 +160,10 @@ Item {
             NumberAnimation { duration: Animations.medium; easing.type: Easing.OutCubic }
         }
         Behavior on width {
-            NumberAnimation { duration: Animations.slow; easing.type: Easing.OutCubic }
+            NumberAnimation { duration: 330; easing.type: Easing.OutBack; easing.overshoot: 1.1 }
         }
         Behavior on height {
-            NumberAnimation { duration: Animations.slow; easing.type: Easing.OutCubic }
+            NumberAnimation { duration: 330; easing.type: Easing.OutBack; easing.overshoot: 1.1 }
         }
     }
 
@@ -466,23 +471,27 @@ Item {
         }
     }
 
+    // ── Goey morph curve (reference: [0.34, 1.22, 0.64, 1]) ──────────
+    // OutBack overshoot gives the "gooey"/bouncy feel like patheonsceo/end-4.
     Behavior on width {
         NumberAnimation {
-            duration: Animations.medium
-            easing.type: Easing.OutCubic
+            duration: 330
+            easing.type: Easing.OutBack
+            easing.overshoot: 1.1
         }
     }
 
     Behavior on height {
         NumberAnimation {
-            duration: Animations.medium
-            easing.type: Easing.OutCubic
+            duration: 330
+            easing.type: Easing.OutBack
+            easing.overshoot: 1.1
         }
     }
 
     Behavior on y {
         NumberAnimation {
-            duration: Animations.medium
+            duration: 280
             easing.type: Easing.OutCubic
         }
     }
