@@ -183,6 +183,8 @@ Scope {
     }
 
     Process { id: volToggle; command: ["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"] }
+    Process { id: wifiToggle; command: ["bash", "-c", "nmcli radio wifi $(nmcli radio wifi | grep -qi disabled && echo on || echo off)"] }
+    Process { id: btToggle; command: ["bluetoothctl", "power", "toggle"] }
 
     SequentialAnimation {
         running: plug && !batFull
@@ -571,20 +573,25 @@ Scope {
                 spacing: 6
                 anchors.verticalCenter: parent.verticalCenter
 
-                Text {
-                    text:  wifi ? "󰤨" : "󰤭"
-                    color: wifi ? a(Colors.accent, 0.70) : a(Colors.fg, 0.20)
-                    font { pixelSize: 13; family: "JetBrainsMono Nerd Font" }
-                    anchors.verticalCenter: parent.verticalCenter
-                    Behavior on color { ColorAnimation { duration: Animations.fast } }
+                PillButton {
+                    icon: wifi ? "󰤨" : "󰤭"
+                    iconSize: 13
+                    active: wifi
+                    inactiveColor: wifiMa_hov ? Colors.red : Colors.fg
+                    property bool wifiMa_hov: containsMouse && !wifi
+                    activeColor: Colors.accent
+                    onClicked: wifiToggle.running = true
                 }
 
-                Text {
-                    text:  bt ? "󰂯" : "󰂲"
-                    color: bt ? a(Colors.fg, 0.55) : a(Colors.fg, 0.18)
-                    font { pixelSize: 12; family: "JetBrainsMono Nerd Font" }
-                    anchors.verticalCenter: parent.verticalCenter
-                    Behavior on color { ColorAnimation { duration: Animations.fast } }
+                PillButton {
+                    icon: bt ? "󰂯" : "󰂲"
+                    iconSize: 12
+                    active: bt
+                    activeOpacity: 0.55
+                    inactiveColor: btMa_hov ? Colors.red : Colors.fg
+                    property bool btMa_hov: containsMouse && !bt
+                    activeColor: Colors.fg
+                    onClicked: btToggle.running = true
                 }
             }
 
@@ -592,6 +599,10 @@ Scope {
                 width:  volRow.width
                 height: compact ? 20 : 24
                 anchors.verticalCenter: parent.verticalCenter
+
+                scale: volMa.containsMouse ? Animations.hoverScale : 1.0
+                transformOrigin: Item.Center
+                Behavior on scale { NumberAnimation { duration: Animations.fast; easing.type: Easing.OutCubic } }
 
                 Row {
                     id: volRow
@@ -613,6 +624,19 @@ Scope {
                         anchors.verticalCenter: parent.verticalCenter
                         Behavior on color { ColorAnimation { duration: Animations.fast } }
                     }
+                }
+
+                Rectangle {
+                    anchors {
+                        bottom: parent.bottom
+                        bottomMargin: 1
+                        horizontalCenter: parent.horizontalCenter
+                    }
+                    width: volMa.containsMouse ? parent.width + 4 : 0
+                    height: 2
+                    radius: 1
+                    color: a(Colors.accent, 0.25)
+                    Behavior on width { NumberAnimation { duration: Animations.medium; easing.type: Easing.OutBack; easing.overshoot: Animations.springPower } }
                 }
 
                 MouseArea {
@@ -660,79 +684,30 @@ Scope {
                     anchors.fill: parent
                     anchors.margins: -6
                     hoverEnabled: true
-                }
-            }
-
-            Item {
-                width:  22
-                height: 22
-                anchors.verticalCenter: parent.verticalCenter
-
-                Rectangle {
-                    anchors.centerIn: parent
-                    property bool lit: pwrBarMa.containsMouse || UIState.powerMenuVisible
-                    width:  lit ? 21 : 17
-                    height: width
-                    radius: width / 2
-                    color:  lit ? a(Colors.red, 0.12) : a(Colors.fg, 0.035)
-                    Behavior on width { NumberAnimation { duration: Animations.medium; easing.type: Easing.OutBack; easing.overshoot: Animations.springPower } }
-                    Behavior on color { ColorAnimation  { duration: Animations.fast } }
-                }
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "⏻"
-                    property bool lit: pwrBarMa.containsMouse || UIState.powerMenuVisible
-                    color: lit ? a(Colors.red, 0.85) : a(Colors.fg, 0.30)
-                    font { pixelSize: lit ? 12 : 11; family: "JetBrainsMono Nerd Font" }
-                    Behavior on color          { ColorAnimation  { duration: Animations.fast } }
-                    Behavior on font.pixelSize { NumberAnimation { duration: Animations.medium; easing.type: Easing.OutBack; easing.overshoot: 1.4 } }
-                }
-
-                MouseArea {
-                    id: pwrBarMa
-                    anchors.fill: parent
-                    anchors.margins: -8
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: UIState.togglePowerMenu()
-                }
-            }
-
-            Item {
-                width:  22
-                height: 22
-                anchors.verticalCenter: parent.verticalCenter
-
-                Rectangle {
-                    anchors.centerIn: parent
-                    property bool lit: dma.containsMouse || UIState.activeDropdown === "dashboard"
-                    width:  lit ? 21 : 17
-                    height: width
-                    radius: width / 2
-                    color:  lit ? a(Colors.accent, 0.10) : a(Colors.fg, 0.035)
-                    Behavior on width { NumberAnimation { duration: Animations.medium; easing.type: Easing.OutBack; easing.overshoot: Animations.springPower } }
-                    Behavior on color { ColorAnimation  { duration: Animations.fast } }
-                }
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "󰺔"
-                    property bool lit: dma.containsMouse || UIState.activeDropdown === "dashboard"
-                    color: lit ? a(Colors.accent, 0.85) : a(Colors.fg, 0.30)
-                    font { pixelSize: lit ? 12 : 11; family: "JetBrainsMono Nerd Font" }
-                    Behavior on color          { ColorAnimation  { duration: Animations.fast } }
-                    Behavior on font.pixelSize { NumberAnimation { duration: Animations.medium; easing.type: Easing.OutBack; easing.overshoot: 1.4 } }
-                }
-
-                MouseArea {
-                    id: dma
-                    anchors.fill: parent
-                    anchors.margins: -8
-                    hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     onClicked: UIState.toggleDropdown("dashboard")
                 }
+            }
+
+            PillButton {
+                icon: "⏻"
+                iconSize: lit ? 12 : 11
+                active: UIState.powerMenuVisible
+                activeColor: Colors.red
+                inactiveColor: Colors.fg
+                hoverColor: Colors.red
+                property bool lit: containsMouse || UIState.powerMenuVisible
+                onClicked: UIState.togglePowerMenu()
+            }
+
+            PillButton {
+                icon: "󰺔"
+                iconSize: lit ? 12 : 11
+                active: UIState.activeDropdown === "dashboard"
+                activeColor: Colors.accent
+                hoverColor: Colors.accent
+                property bool lit: containsMouse || UIState.activeDropdown === "dashboard"
+                onClicked: UIState.toggleDropdown("dashboard")
             }
         }
     }
