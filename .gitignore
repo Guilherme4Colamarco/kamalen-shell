@@ -1,0 +1,8 @@
+# Arquivos gerados dinamicamente pelo iris.py (paleta de cores do wallpaper atual)
+# Estes mudam a cada troca de wallpaper e não devem ser commitados
+.config/nvim/lua/colors.lua
+.config/quickshell/state/*.json
+
+# Cache
+*.pyc
+__pycache__/
