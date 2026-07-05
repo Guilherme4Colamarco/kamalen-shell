@@ -1,8 +1,10 @@
 #!/bin/bash
 # ============================================================================
-# Kamalen Shell Installer v2.0
+# Kamalen Shell Installer v2.1
 # ============================================================================
 # Improved version with:
+# - Symlink-based config install (~/.config → repo, like meloworld)
+# - --unlink to revert symlinks and restore backups
 # - Better error handling and rollback
 # - Progress feedback and colored output
 # - Dependency verification
@@ -62,7 +64,7 @@ trap cleanup EXIT
 # ── Help ─────────────────────────────────────────────────────────
 usage() {
     cat << EOF
-${BOLD}Kamalen Shell Installer v2.0${RESET}
+${BOLD}Kamalen Shell Installer v2.1${RESET}
 
 ${BOLD}Usage:${RESET}
   ./install.sh [options] [command]
@@ -70,7 +72,8 @@ ${BOLD}Usage:${RESET}
 ${BOLD}Commands:${RESET}
   (none)      Full installation (interactive)
   deps        Install dependencies only
-  configs     Install configs only
+  configs     Install configs only (symlinks ~/.config/ → repo)
+  unlink      Remove symlinks and optionally restore backup
   mango       Build mango-ext only
   verify      Verify installation
   status      Show installation status
@@ -101,7 +104,7 @@ parse_args() {
             --skip-deps)     SKIP_DEPS=true; shift ;;
             --skip-configs)  SKIP_CONFIGS=true; shift ;;
             -h|--help)       usage ;;
-            deps|configs|mango|verify|status)
+            deps|configs|mango|verify|status|unlink)
                 COMMAND="$1"; shift ;;
             *)
                 error "Unknown option: $1"
@@ -276,15 +279,21 @@ account required pam_unix.so" | sudo -S -p '' tee /etc/pam.d/lockscreen > /dev/n
     fi
 }
 
-# ── Install Configs ─────────────────────────────────────────────
-install_configs() {
-    header "Installing Configs"
+# ── Managed Config Dirs ──────────────────────────────────────────
+# These directories are symlinked from the repo to ~/.config/
+get_managed_dirs() {
+    echo "mango mango-ext kitty quickshell fastfetch cava rmpc nvim"
+}
 
-    # Create directories
+# ── Install Configs (Symlink Mode) ───────────────────────────────
+install_configs() {
+    header "Installing Configs (Symlink Mode)"
+
+    # Create system directories (config dirs are symlinked, not created)
     local dirs=(
         ~/.config ~/.local/bin ~/wallpapers ~/screenshots ~/screen-recordings
         ~/.cache/wallpaper-thumbs ~/.cache/wallpaper-colors ~/.cache/qs
-        ~/.config/mpd/playlists ~/.config/quickshell/state
+        ~/.config/mpd/playlists
     )
 
     info "Creating directories..."
@@ -304,57 +313,83 @@ install_configs() {
     fi
     log "MPD state initialized"
 
-    # Initialize Quickshell state
-    info "Initializing Quickshell state..."
-    if ! $DRY_RUN; then
-        echo "{}" > ~/.config/quickshell/state/settings.json 2>/dev/null || true
-        echo "{}" > ~/.config/quickshell/state/app_usage.json 2>/dev/null || true
-    fi
-    log "Quickshell state initialized"
+    local config_dirs
+    read -ra config_dirs <<< "$(get_managed_dirs)"
 
     # Backup existing configs
     BACKUP_DIR=~/.dotfiles-backup-$(date +%Y%m%d-%H%M%S)
-    info "Backing up existing configs to $BACKUP_DIR"
+    local has_backup=false
     if ! $DRY_RUN; then
         mkdir -p "$BACKUP_DIR"
     fi
 
-    local config_dirs=(mango mango-ext kitty quickshell fastfetch cava rmpc nvim)
     for dir in "${config_dirs[@]}"; do
-        if [[ -e ~/.config/"$dir" ]]; then
+        local cfg=~/.config/"$dir"
+        local repo_target="$SCRIPT_DIR/.config/$dir"
+
+        # Already symlinked to our repo? Skip
+        if [[ -L "$cfg" ]] && [[ "$(readlink -f "$cfg" 2>/dev/null)" == "$repo_target" ]]; then
+            step "$dir already symlinked — skipping"
+            continue
+        fi
+
+        # Exists (file, dir, or symlink elsewhere)? Back it up
+        if [[ -e "$cfg" || -L "$cfg" ]]; then
             step "Backing up $dir"
             if ! $DRY_RUN; then
-                mv ~/.config/"$dir" "$BACKUP_DIR/"
+                mv "$cfg" "$BACKUP_DIR/"
+                has_backup=true
             fi
         fi
     done
 
-    if [[ -e ~/.config/starship.toml ]]; then
+    # starship.toml (single file)
+    local star=~/.config/starship.toml
+    local star_target="$SCRIPT_DIR/.config/starship.toml"
+    if [[ -L "$star" ]] && [[ "$(readlink -f "$star" 2>/dev/null)" == "$star_target" ]]; then
+        step "starship.toml already symlinked — skipping"
+    elif [[ -e "$star" || -L "$star" ]]; then
         step "Backing up starship.toml"
         if ! $DRY_RUN; then
-            mv ~/.config/starship.toml "$BACKUP_DIR/"
+            mv "$star" "$BACKUP_DIR/"
+            has_backup=true
         fi
     fi
-    log "Existing configs backed up"
 
-    # Copy new configs
-    info "Installing new configs..."
+    if ! $has_backup && ! $DRY_RUN; then
+        rmdir "$BACKUP_DIR" 2>/dev/null || true
+        BACKUP_DIR=""
+    fi
+    [[ -n "$BACKUP_DIR" ]] && log "Existing configs backed up to $BACKUP_DIR" || log "No existing configs to back up"
+
+    # Create symlinks from repo → ~/.config/
+    info "Creating symlinks..."
     for dir in "${config_dirs[@]}"; do
-        if [[ -d "$SCRIPT_DIR/.config/$dir" ]]; then
-            step "Installing $dir"
+        local repo_dir="$SCRIPT_DIR/.config/$dir"
+        if [[ -d "$repo_dir" ]]; then
+            step "Symlinking $dir → $repo_dir"
             if ! $DRY_RUN; then
-                cp -r "$SCRIPT_DIR/.config/$dir" ~/.config/
+                ln -s "$repo_dir" ~/.config/"$dir"
             fi
         fi
     done
 
-    if [[ -f "$SCRIPT_DIR/.config/starship.toml" ]]; then
-        step "Installing starship.toml"
+    if [[ -f "$star_target" ]]; then
+        step "Symlinking starship.toml"
         if ! $DRY_RUN; then
-            cp "$SCRIPT_DIR/.config/starship.toml" ~/.config/
+            ln -s "$star_target" "$star"
         fi
     fi
-    log "Configs installed"
+    log "Configs symlinked to $SCRIPT_DIR/.config/"
+
+    # Initialize Quickshell state (writes through symlink → repo dir)
+    info "Initializing Quickshell state..."
+    if ! $DRY_RUN; then
+        mkdir -p ~/.config/quickshell/state
+        [[ ! -f ~/.config/quickshell/state/settings.json ]] && echo "{}" > ~/.config/quickshell/state/settings.json 2>/dev/null || true
+        [[ ! -f ~/.config/quickshell/state/app_usage.json ]] && echo "{}" > ~/.config/quickshell/state/app_usage.json 2>/dev/null || true
+    fi
+    log "Quickshell state initialized"
 
     # Copy wallpapers
     info "Installing wallpapers..."
@@ -398,6 +433,83 @@ EOF
         chmod +x ~/.local/bin/start-quickshell.sh
     fi
     log "Launcher script created"
+}
+
+# ── Unlink Configs ───────────────────────────────────────────────
+unlink_configs() {
+    header "Unlinking Configs"
+
+    local config_dirs
+    read -ra config_dirs <<< "$(get_managed_dirs)"
+
+    local removed=0
+    local skipped=0
+
+    for dir in "${config_dirs[@]}"; do
+        local cfg=~/.config/"$dir"
+        local repo_target="$SCRIPT_DIR/.config/$dir"
+
+        if [[ -L "$cfg" ]]; then
+            local points_to
+            points_to=$(readlink -f "$cfg" 2>/dev/null)
+            if [[ "$points_to" == "$repo_target" ]]; then
+                step "Removing symlink $dir"
+                if ! $DRY_RUN; then
+                    rm "$cfg"
+                fi
+                ((removed++)) || true
+            else
+                step "Skipping $dir (symlink points elsewhere: $points_to)"
+                ((skipped++)) || true
+            fi
+        elif [[ -e "$cfg" ]]; then
+            step "Skipping $dir (not a symlink — use 'rm -rf' manually)"
+            ((skipped++)) || true
+        else
+            step "Skipping $dir (doesn't exist)"
+            ((skipped++)) || true
+        fi
+    done
+
+    # starship.toml
+    local star=~/.config/starship.toml
+    local star_target="$SCRIPT_DIR/.config/starship.toml"
+    if [[ -L "$star" ]] && [[ "$(readlink -f "$star" 2>/dev/null)" == "$star_target" ]]; then
+        step "Removing symlink starship.toml"
+        if ! $DRY_RUN; then
+            rm "$star"
+        fi
+        ((removed++)) || true
+    fi
+
+    echo ""
+    log "Removed $removed symlinks, skipped $skipped"
+
+    # Offer to restore latest backup
+    local latest_backup
+    latest_backup=$(ls -td ~/.dotfiles-backup-* 2>/dev/null | head -1)
+    if [[ -n "$latest_backup" && -d "$latest_backup" ]]; then
+        echo ""
+        info "Latest backup available: $latest_backup"
+        if ! $DRY_RUN; then
+            read -p "Restore configs from this backup? [y/N] " -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                for dir in "${config_dirs[@]}" starship.toml; do
+                    if [[ -e "$latest_backup/$dir" ]]; then
+                        mv "$latest_backup/$dir" ~/.config/
+                        step "Restored $dir"
+                    fi
+                done
+                rmdir "$latest_backup" 2>/dev/null || true
+                log "Configs restored from backup"
+            else
+                info "Backup left at $latest_backup"
+            fi
+        fi
+    else
+        info "No backups found to restore"
+    fi
 }
 
 # ── Configure User Shell ────────────────────────────────────────
@@ -620,7 +732,11 @@ show_status() {
         cfg_name="${name_path%%:*}"
         cfg_path="${name_path##*:}"
         if [[ -f "$cfg_path" ]]; then
-            echo -e "  ${GREEN}✓${RESET} $cfg_name"
+            if [[ -L "${cfg_path%/*}" ]]; then
+                echo -e "  ${GREEN}✓${RESET} $cfg_name ${DIM}(symlinked)${RESET}"
+            else
+                echo -e "  ${GREEN}✓${RESET} $cfg_name"
+            fi
         else
             echo -e "  ${RED}✗${RESET} $cfg_name"
         fi
@@ -650,7 +766,7 @@ print_summary() {
     echo -e "${BOLD}Completed:${RESET}"
     echo "──────────"
     echo "  • Dependencies installed"
-    echo "  • Configs installed to ~/.config/"
+    echo "  • Configs symlinked to ~/.config/ → $SCRIPT_DIR/.config/"
     echo "  • Wallpapers copied to ~/wallpapers/"
     echo "  • PAM lockscreen configured"
     if [[ -n "$BACKUP_DIR" ]]; then
@@ -719,6 +835,10 @@ main() {
             ;;
         status)
             show_status
+            ;;
+        unlink)
+            preflight
+            unlink_configs
             ;;
         *)
             preflight
