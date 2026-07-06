@@ -145,9 +145,42 @@ PillButton {
 
 ---
 
+## Fase 8 — Configuração do MangoWM pelo shell (Phase 1)
+**Data:** 6 jul 2026
+
+**Objetivo:** Permitir configurar o MangoWM diretamente pela interface do shell, com aplicação ao vivo.
+
+**Solução:**
+1. **Backend Python `~/.config/mango/mango_config.py`**
+   - Parser/writer robusto do formato `key=value` do MangoWM
+   - CLI: `get`, `set`, `set-apply`, `apply`, `set-many`, `set-module`, `reload`, `validate`, `migrate`
+   - Preserva comentários e ordem nos arquivos
+   - Detecta socket do Mango automaticamente via `MANGO_INSTANCE_SIGNATURE` ou glob
+2. **Configuração modular do Mango**
+   - `config.conf` passou a conter apenas `source=conf.d/*.conf`
+   - Cada categoria em seu próprio arquivo: `gaps.conf`, `borders.conf`, `blur.conf`, `shadows.conf`, `animations.conf`, `colors.conf`, `focus.conf`, `input-*.conf`, `binds.conf`, `windowrules.conf`, `monitors.conf`, etc.
+   - Backup automático do `config.conf` original
+3. **Singleton QML `MangoConfig.qml`**
+   - Registrado em `qmldir`
+   - Propriedades reativas: gaps, borders, blur, shadows, opacity, input, focus
+   - `MangoConfig.set(key, value)` persiste + aplica ao vivo via `mmsg setoption`
+   - `MangoConfig.setModule(module, pairs)` para updates em lote
+4. **Refactor de `UIState.qml`**
+   - `setBorderRadius`, `applyMangoAnimations`, `applyMangoBlur`, `updateMangoOpacity`, `updateMangoBorderColors` agora usam o backend Python em vez de `sed -i` frágil
+   - Isso torna compatível com a configuração modular e permite chaves novas
+
+**Resultado:**
+- MangoWM configurável programaticamente pelo shell
+- Aplicação ao vivo sem recarregar tudo (para options que suportam `setoption`)
+- Base pronta para a aba "Mango" no Dashboard (Phase 2)
+- Validação `mango -p` limpa após remover entradas stale
+
+---
+
 ## Próximas fases (planejadas)
 
 - **Fase 4:** Padronizar hover (eliminar underline restante)
 - **Fase 5:** Tooltips em todos os botões
 - **Fase 6:** Clock com data opcional (hover expande)
 - **Fase 7:** Mais estilos de barra (blur, liquid, TUI, ctOS)
+- **Fase 9:** Aba "Mango" no Dashboard com sliders/toggles para todas as opções

@@ -363,9 +363,10 @@ Singleton {
 
     function setBorderRadius(r) {
         borderRadius = r
-        borderRadiusProc.command = ["bash", "-c",
-            "sed -i 's/^border_radius=.*/border_radius=" + r + "/' " + _mangoConfigPath +
-            " && mmsg -d reload_config 2>/dev/null"]
+        borderRadiusProc.command = [
+            "python3", Quickshell.env("HOME") + "/.config/mango/mango_config.py",
+            "set-apply", "border_radius", "" + r
+        ]
         borderRadiusProc.running = true
         saveSettings()
     }
@@ -471,35 +472,35 @@ Singleton {
 
         var cfg = configs[animationProfile] || configs["bubbly"]
 
-        var sedCmd = [
-            "sed -i",
-            "-e 's/^animations=.*/animations=" + cfg.enabled + "/'",
-            "-e 's/^layer_animations=.*/layer_animations=" + cfg.enabled + "/'",
-            "-e 's/^animation_fade_in=.*/animation_fade_in=" + cfg.fade_in + "/'",
-            "-e 's/^animation_fade_out=.*/animation_fade_out=" + cfg.fade_out + "/'",
-            "-e 's/^animation_type_open=.*/animation_type_open=" + cfg.type_open + "/'",
-            "-e 's/^animation_type_close=.*/animation_type_close=" + cfg.type_close + "/'",
-            "-e 's/^layer_animation_type_open=.*/layer_animation_type_open=" + cfg.layer_open + "/'",
-            "-e 's/^layer_animation_type_close=.*/layer_animation_type_close=" + cfg.layer_close + "/'",
-            "-e 's/^zoom_initial_ratio=.*/zoom_initial_ratio=" + cfg.zoom_initial + "/'",
-            "-e 's/^zoom_end_ratio=.*/zoom_end_ratio=" + cfg.zoom_end + "/'",
-            "-e 's/^animation_duration_open=.*/animation_duration_open=" + cfg.open + "/'",
-            "-e 's/^animation_duration_close=.*/animation_duration_close=" + cfg.close + "/'",
-            "-e 's/^animation_duration_move=.*/animation_duration_move=" + cfg.move + "/'",
-            "-e 's/^animation_duration_tag=.*/animation_duration_tag=" + cfg.tag + "/'",
-            "-e 's/^animation_duration_focus=.*/animation_duration_focus=" + cfg.focus + "/'",
-            "-e 's|^animation_curve_open=.*|animation_curve_open=" + cfg.curve_open + "|'",
-            "-e 's|^animation_curve_close=.*|animation_curve_close=" + cfg.curve_close + "|'",
-            "-e 's|^animation_curve_move=.*|animation_curve_move=" + cfg.curve_move + "|'",
-            "-e 's|^animation_curve_tag=.*|animation_curve_tag=" + cfg.curve_tag + "|'",
-            "-e 's|^animation_curve_focus=.*|animation_curve_focus=" + cfg.curve_focus + "|'",
-            "-e 's|^animation_curve_opafadein=.*|animation_curve_opafadein=" + cfg.curve_fadein + "|'",
-            "-e 's|^animation_curve_opafadeout=.*|animation_curve_opafadeout=" + cfg.curve_fadeout + "|'",
-            _mangoConfigPath,
-            "&& mmsg -d reload_config 2>/dev/null"
-        ].join(" ")
+        var pairs = {
+            "animations": cfg.enabled,
+            "layer_animations": cfg.enabled,
+            "animation_fade_in": cfg.fade_in,
+            "animation_fade_out": cfg.fade_out,
+            "animation_type_open": cfg.type_open,
+            "animation_type_close": cfg.type_close,
+            "layer_animation_type_open": cfg.layer_open,
+            "layer_animation_type_close": cfg.layer_close,
+            "zoom_initial_ratio": cfg.zoom_initial,
+            "zoom_end_ratio": cfg.zoom_end,
+            "animation_duration_open": cfg.open,
+            "animation_duration_close": cfg.close,
+            "animation_duration_move": cfg.move,
+            "animation_duration_tag": cfg.tag,
+            "animation_duration_focus": cfg.focus,
+            "animation_curve_open": cfg.curve_open,
+            "animation_curve_close": cfg.curve_close,
+            "animation_curve_move": cfg.curve_move,
+            "animation_curve_tag": cfg.curve_tag,
+            "animation_curve_focus": cfg.curve_focus,
+            "animation_curve_opafadein": cfg.curve_fadein,
+            "animation_curve_opafadeout": cfg.curve_fadeout
+        }
 
-        mangoAnimProc.command = ["bash", "-c", sedCmd]
+        mangoAnimProc.command = [
+            "python3", Quickshell.env("HOME") + "/.config/mango/mango_config.py",
+            "set-module", "animations", JSON.stringify(pairs), "--reload"
+        ]
         mangoAnimProc.running = true
     }
 
@@ -529,22 +530,22 @@ Singleton {
 
         var cfg = configs[blurProfile] || configs["balanced"]
 
-        var sedCmd = [
-            "sed -i",
-            "-e 's/^blur=.*/blur=" + cfg.enabled + "/'",
-            "-e 's/^blur_layer=.*/blur_layer=" + cfg.layer + "/'",
-            "-e 's/^blur_optimized=.*/blur_optimized=" + cfg.optimized + "/'",
-            "-e 's/^blur_params_num_passes=.*/blur_params_num_passes=" + cfg.passes + "/'",
-            "-e 's/^blur_params_radius=.*/blur_params_radius=" + cfg.radius + "/'",
-            "-e 's/^blur_params_noise=.*/blur_params_noise=" + cfg.noise + "/'",
-            "-e 's/^blur_params_brightness=.*/blur_params_brightness=" + cfg.brightness + "/'",
-            "-e 's/^blur_params_contrast=.*/blur_params_contrast=" + cfg.contrast + "/'",
-            "-e 's/^blur_params_saturation=.*/blur_params_saturation=" + cfg.saturation + "/'",
-            _mangoConfigPath,
-            "&& mmsg -d reload_config 2>/dev/null"
-        ].join(" ")
+        var pairs = {
+            "blur": cfg.enabled,
+            "blur_layer": cfg.layer,
+            "blur_optimized": cfg.optimized,
+            "blur_params_num_passes": cfg.passes,
+            "blur_params_radius": cfg.radius,
+            "blur_params_noise": cfg.noise,
+            "blur_params_brightness": cfg.brightness,
+            "blur_params_contrast": cfg.contrast,
+            "blur_params_saturation": cfg.saturation
+        }
 
-        mangoBlurProc.command = ["bash", "-c", sedCmd]
+        mangoBlurProc.command = [
+            "python3", Quickshell.env("HOME") + "/.config/mango/mango_config.py",
+            "set-module", "blur", JSON.stringify(pairs), "--reload"
+        ]
         mangoBlurProc.running = true
     }
 
@@ -759,35 +760,28 @@ Singleton {
 
     function updateMangoOpacity() {
         var unfocused = transparencyEnabled ? "0.85" : "1.0"
-        mangoOpacityProc.command = ["bash", "-c",
-            "mmsg -d setoption,focused_opacity,1.0 2>/dev/null; " +
-            "mmsg -d setoption,unfocused_opacity," + unfocused + " 2>/dev/null; " +
-            "sed -i " +
-            "'s/^focused_opacity=.*/focused_opacity=1.0/; " +
-            "s/^unfocused_opacity=.*/unfocused_opacity=" + unfocused + "/' " +
-            _mangoConfigPath]
+        mangoOpacityProc.command = [
+            "python3", Quickshell.env("HOME") + "/.config/mango/mango_config.py",
+            "set-many", JSON.stringify({"focused_opacity": "1.0", "unfocused_opacity": unfocused}), "--apply"
+        ]
         mangoOpacityProc.running = true
     }
 
     function updateMangoBorderColors() {
-        var focus     = colorToMango(Colors.accent)
-        var urgent    = colorToMango(Colors.red)
-        var scratch   = colorToMango(Colors.accent)
-        var global    = colorToMango(Colors.accent)
-        var overlay   = colorToMango(Colors.green)
-        var maxscreen = colorToMango(Colors.yellow)
-        var border    = colorToMango(Colors.dim)
+        var pairs = {
+            "focuscolor":     colorToMango(Colors.accent),
+            "urgentcolor":    colorToMango(Colors.red),
+            "scratchpadcolor": colorToMango(Colors.accent),
+            "globalcolor":    colorToMango(Colors.accent),
+            "overlaycolor":   colorToMango(Colors.green),
+            "maximizescreencolor": colorToMango(Colors.yellow),
+            "bordercolor":    colorToMango(Colors.dim)
+        }
 
-        mangoBorderProc.command = ["bash", "-c",
-            "sed -i " +
-            "'s/^focuscolor=.*/focuscolor=" + focus + "/; " +
-            "s/^urgentcolor=.*/urgentcolor=" + urgent + "/; " +
-            "s/^scratchpadcolor=.*/scratchpadcolor=" + scratch + "/; " +
-            "s/^globalcolor=.*/globalcolor=" + global + "/; " +
-            "s/^overlaycolor=.*/overlaycolor=" + overlay + "/; " +
-            "s/^maximizescreencolor=.*/maximizescreencolor=" + maxscreen + "/; " +
-            "s/^bordercolor=.*/bordercolor=" + border + "/' " +
-            _mangoConfigPath + " && mmsg -d reload_config 2>/dev/null"]
+        mangoBorderProc.command = [
+            "python3", Quickshell.env("HOME") + "/.config/mango/mango_config.py",
+            "set-module", "colors", JSON.stringify(pairs), "--reload"
+        ]
         mangoBorderProc.running = true
     }
 
