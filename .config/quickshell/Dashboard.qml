@@ -42,7 +42,10 @@ PanelWindow {
         { icon: "󰎆", label: L10n.tr("media", "Media") },
         { icon: "󰒓", label: L10n.tr("system", "System") },
         { icon: "󰏘", label: L10n.tr("appearance", "Look") },
-        { icon: "󰒈", label: L10n.tr("mango", "Mango") }
+        { icon: "󰒈", label: L10n.tr("mango", "Mango") },
+        { icon: "󰌌", label: L10n.tr("binds", "Binds") },
+        { icon: "󰁍", label: L10n.tr("rules", "Rules") },
+        { icon: "󰍹", label: L10n.tr("monitors", "Monitors") }
     ]
 
     property string powerMode: "balanced"
@@ -449,7 +452,7 @@ PanelWindow {
                         Item {
                             required property int index
                             required property var modelData
-                            width:  (tabBar.width - 30) / 6
+                            width:  (tabBar.width - tabBar.spacing * (tabs.length - 1)) / tabs.length
                             height: 32
 
                             Rectangle {
@@ -517,6 +520,9 @@ PanelWindow {
                     SystemTab { helpers: dashHelpers; uptime: dashboard.uptime }
                     LookTab { helpers: dashHelpers }
                     MangoTab {}
+                    BindsTab { helpers: dashHelpers }
+                    WindowRulesTab { helpers: dashHelpers }
+                    MonitorsTab { helpers: dashHelpers }
                 }
             }
         }

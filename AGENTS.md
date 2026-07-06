@@ -78,6 +78,19 @@ python3 ~/.config/mango/mango_config.py validate
 
 **QML wrapper**: `MangoConfig` singleton loads values on startup, exposes reactive properties, writes via Python backend.
 
+## CRITICAL: Single quickshell instance
+
+**NEVER start more than one quickshell process.** Always check before launching:
+
+```bash
+pgrep -c quickshell   # check count
+pkill quickshell       # kill existing
+sleep 1
+nohup quickshell &>/dev/null &
+```
+
+Multiple instances conflict on the Wayland session and cause corruption. This is the #1 operational rule.
+
 ## QuickShell lifecycle
 
 ```bash

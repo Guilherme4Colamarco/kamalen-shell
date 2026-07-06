@@ -37,3 +37,6 @@ MediaTab 1.0 tabs/MediaTab.qml
 SystemTab 1.0 tabs/SystemTab.qml
 LookTab 1.0 tabs/LookTab.qml
 MangoTab 1.0 tabs/MangoTab.qml
+BindsTab 1.0 tabs/BindsTab.qml
+WindowRulesTab 1.0 tabs/WindowRulesTab.qml
+MonitorsTab 1.0 tabs/MonitorsTab.qml

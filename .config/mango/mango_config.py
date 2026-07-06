@@ -551,6 +551,89 @@ def cmd_reload():
         error(str(e))
 
 
+def cmd_list_directives(module):
+    """
+    List all directive lines in a module file.
+    Returns JSON array of {index, prefix, value, raw} objects.
+    """
+    modules, _ = parse_modules()
+    if module not in modules:
+        print(json.dumps([]))
+        return
+
+    result = []
+    dir_idx = 0
+    for line in modules[module]:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        matched = False
+        for prefixes, _ in DIRECTIVE_MODULES:
+            for prefix in sorted(prefixes, key=len, reverse=True):
+                if stripped.startswith(prefix):
+                    value = stripped[len(prefix):]
+                    result.append({
+                        "index": dir_idx,
+                        "prefix": prefix.rstrip("="),
+                        "value": value,
+                        "raw": line
+                    })
+                    dir_idx += 1
+                    matched = True
+                    break
+            if matched:
+                break
+        if not matched and "=" in stripped:
+            key = stripped.split("=", 1)[0].strip()
+            result.append({
+                "index": dir_idx,
+                "prefix": key,
+                "value": stripped.split("=", 1)[1],
+                "raw": line
+            })
+            dir_idx += 1
+
+    print(json.dumps(result, indent=2))
+
+
+def cmd_add_directive(module, prefix, value):
+    """Add a directive line to a module file and reload config."""
+    modules, main_lines = parse_modules()
+    if module not in modules:
+        modules[module] = []
+    modules[module].append(f"{prefix}={value}")
+    write_modules(modules, main_lines)
+    mmsg_dispatch(["reload_config"])
+    print(json.dumps({"ok": True, "module": module, "prefix": prefix, "value": value}))
+
+
+def cmd_remove_directive(module, index):
+    """Remove a directive line from a module file by its directive index (0-based)."""
+    modules, main_lines = parse_modules()
+    if module not in modules:
+        error(f"Module '{module}' not found")
+
+    lines = modules[module]
+    dir_idx = 0
+    remove_line_idx = None
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        if dir_idx == index:
+            remove_line_idx = i
+            break
+        dir_idx += 1
+
+    if remove_line_idx is None:
+        error(f"Directive index {index} not found in module '{module}'")
+
+    removed = lines.pop(remove_line_idx)
+    write_modules(modules, main_lines)
+    mmsg_dispatch(["reload_config"])
+    print(json.dumps({"ok": True, "module": module, "removed": removed.strip()}))
+
+
 def cmd_validate():
     try:
         result = subprocess.run(
@@ -735,6 +818,12 @@ def main():
         cmd_set_module(args[1], args[2], reload_after)
     elif cmd == "reload" and len(args) == 1:
         cmd_reload()
+    elif cmd == "list-directives" and len(args) == 2:
+        cmd_list_directives(args[1])
+    elif cmd == "add-directive" and len(args) == 4:
+        cmd_add_directive(args[1], args[2], args[3])
+    elif cmd == "remove-directive" and len(args) == 3:
+        cmd_remove_directive(args[1], int(args[2]))
     elif cmd == "validate" and len(args) == 1:
         cmd_validate()
     elif cmd == "migrate" and len(args) == 1:

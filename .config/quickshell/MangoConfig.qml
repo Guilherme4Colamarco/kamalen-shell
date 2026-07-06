@@ -484,6 +484,27 @@ Singleton {
     }
 
     // -------------------------------------------------------------------------
+    // Directive API (binds, windowrules, monitors)
+    // -------------------------------------------------------------------------
+
+    property var _dirCallback: null
+
+    function listDirectives(module, callback) {
+        _dirCallback = callback
+        dirProc.command = ["python3", _configPath, "list-directives", module]
+        dirProc.running = false
+        dirProc.running = true
+    }
+
+    function addDirective(module, prefix, value) {
+        runCmd(["add-directive", module, prefix, value])
+    }
+
+    function removeDirective(module, index) {
+        runCmd(["remove-directive", module, String(index)])
+    }
+
+    // -------------------------------------------------------------------------
     // Processes
     // -------------------------------------------------------------------------
 
@@ -507,6 +528,29 @@ Singleton {
             if (exitCode !== 0) {
                 console.log("MangoConfig: command exited with code", exitCode,
                             "command:", JSON.stringify(command))
+            }
+        }
+    }
+
+    Process {
+        id: dirProc
+        stdout: SplitParser {
+            splitMarker: ""
+            onRead: data => {
+                try {
+                    var parsed = JSON.parse(data)
+                    if (mangoConfig._dirCallback) {
+                        mangoConfig._dirCallback(parsed)
+                        mangoConfig._dirCallback = null
+                    }
+                } catch (e) {
+                    console.log("MangoConfig: failed to parse dir output:", e)
+                }
+            }
+        }
+        onExited: exitCode => {
+            if (exitCode !== 0) {
+                console.log("MangoConfig: dir command exited with code", exitCode)
             }
         }
     }
