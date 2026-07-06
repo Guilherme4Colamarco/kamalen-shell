@@ -1,169 +1,119 @@
 import Quickshell
 import Quickshell.DBusMenu
-import QtQuick
 import Quickshell._Window
+import QtQuick
 
-// ── Styled tray menu popup ────────────────────────────────────────────────
-// Renders the tray item's DBusMenu as a themed QuickShell popup instead of
-// the native application menu. Uses QsMenuOpener to read entries from the
-// StatusNotifier's menu property and renders them with the shell's colours
-// and bubbly interaction style.
-PopupWindow {
+PopupBase {
     id: root
 
-    // ── config ──────────────────────────────────────────────────────────
-    property int  padding:      12
-    property int  itemHeight:   32
-    property int  iconSize:     16
-    property real itemRadius:   6
+    implicitWidth: 220
+    contentHeight: contentCol.implicitHeight
+    autoDismiss: false
 
-    // ── visibility & position ──────────────────────────────────────────
-    visible:      TrayState.visible && TrayState.activeItem !== null
     parentWindow: TrayState.parentWindow
-    relativeX:    TrayState.popupX
-    relativeY:    TrayState.popupY
+    relativeX: TrayState.popupX
+    relativeY: TrayState.popupY
 
-    width:  Math.max(minImplicit, popupLayout.implicitWidth  + padding * 2)
-    height: popupLayout.implicitHeight + padding * 2
-    readonly property int minImplicit: 180
+    Connections {
+        target: TrayState
+        function onVisibleChanged() {
+            root.animState = TrayState.visible ? "open" : "closing"
+        }
+    }
 
-    color:      "transparent"
-    grabFocus:  true
-    mask:       bgPanel
-
-    // close via outside click or wm action
-    function onClosed() { TrayState.hide() }
-
-    // ── QsMenuOpener – reads the tray item's DBusMenu ──────────────────
     QsMenuOpener {
         id: menuOpener
         menu: TrayState.activeItem ? TrayState.activeItem.menu : null
     }
 
-    // ── background panel ───────────────────────────────────────────────
-    Rectangle {
-        id: bgPanel
-        anchors.fill: parent
-        radius:       10
-        color:        Colors.surface
-        border.color: Qt.rgba(Colors.fg.r, Colors.fg.g, Colors.fg.b, 0.08)
-        border.width: 1
-
-        layer.enabled: true
-        layer.samples: 4
-    }
-
-    // ── menu entries ───────────────────────────────────────────────────
     Column {
-        id: popupLayout
-        anchors {
-            top: parent.top;    topMargin: padding
-            left: parent.left;  leftMargin: padding
-            right: parent.right; rightMargin: padding
-        }
+        id: contentCol
+        anchors { top: parent.top; left: parent.left; right: parent.right; margins: root.padding }
         spacing: 3
 
-        // optional title row
         Text {
-            id: titleText
             width: parent.width
             visible: Boolean(TrayState.activeItem?.title)
             text: TrayState.activeItem?.title ?? ""
-            font { pixelSize: 11; weight: Font.Bold }
+            font { pixelSize: 11; weight: Font.Bold; family: "JetBrainsMono Nerd Font" }
             color: Colors.dim
             bottomPadding: 6
             elide: Text.ElideRight
         }
 
-        // menu entries from QsMenuOpener
         Instantiator {
             model: menuOpener.children
             asynchronous: false
 
             delegate: Item {
-                id: entry
+                id: entryDelegate
                 required property var modelData
-                required property int  index
+                required property int index
 
-                width:  parent.width
-                height: modelData.isSeparator ? sepItem.height : itemHeight
+                width: contentCol.width
+                height: modelData.isSeparator ? 9 : 32
 
-                // ── separator ──────────────────────────────────────
                 Rectangle {
-                    id: sepItem
-                    visible:       modelData.isSeparator
+                    visible: entryDelegate.modelData.isSeparator
                     anchors.centerIn: parent
-                    width:         parent.width - 8
-                    height:        1
-                    color:         Qt.rgba(Colors.fg.r, Colors.fg.g, Colors.fg.b, 0.08)
-                    antialiasing:  true
+                    width: parent.width - 8
+                    height: 1
+                    color: Qt.rgba(Colors.fg.r, Colors.fg.g, Colors.fg.b, 0.08)
+                    antialiasing: true
                 }
 
-                // ── clickable row ──────────────────────────────────
                 Rectangle {
-                    id: bg
-                    visible: !modelData.isSeparator
-                    width:   parent.width
-                    height:  itemHeight
-                    radius:  itemRadius
-                    color:   bgArea.containsMouse && modelData.enabled
-                             ? Qt.rgba(Colors.fg.r, Colors.fg.g, Colors.fg.b, 0.08)
-                             : "transparent"
-                    opacity: modelData.enabled ? 1.0 : 0.4
+                    visible: !entryDelegate.modelData.isSeparator
+                    width: parent.width
+                    height: 32
+                    radius: Math.round(UIState.borderRadius * 0.375)
+                    color: rowArea.containsMouse && entryDelegate.modelData.enabled
+                        ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.12)
+                        : "transparent"
+                    opacity: entryDelegate.modelData.enabled ? 1.0 : 0.4
 
                     Behavior on color {
-                        ColorAnimation {
-                            duration: Animations.fast
-                            easing.type: Easing.OutCubic
-                        }
+                        ColorAnimation { duration: Animations.fast; easing.type: Easing.OutCubic }
                     }
 
-                    // row: [indicator] [icon] [text]
                     Row {
                         anchors {
-                            left: parent.left;    leftMargin: 10
-                            right: parent.right;  rightMargin: 10
+                            left: parent.left; leftMargin: 10
+                            right: parent.right; rightMargin: 10
                             verticalCenter: parent.verticalCenter
                         }
                         spacing: 8
 
-                        // checkmark / radio indicator
                         Text {
-                            visible: modelData.buttonType !== QsMenuButtonType.None
+                            visible: entryDelegate.modelData.buttonType !== QsMenuButtonType.None
                             text: {
-                                if (modelData.buttonType === QsMenuButtonType.CheckBox)
+                                if (entryDelegate.modelData.buttonType === QsMenuButtonType.CheckBox)
                                     return "✓"
-                                if (modelData.buttonType === QsMenuButtonType.RadioButton)
+                                if (entryDelegate.modelData.buttonType === QsMenuButtonType.RadioButton)
                                     return "●"
                                 return ""
                             }
-                            font.pixelSize: 13
+                            font { pixelSize: 13; family: "JetBrainsMono Nerd Font" }
                             color: Colors.accent
                             width: 16
                             horizontalAlignment: Text.AlignHCenter
                             anchors.verticalCenter: parent.verticalCenter
                         }
 
-                        // application icon
                         Image {
-                            visible: Boolean(modelData.icon)
-                            width:  iconSize
-                            height: iconSize
-                            source: modelData.icon || ""
-                            sourceSize.width:  iconSize
-                            sourceSize.height: iconSize
-                            smooth:        true
-                            mipmap:        true
-                            asynchronous:  true
+                            visible: Boolean(entryDelegate.modelData.icon)
+                            width: 16; height: 16
+                            source: entryDelegate.modelData.icon || ""
+                            sourceSize.width: 16; sourceSize.height: 16
+                            smooth: true; mipmap: true
+                            asynchronous: true
                             anchors.verticalCenter: parent.verticalCenter
                             fillMode: Image.PreserveAspectFit
                         }
 
-                        // label
                         Text {
-                            text: modelData.text || ""
-                            font.pixelSize: 13
-                            font.weight: Font.Bold
+                            text: entryDelegate.modelData.text || ""
+                            font { pixelSize: 13; weight: Font.Bold; family: "JetBrainsMono Nerd Font" }
                             color: Colors.fg
                             anchors.verticalCenter: parent.verticalCenter
                             width: parent.width - x
@@ -171,24 +121,21 @@ PopupWindow {
                         }
                     }
 
-                    // ── click ──────────────────────────────────────
                     MouseArea {
-                        id: bgArea
+                        id: rowArea
                         anchors.fill: parent
                         hoverEnabled: true
-                        enabled:      modelData.enabled
-                        cursorShape:  Qt.PointingHandCursor
-
+                        enabled: entryDelegate.modelData.enabled
+                        cursorShape: Qt.PointingHandCursor
                         onClicked: {
-                            modelData.triggered()
-                            // small delay so the triggered action registers
-                            Qt.callLater(TrayState.hide)
+                            entryDelegate.modelData.triggered()
+                            TrayState.hide()
                         }
                     }
                 }
             }
 
-            onObjectAdded:   (idx, obj) => obj.parent = popupLayout
+            onObjectAdded: (idx, obj) => obj.parent = contentCol
             onObjectRemoved: (idx, obj) => {}
         }
     }

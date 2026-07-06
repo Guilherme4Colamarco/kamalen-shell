@@ -14,6 +14,8 @@ PowerMenu 1.0 PowerMenu.qml
 LayoutMenu 1.0 LayoutMenu.qml
 ClipboardMenu 1.0 ClipboardMenu.qml
 PolkitDialog 1.0 PolkitDialog.qml
+PopupBase 1.0 PopupBase.qml
+TrayBar 1.0 TrayBar.qml
 TrayPopup 1.0 TrayPopup.qml
 singleton TrayState 1.0 TrayState.qml
 MIcon 1.0 MIcon.qml

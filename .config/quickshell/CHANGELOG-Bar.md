@@ -16,6 +16,51 @@ Registro incremental de mudanças. Cada entrada = uma fase testada e funcionando
 
 ---
 
+## Fase 2 — Tray refactor + PopupBase (inspirado no meloworld-dotfiles)
+**Data:** 5 jul 2026
+
+**Problema:**
+- Tray inline duplicado em Bar.qml e IslandContent.qml (~100 linhas × 2)
+- `TrayPopup.qml` tinha bug crítico: `visible` binding lutava com WM para fechar, `onClosed()` nunca chamado
+- `TrayState.hide()` não limpava `activeItem` (memory leak)
+- `QsWindow.window` acessado sem null-guard → crash potencial
+
+**Solução:**
+1. **PopupBase.qml** — componente base com state machine (`closed`→`open`→`closing`→`closed`), slide-down + fade animado, auto-dismiss timer, estética Kamalen (Colors/Animations/UIState)
+2. **TrayState.qml** — `hide()` limpa `activeItem` + `parentWindow`; adicionado `closeAll()`
+3. **TrayPopup.qml** — reescrito usando `PopupBase`; `visible` controlado por `animState` (não binding); conectado a `onAboutToHide`
+4. **TrayBar.qml** — componente extraído (80 linhas), configável (`iconPx`, `itemPx`, `itemH`, `itemRadius`, `itemSpacing`), null-safe `QsWindow?.window`
+5. **Bar.qml / IslandContent.qml** — substituídos por `TrayBar {}`
+6. **qmldir** — registrado `PopupBase` e `TrayBar`
+
+**Resultado:**
+- Código duplicado eliminado (~180 linhas)
+- Tray popup fecha corretamente (clique fora, auto-dismiss 3s)
+- Memory leak corrigido
+- Crash potential eliminado
+- Configuração consistente entre barra e island
+
+---
+
+## Fase 2b — Bugfix: PopupBase crash (onAboutToHide inexistente)
+**Data:** 5 jul 2026
+
+**Problema:**
+- `PopupBase.qml` usava `onAboutToHide` que não existe em `PopupWindow`
+- Verificado via qmltypes: `ProxyPopupWindow` não exporta esse signal
+- Resultado: shell crashava ao recarregar
+
+**Solução:**
+- Removido `onAboutToHide: { animState = "closing" }`
+- Fechamento já é tratado por `TrayPopup.Connections` → `animState = "closing"`
+- `mask: Region { item: innerRect }` mantido (válido — `Quickshell/Region 0.0`)
+
+**Resultado:**
+- Shell recarrega sem crash
+- Tray popup funciona: abre via TrayBar, fecha via auto-dismiss / clique fora
+
+---
+
 ## Fase 1 — PillButton component (DRY refactor)
 **Data:** 5 jul 2026
 
@@ -52,7 +97,7 @@ PillButton {
 
 ## Próximas fases (planejadas)
 
-- **Fase 2:** Agrupar right cluster com separators sutis
-- **Fase 3:** Padronizar hover (eliminar underline restante)
-- **Fase 4:** Tooltips em todos os botões
-- **Fase 5:** Clock com data opcional (hover expande)
+- **Fase 3:** Agrupar right cluster com separators sutis
+- **Fase 4:** Padronizar hover (eliminar underline restante)
+- **Fase 5:** Tooltips em todos os botões
+- **Fase 6:** Clock com data opcional (hover expande)

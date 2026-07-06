@@ -1,15 +1,13 @@
 pragma Singleton
 import QtQuick
+import Quickshell
 
-// ── Tray popup state coordinator ──────────────────────────────────────────
-// Shared between TrayBar delegates and TrayPopup to open/close the styled
-// popup menu rendered by QuickShell instead of the native application menu.
-QtObject {
+Singleton {
     id: state
 
     property bool  visible:      false
-    property var   activeItem:   null   // StatusNotifierItem
-    property var   parentWindow: null   // PanelWindow to anchor to
+    property var   activeItem:   null
+    property var   parentWindow: null
     property int   popupX:       0
     property int   popupY:       0
 
@@ -23,6 +21,8 @@ QtObject {
 
     function hide() {
         visible = false
+        activeItem = null
+        parentWindow = null
     }
 
     function toggle(item, win, x, y) {
@@ -31,5 +31,9 @@ QtObject {
         } else {
             show(item, win, x, y)
         }
+    }
+
+    function closeAll() {
+        hide()
     }
 }

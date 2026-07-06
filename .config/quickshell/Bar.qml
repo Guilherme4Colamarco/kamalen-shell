@@ -1,8 +1,6 @@
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
-import Quickshell.Services.SystemTray
-import Quickshell.DBusMenu
 import Quickshell.Widgets
 import QtQuick
 
@@ -502,71 +500,8 @@ Scope {
             anchors.verticalCenter: parent.verticalCenter
             spacing: 12
 
-            // System Tray
-            Row {
-                id: trayRow
-                spacing: 8
+            TrayBar {
                 anchors.verticalCenter: parent.verticalCenter
-
-                Repeater {
-                    model: SystemTray.items
-                    delegate: Rectangle {
-                        id: trayItem
-                        required property var modelData
-
-                        implicitWidth:  28
-                        implicitHeight: 24
-                        radius: 6
-                        anchors.verticalCenter: parent.verticalCenter
-                        color: trayMouse.containsMouse ? Qt.rgba(Colors.fg.r, Colors.fg.g, Colors.fg.b, 0.10) : "transparent"
-                        scale: trayMouse.containsMouse ? Animations.hoverScale : 1.0
-                        transformOrigin: Item.Center
-
-                        Behavior on color { ColorAnimation { duration: Animations.fast } }
-                        Behavior on scale { NumberAnimation { duration: Animations.fast; easing.type: Easing.OutCubic } }
-
-                        Image {
-                            anchors.centerIn: parent
-                            width: 18; height: 18
-                            source: trayItem.modelData.icon || ""
-                            smooth: true; mipmap: true
-                            visible: source !== ""
-                        }
-
-                        MouseArea {
-                            id: trayMouse
-                            anchors.fill: parent
-                            acceptedButtons: Qt.LeftButton | Qt.RightButton
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: function(mouse) {
-                                if (mouse.button === Qt.RightButton && trayItem.modelData.hasMenu) {
-                                    var win = trayItem.QsWindow.window
-                                    var pos = trayItem.mapToItem(trayItem.QsWindow.contentItem, 0, trayItem.height)
-                                    print("TRAY: right-click menu, TrayState.show(win=", win, ", x=", pos.x, " y=", pos.y, ")")
-                                    if (win) {
-                                        TrayState.show(trayItem.modelData, win, pos.x, pos.y)
-                                    } else {
-                                        print("TRAY: QsWindow.window is null")
-                                    }
-                                } else if (mouse.button === Qt.LeftButton) {
-                                    if (trayItem.modelData.onlyMenu) {
-                                        var win = trayItem.QsWindow.window
-                                        var pos = trayItem.mapToItem(trayItem.QsWindow.contentItem, 0, trayItem.height)
-                                        if (win && trayItem.modelData.hasMenu) {
-                                            TrayState.show(trayItem.modelData, win, pos.x, pos.y)
-                                        }
-                                    } else {
-                                        trayItem.modelData.activate()
-                                    }
-                                }
-                            }
-                            onWheel: function(wheel) {
-                                trayItem.modelData.scroll(wheel.angleDelta.y, false)
-                            }
-                        }
-                    }
-                }
             }
 
             Row {

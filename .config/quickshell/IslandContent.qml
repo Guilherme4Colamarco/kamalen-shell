@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
-import Quickshell.Services.SystemTray
 import Quickshell.Io
 
 Item {
@@ -366,54 +365,14 @@ Item {
                 }
 
                 // System Tray icons (aligned to the right)
-                Row {
-                    id: trayRow
+                TrayBar {
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
-                    spacing: 5
-
-                    Repeater {
-                        model: SystemTray.items
-                        delegate: Rectangle {
-                            id: trayItem
-                            required property var modelData
-
-                            width: 29
-                            height: 22
-                            radius: 5
-                            color: trayArea.containsMouse ? Qt.rgba(Colors.fg.r, Colors.fg.g, Colors.fg.b, 0.10) : "transparent"
-                            anchors.verticalCenter: parent.verticalCenter
-
-                            Behavior on color {
-                                ColorAnimation { duration: Animations.fast }
-                            }
-
-                            Image {
-                                anchors.centerIn: parent
-                                width: 16; height: 16
-                                source: trayItem.modelData.icon || ""
-                                smooth: true; mipmap: true
-                                visible: source !== ""
-                            }
-
-                            MouseArea {
-                                id: trayArea
-                                anchors.fill: parent
-                                acceptedButtons: Qt.LeftButton | Qt.RightButton
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: function(mouse) {
-                                    if (mouse.button === Qt.RightButton && trayItem.modelData.hasMenu) {
-                                        var win = trayItem.QsWindow.window
-                                        var pos = trayItem.mapToItem(trayItem.QsWindow.contentItem, 0, trayItem.height)
-                                        if (win) TrayState.show(trayItem.modelData, win, pos.x, pos.y)
-                                    } else if (mouse.button === Qt.LeftButton) {
-                                        trayItem.modelData.activate()
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    iconPx: 16
+                    itemPx: 26
+                    itemH: 22
+                    itemRadius: 5
+                    itemSpacing: 5
                 }
             }
 

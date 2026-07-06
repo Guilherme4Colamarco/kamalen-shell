@@ -17,16 +17,27 @@ def search(args):
     params = {
         "q": args.query or "",
         "categories": args.categories or "111",
-        "purity": "100", # Restrict to SFW
+        "purity": args.purity or "100",
         "sorting": args.sorting or "relevance",
         "order": "desc",
         "page": str(args.page or 1)
     }
+    # Optional filters
+    if args.atleast:
+        params["atleast"] = args.atleast
+    if args.ratios:
+        params["ratios"] = args.ratios
+    if args.types:
+        params["types"] = args.types
+    if args.topRange:
+        params["topRange"] = args.topRange
+    
     url = f"https://wallhaven.cc/api/v1/search?{urllib.parse.urlencode(params)}"
     req = urllib.request.Request(url, headers=get_headers(args.apikey))
     try:
         with urllib.request.urlopen(req) as resp:
             data = json.loads(resp.read().decode("utf-8"))
+            meta = data.get("meta", {})
             results = []
             for item in data.get("data", []):
                 ext = ""
@@ -34,14 +45,27 @@ def search(args):
                     _, ext = os.path.splitext(item.get("path"))
                 results.append({
                     "id": item.get("id"),
-                    "url": item.get("path"),  # Direct full-res link
+                    "url": item.get("path"),
                     "thumbnail": item.get("thumbs", {}).get("large"),
                     "resolution": item.get("resolution"),
                     "file_type": item.get("file_type"),
                     "file_size": item.get("file_size"),
-                    "ext": ext
+                    "ext": ext,
+                    "tags": [t.get("name") for t in (item.get("tags") or [])[:4]],
+                    "colors": (item.get("colors") or [])[:3],
+                    "views": item.get("views", 0),
+                    "favorites": item.get("favorites", 0),
+                    "purity": item.get("purity", "sfw"),
+                    "category": item.get("category", "general")
                 })
-            print(json.dumps(results))
+            # Return results with meta info
+            output = {
+                "results": results,
+                "total": meta.get("total", 0),
+                "last_page": meta.get("last_page", 1),
+                "current_page": meta.get("current_page", 1)
+            }
+            print(json.dumps(output))
     except Exception as e:
         print(json.dumps({"error": str(e)}), file=sys.stderr)
         sys.exit(1)
@@ -95,7 +119,12 @@ def main():
     search_parser = subparsers.add_parser("search", help="Search Wallhaven")
     search_parser.add_argument("--query", type=str, default="", help="Search query")
     search_parser.add_argument("--categories", type=str, default="111", help="Categories bitmask (General/Anime/People)")
+    search_parser.add_argument("--purity", type=str, default="100", help="Purity bitmask (SFW/Sketchy/NSFW)")
     search_parser.add_argument("--sorting", type=str, default="relevance", help="Sorting method")
+    search_parser.add_argument("--atleast", type=str, default=None, help="Minimum resolution (e.g. 1920x1080)")
+    search_parser.add_argument("--ratios", type=str, default=None, help="Aspect ratios (e.g. 16x9,16x10)")
+    search_parser.add_argument("--types", type=str, default=None, help="File types (png,jpg)")
+    search_parser.add_argument("--topRange", type=str, default=None, help="Top range for toplist (1d,3d,1w,1M,3M,6M,1y)")
     search_parser.add_argument("--page", type=int, default=1, help="Page number")
     search_parser.add_argument("--apikey", type=str, default=None, help="Wallhaven API key")
     

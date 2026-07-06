@@ -28,6 +28,22 @@ PanelWindow {
     property string wallhavenScript: Quickshell.env("HOME") + "/.config/quickshell/wallhaven/wallhaven.py"
     property int onlineSelected: 0
     property int currentPage: 1
+    property int totalPages: 1
+    property int totalResults: 0
+    property bool showDeleteConfirm: false
+    property var pendingDeleteWall: null
+    property bool showHelp: false
+    property bool _escPressedRecently: false
+    property bool showFilters: false
+
+    // Filter properties
+    property string whCategories: "111"  // General/Anime/People bitmask
+    property string whPurity: "100"      // SFW/Sketchy/NSFW bitmask
+    property string whSorting: "relevance"  // relevance, date_added, views, favorites, toplist, random
+    property string whAtleast: ""        // Minimum resolution (e.g. "1920x1080")
+    property string whRatios: ""         // Aspect ratios (e.g. "16x9,16x10")
+    property string whTypes: ""          // File types (e.g. "png,jpg")
+    property string whTopRange: "1w"     // Top range for toplist (1d,3d,1w,1M,3M,6M,1y)
 
     property real smoothSelected: 0
     Behavior on smoothSelected {
@@ -96,6 +112,25 @@ PanelWindow {
         id: enableAnimDelay
         interval: 120
         onTriggered: _skipInitialAnim = false
+    }
+
+    Timer {
+        id: escResetTimer
+        interval: 400
+        onTriggered: _escPressedRecently = false
+    }
+
+    function resetOnlineSearch() {
+        keyInput.text = ""
+        query = ""
+        onlineModel.clear()
+        onlineSelected = 0
+        currentPage = 1
+        totalPages = 1
+        totalResults = 0
+        loadingSearch = false
+        _escPressedRecently = false
+        showFilters = false
     }
 
     function filterWalls(preserve) {
@@ -311,6 +346,31 @@ PanelWindow {
     Process { id: applyProc }
     Process { id: writeCacheProc }
 
+    Process {
+        id: deleteProc
+        running: false
+
+        function deleteWallpaper(wall) {
+            if (!wall) return
+            var path = wallDir + "/" + wall.name
+            command = ["bash", "-c",
+                "rm -f '" + path + "' && " +
+                "rm -f '" + cachePath + "/" + wall.name + ".thumb.jpg' && " +
+                "echo 'DELETED'"]
+            running = true
+        }
+
+        stdout: SplitParser {
+            splitMarker: "\n"
+            onRead: data => {
+                if (data.trim() === "DELETED") {
+                    // Reload local list
+                    currentWallProc.running = true
+                }
+            }
+        }
+    }
+
     ListModel {
         id: onlineModel
     }
@@ -321,13 +381,17 @@ PanelWindow {
         
         function runSearch(q, p) {
             currentPage = p ? p : 1
-            var categories = UIState.wallhavenCategories ? UIState.wallhavenCategories : "111"
-            var sorting = UIState.wallhavenSorting ? UIState.wallhavenSorting : "relevance"
-            command = ["python3", wallhavenScript, "search", "--query", q, "--categories", categories, "--sorting", sorting, "--page", currentPage.toString()]
-            if (UIState.wallhavenApiKey) {
-                command.push("--apikey")
-                command.push(UIState.wallhavenApiKey)
-            }
+            command = ["python3", wallhavenScript, "search",
+                "--query", q,
+                "--categories", whCategories,
+                "--purity", whPurity,
+                "--sorting", whSorting,
+                "--page", currentPage.toString()]
+            if (whAtleast) { command.push("--atleast"); command.push(whAtleast) }
+            if (whRatios) { command.push("--ratios"); command.push(whRatios) }
+            if (whTypes) { command.push("--types"); command.push(whTypes) }
+            if (whSorting === "toplist" && whTopRange) { command.push("--topRange"); command.push(whTopRange) }
+            if (UIState.wallhavenApiKey) { command.push("--apikey"); command.push(UIState.wallhavenApiKey) }
             running = false
             running = true
         }
@@ -336,13 +400,16 @@ PanelWindow {
             splitMarker: "\n"
             onRead: data => {
                 try {
-                    var list = JSON.parse(data.trim())
+                    var resp = JSON.parse(data.trim())
                     onlineModel.clear()
                     onlineSelected = 0
-                    if (list.error) {
-                        console.log("Search error:", list.error)
+                    if (resp.error) {
+                        console.log("Search error:", resp.error)
                         return
                     }
+                    var list = resp.results || resp
+                    totalResults = resp.total || 0
+                    totalPages = resp.last_page || 1
                     for (var i = 0; i < list.length; i++) {
                         onlineModel.append(list[i])
                     }
@@ -351,7 +418,10 @@ PanelWindow {
                 }
             }
         }
-        onExited: loadingSearch = false
+        onExited: {
+            loadingSearch = false
+            onlineGrid._loadingMore = false
+        }
     }
 
     Process {
@@ -475,21 +545,9 @@ PanelWindow {
                     event.accepted = true
                 } else if (event.key === Qt.Key_PageUp) {
                     if (currentTab === "local") selected = Math.max(0, selected - 5)
-                    else if (currentTab === "online") {
-                        if (currentPage > 1) {
-                            currentPage--
-                            loadingSearch = true
-                            searchProc.runSearch(keyInput.text, currentPage)
-                        }
-                    }
                     event.accepted = true
                 } else if (event.key === Qt.Key_PageDown) {
                     if (currentTab === "local") selected = Math.min(filtered.length - 1, selected + 5)
-                    else if (currentTab === "online") {
-                        currentPage++
-                        loadingSearch = true
-                        searchProc.runSearch(keyInput.text, currentPage)
-                    }
                     event.accepted = true
                 } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
                     if (currentTab === "local") {
@@ -506,8 +564,51 @@ PanelWindow {
                 } else if (event.key === Qt.Key_R) {
                     if (currentTab === "local") pickRandom()
                     event.accepted = true
+                } else if (event.key === Qt.Key_Y) {
+                    if (showDeleteConfirm && pendingDeleteWall) {
+                        deleteProc.deleteWallpaper(pendingDeleteWall)
+                        showDeleteConfirm = false
+                        pendingDeleteWall = null
+                    }
+                    event.accepted = true
+                } else if (event.key === Qt.Key_N) {
+                    if (showDeleteConfirm) {
+                        showDeleteConfirm = false
+                        pendingDeleteWall = null
+                    }
+                    event.accepted = true
+                } else if (event.key === Qt.Key_D) {
+                    if (currentTab === "local" && filtered.length > 0 && !showDeleteConfirm) {
+                        pendingDeleteWall = filtered[selected]
+                        showDeleteConfirm = true
+                    }
+                    event.accepted = true
+                } else if (event.key === Qt.Key_F) {
+                    if (currentTab === "online" && !searching) {
+                        showFilters = !showFilters
+                    }
+                    event.accepted = true
+                } else if (event.key === Qt.Key_Question) {
+                    showHelp = !showHelp
+                    event.accepted = true
                 } else if (event.key === Qt.Key_Escape) {
-                    if (query !== "") {
+                    if (showHelp) {
+                        showHelp = false
+                    } else if (showDeleteConfirm) {
+                        showDeleteConfirm = false
+                        pendingDeleteWall = null
+                    } else if (currentTab === "online" && onlineModel.count > 0) {
+                        if (_escPressedRecently) {
+                            resetOnlineSearch()
+                        } else {
+                            _escPressedRecently = true
+                            escResetTimer.start()
+                            if (query !== "") {
+                                keyInput.text = ""
+                                query = ""
+                            }
+                        }
+                    } else if (query !== "") {
                         keyInput.text = ""
                         query = ""
                         if (currentTab === "local") filterWalls()
@@ -894,6 +995,19 @@ PanelWindow {
                 boundsBehavior: Flickable.StopAtBounds
                 ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
+                property bool _loadingMore: false
+
+                onContentYChanged: {
+                    if (contentHeight <= 0) return
+                    var threshold = 200
+                    var atBottom = (contentY + height) >= (contentHeight - threshold)
+                    if (atBottom && !_loadingMore && !loadingSearch && currentPage < totalPages && keyInput.text.trim().length > 0) {
+                        _loadingMore = true
+                        currentPage++
+                        searchProc.runSearch(keyInput.text.trim(), currentPage)
+                    }
+                }
+
                 delegate: Rectangle {
                     id: gridItem
                     required property string id
@@ -903,14 +1017,52 @@ PanelWindow {
                     required property int file_size
                     required property string ext
                     required property int index
+                    property var tags: modelData ? (modelData.tags || []) : []
+                    property var colors: modelData ? (modelData.colors || []) : []
 
                     width:  (cardW / 3) - 12
                     height: (width / 1.6)
                     radius: brCard
                     color:  a(Colors.bg, 0.4)
                     clip:   true
-                    border.width: activeDownloadId === id ? 2.5 : (onlineSelected === index ? 2 : 0)
-                    border.color: activeDownloadId === id ? Colors.accent : a(Colors.accent, 0.6)
+                    border.width: onlineSelected === index ? 2 : (activeDownloadId === id ? 2.5 : 0)
+                    border.color: onlineSelected === index ? Colors.accent : (activeDownloadId === id ? Colors.accent : "transparent")
+
+                    Behavior on scale { NumberAnimation { duration: Animations.fast; easing.type: Easing.OutCubic } }
+                    Behavior on border.color { ColorAnimation { duration: Animations.fast } }
+                    Behavior on border.width { NumberAnimation { duration: Animations.fast } }
+                    scale: gridMa.containsMouse || onlineSelected === index ? 1.03 : 1.0
+
+                    // Selection highlight overlay (inside clip, but visible)
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: brCard
+                        color: onlineSelected === index ? a(Colors.accent, 0.15) : "transparent"
+                        border.width: onlineSelected === index ? 2 : 0
+                        border.color: Colors.accent
+                        visible: onlineSelected === index
+                        z: 999
+                        opacity: 1.0
+
+                        Behavior on color { ColorAnimation { duration: Animations.fast } }
+                    }
+
+                    // Corner selection indicator
+                    Rectangle {
+                        anchors { top: parent.top; left: parent.left; margins: 4 }
+                        width: 20; height: 20
+                        radius: 10
+                        color: Colors.accent
+                        visible: onlineSelected === index
+                        z: 999
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "✓"
+                            color: "#fff"
+                            font { pixelSize: 10; family: "JetBrainsMono Nerd Font"; bold: true }
+                        }
+                    }
 
                     Image {
                         anchors.fill: parent
@@ -920,57 +1072,164 @@ PanelWindow {
                         cache: true
                     }
 
-                    // Dim/Overlay for hover
+                    // Resolution badge (top-right)
                     Rectangle {
-                        anchors.fill: parent
-                        color: gridMa.containsMouse ? a("#000", 0.6) : "transparent"
-                        Behavior on color { ColorAnimation { duration: Animations.fast } }
+                        anchors { top: parent.top; right: parent.right; margins: 6 }
+                        width: resBadge.width + 10; height: 18
+                        radius: 4
+                        color: a("#000", 0.6)
+                        visible: activeDownloadId !== id
 
-                        Column {
+                        Text {
+                            id: resBadge
                             anchors.centerIn: parent
-                            spacing: 4
-                            visible: gridMa.containsMouse && activeDownloadId !== id
-
-                            Text {
-                                text: resolution
-                                color: "#fff"
-                                font { pixelSize: 10; family: "JetBrainsMono Nerd Font"; bold: true }
-                                anchors.horizontalCenter: parent.horizontalCenter
-                            }
-                            Text {
-                                text: (file_size / (1024 * 1024)).toFixed(1) + " MB"
-                                color: a("#fff", 0.7)
-                                font { pixelSize: 9; family: "JetBrainsMono Nerd Font" }
-                                anchors.horizontalCenter: parent.horizontalCenter
-                            }
+                            text: gridItem.resolution
+                            color: "#fff"
+                            font { pixelSize: 8; family: "JetBrainsMono Nerd Font"; bold: true }
                         }
                     }
 
-                    // Loading progress overlay
+                    // File type badge (bottom-left)
+                    Rectangle {
+                        anchors { bottom: parent.bottom; left: parent.left; margins: 6 }
+                        width: typeBadge.width + 8; height: 16
+                        radius: 3
+                        color: a(Colors.accent, 0.85)
+                        visible: activeDownloadId !== id
+
+                        Text {
+                            id: typeBadge
+                            anchors.centerIn: parent
+                            text: gridItem.ext.replace(".", "").toUpperCase()
+                            color: "#fff"
+                            font { pixelSize: 7; family: "JetBrainsMono Nerd Font"; bold: true }
+                        }
+                    }
+
+                    // Hover overlay with gradient
                     Rectangle {
                         anchors.fill: parent
-                        color: a("#000", 0.72)
-                        visible: activeDownloadId === id
+                        color: "transparent"
+                        visible: gridMa.containsMouse && activeDownloadId !== id
+
+                        Rectangle {
+                            anchors.fill: parent
+                            gradient: Gradient {
+                                GradientStop { position: 0.0; color: a("#000", 0.05) }
+                                GradientStop { position: 0.4; color: a("#000", 0.45) }
+                                GradientStop { position: 1.0; color: a("#000", 0.78) }
+                            }
+                        }
 
                         Column {
                             anchors.centerIn: parent
-                            spacing: 8
+                            spacing: 5
+                            width: parent.width - 16
 
                             Text {
                                 text: "󰔟"
                                 color: Colors.accent
                                 font { pixelSize: 18; family: "JetBrainsMono Nerd Font" }
                                 anchors.horizontalCenter: parent.horizontalCenter
+                            }
+
+                            Text {
+                                text: gridItem.resolution
+                                color: "#fff"
+                                font { pixelSize: 12; family: "JetBrainsMono Nerd Font"; bold: true }
+                                anchors.horizontalCenter: parent.horizontalCenter
+                            }
+
+                            Text {
+                                text: (gridItem.file_size / (1024 * 1024)).toFixed(1) + " MB • " + gridItem.ext.replace(".", "").toUpperCase()
+                                color: a("#fff", 0.7)
+                                font { pixelSize: 9; family: "JetBrainsMono Nerd Font" }
+                                anchors.horizontalCenter: parent.horizontalCenter
+                            }
+
+                            Row {
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                spacing: 4
+                                visible: gridItem.tags && gridItem.tags.length > 0
+                                Repeater {
+                                    model: Math.min((gridItem.tags || []).length, 3)
+                                    Rectangle {
+                                        width: tagLabel.width + 8; height: 16
+                                        radius: 3
+                                        color: a(Colors.accent, 0.25)
+                                        Text {
+                                            id: tagLabel
+                                            anchors.centerIn: parent
+                                            text: (gridItem.tags || [])[index] || ""
+                                            color: Colors.accent
+                                            font { pixelSize: 7; family: "JetBrainsMono Nerd Font" }
+                                        }
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                width: enterHint.width + 12; height: 20
+                                radius: 4
+                                color: a(Colors.accent, 0.2)
+                                border.width: 1
+                                border.color: a(Colors.accent, 0.4)
+                                anchors.horizontalCenter: parent.horizontalCenter
+
+                                Text {
+                                    id: enterHint
+                                    anchors.centerIn: parent
+                                    text: "Enter ⏎"
+                                    color: Colors.accent
+                                    font { pixelSize: 8; family: "JetBrainsMono Nerd Font" }
+                                }
+                            }
+                        }
+                    }
+
+                    // Download progress overlay
+                    Rectangle {
+                        anchors.fill: parent
+                        color: a("#000", 0.82)
+                        visible: activeDownloadId === id
+
+                        Column {
+                            anchors.centerIn: parent
+                            spacing: 10
+                            width: parent.width - 20
+
+                            Text {
+                                id: dlIcon
+                                text: "󰔟"
+                                color: Colors.accent
+                                font { pixelSize: 22; family: "JetBrainsMono Nerd Font" }
+                                anchors.horizontalCenter: parent.horizontalCenter
                                 RotationAnimation on rotation {
-                                    running: activeDownloadId === gridItem.id
+                                    running: activeDownloadId === gridItem.id && downloadPercent < 100
                                     from: 0; to: 360; duration: 800; loops: Animation.Infinite
+                                }
+                            }
+
+                            Rectangle {
+                                width: parent.width
+                                height: 5
+                                radius: 3
+                                color: a(Colors.fg, 0.1)
+                                anchors.horizontalCenter: parent.horizontalCenter
+
+                                Rectangle {
+                                    width: parent.width * (downloadPercent / 100)
+                                    height: parent.height
+                                    radius: parent.radius
+                                    color: Colors.accent
+                                    Behavior on width { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
                                 }
                             }
 
                             Text {
                                 text: downloadPercent + "%"
                                 color: Colors.fg
-                                font { pixelSize: 10; family: "JetBrainsMono Nerd Font"; bold: true }
+                                font { pixelSize: 11; family: "JetBrainsMono Nerd Font"; bold: true }
                                 anchors.horizontalCenter: parent.horizontalCenter
                             }
                         }
@@ -996,8 +1255,8 @@ PanelWindow {
         // Online Loading Indicator
         Rectangle {
             anchors.centerIn: parent
-            width:  160
-            height: 100
+            width:  180
+            height: 110
             radius: brCard
             color:  a(Colors.bg, UIState.transparencyEnabled ? 0.72 : 0.9)
             border.width: 1
@@ -1006,12 +1265,12 @@ PanelWindow {
 
             Column {
                 anchors.centerIn: parent
-                spacing: 12
+                spacing: 14
 
                 Text {
                     text: "󰔟"
                     color: Colors.accent
-                    font { pixelSize: 24; family: "JetBrainsMono Nerd Font" }
+                    font { pixelSize: 28; family: "JetBrainsMono Nerd Font" }
                     anchors.horizontalCenter: parent.horizontalCenter
                     RotationAnimation on rotation {
                         running: currentTab === "online" && loadingSearch
@@ -1019,10 +1278,38 @@ PanelWindow {
                     }
                 }
 
+                Row {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    spacing: 2
+
+                    Text {
+                        text: "Searching"
+                        color: Colors.fg
+                        font { pixelSize: 11; family: "JetBrainsMono Nerd Font"; bold: true }
+                    }
+
+                    Text {
+                        id: loadingDots
+                        text: ""
+                        color: Colors.fg
+                        font { pixelSize: 11; family: "JetBrainsMono Nerd Font"; bold: true }
+                        SequentialAnimation on text {
+                            running: currentTab === "online" && loadingSearch
+                            loops: Animation.Infinite
+                            ScriptAction { script: loadingDots.text = "." }
+                            PauseAnimation { duration: 300 }
+                            ScriptAction { script: loadingDots.text = ".." }
+                            PauseAnimation { duration: 300 }
+                            ScriptAction { script: loadingDots.text = "..." }
+                            PauseAnimation { duration: 300 }
+                        }
+                    }
+                }
+
                 Text {
-                    text: L10n.tr("search_placeholder", "Searching...")
-                    color: Colors.fg
-                    font { pixelSize: 11; family: "JetBrainsMono Nerd Font"; bold: true }
+                    text: "Wallhaven"
+                    color: a(Colors.fg, 0.3)
+                    font { pixelSize: 9; family: "JetBrainsMono Nerd Font" }
                     anchors.horizontalCenter: parent.horizontalCenter
                 }
             }
@@ -1041,92 +1328,147 @@ PanelWindow {
 
             Column {
                 anchors.centerIn: parent
-                spacing: 18
+                spacing: 20
 
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: "󰏗"
-                    color: a(Colors.fg, 0.1)
-                    font { pixelSize: 48; family: "JetBrainsMono Nerd Font" }
+                    color: a(Colors.fg, 0.15)
+                    font { pixelSize: 56; family: "JetBrainsMono Nerd Font" }
+                    opacity: 0.8
+                    SequentialAnimation on opacity {
+                        loops: Animation.Infinite
+                        NumberAnimation { to: 0.4; duration: 1500; easing.type: Easing.InOutSine }
+                        NumberAnimation { to: 0.8; duration: 1500; easing.type: Easing.InOutSine }
+                    }
                 }
 
-                Text {
+                Column {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: L10n.tr("no_online_results", "No wallpapers found online")
-                    color: a(Colors.fg, 0.4)
-                    font { pixelSize: 14; family: "JetBrainsMono Nerd Font" }
+                    spacing: 8
+
+                    Text {
+                        text: L10n.tr("no_online_results", "No wallpapers found")
+                        color: a(Colors.fg, 0.5)
+                        font { pixelSize: 16; family: "JetBrainsMono Nerd Font"; bold: true }
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+
+                    Text {
+                        text: "Try a different search term"
+                        color: a(Colors.fg, 0.3)
+                        font { pixelSize: 11; family: "JetBrainsMono Nerd Font" }
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+                }
+
+                Row {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    spacing: 8
+
+                    Repeater {
+                        model: ["nature", "space", "abstract", "city", "dark"]
+
+                        Rectangle {
+                            width: suggText.width + 14; height: 26
+                            radius: brSm
+                            color: suggMa.containsMouse ? a(Colors.accent, 0.15) : a(Colors.fg, 0.05)
+                            border.width: 1
+                            border.color: suggMa.containsMouse ? a(Colors.accent, 0.3) : a(Colors.fg, 0.08)
+
+                            Text {
+                                id: suggText
+                                anchors.centerIn: parent
+                                text: modelData
+                                color: suggMa.containsMouse ? Colors.accent : a(Colors.fg, 0.5)
+                                font { pixelSize: 10; family: "JetBrainsMono Nerd Font" }
+                            }
+
+                            MouseArea {
+                                id: suggMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    keyInput.text = modelData
+                                    searching = true
+                                    loadingSearch = true
+                                    searchProc.runSearch(modelData, 1)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Row {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    spacing: 6
+
+                    Text {
+                        text: "Press"
+                        color: a(Colors.fg, 0.2)
+                        font { pixelSize: 9; family: "JetBrainsMono Nerd Font" }
+                    }
+
+                    Rectangle {
+                        width: slashW.width + 8; height: 18
+                        radius: 3
+                        color: a(Colors.fg, 0.05)
+                        border.width: 1
+                        border.color: a(Colors.fg, 0.08)
+
+                        Text {
+                            id: slashW
+                            anchors.centerIn: parent
+                            text: "/"
+                            color: a(Colors.fg, 0.4)
+                            font { pixelSize: 9; family: "JetBrainsMono Nerd Font" }
+                        }
+                    }
+
+                    Text {
+                        text: "to search"
+                        color: a(Colors.fg, 0.2)
+                        font { pixelSize: 9; family: "JetBrainsMono Nerd Font" }
+                    }
                 }
             }
         }
- 
-        // Pagination Row
-        Row {
-            id: paginationRow
+
+        // Loading more indicator (at bottom of online grid)
+        Rectangle {
             anchors {
-                bottom:           searchBar.top
-                bottomMargin:     14
+                bottom: searchBar.top
+                bottomMargin: 12
                 horizontalCenter: parent.horizontalCenter
             }
-            spacing: 16
-            visible: currentTab === "online" && onlineModel.count > 0 && !loadingSearch
+            width: 140
+            height: 34
+            radius: brSm
+            color: a(Colors.bg, 0.8)
+            border.width: 1
+            border.color: a(Colors.fg, 0.08)
+            visible: currentTab === "online" && onlineGrid._loadingMore
 
-            Rectangle {
-                width:  32
-                height: 32
-                radius: brSm
-                color:  currentPage > 1 ? a(Colors.bg, 0.4) : a(Colors.bg, 0.1)
-                border.width: 1
-                border.color: currentPage > 1 ? a(Colors.fg, 0.1) : a(Colors.fg, 0.03)
+            Row {
+                anchors.centerIn: parent
+                spacing: 8
 
                 Text {
-                    anchors.centerIn: parent
-                    text: "󰅁"
-                    color: currentPage > 1 ? Colors.fg : a(Colors.fg, 0.2)
-                    font { pixelSize: 12; family: "JetBrainsMono Nerd Font" }
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    enabled: currentPage > 1
-                    cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                    onClicked: {
-                        currentPage--
-                        loadingSearch = true
-                        searchProc.runSearch(keyInput.text, currentPage)
+                    text: "󰔟"
+                    color: Colors.accent
+                    font { pixelSize: 14; family: "JetBrainsMono Nerd Font" }
+                    RotationAnimation on rotation {
+                        running: currentTab === "online" && onlineGrid._loadingMore
+                        from: 0; to: 360; duration: 800; loops: Animation.Infinite
                     }
                 }
-            }
-
-            Text {
-                text: L10n.tr("page", "Page") + " " + currentPage
-                color: Colors.fg
-                font { pixelSize: 11; family: "JetBrainsMono Nerd Font"; bold: true }
-                anchors.verticalCenter: parent.verticalCenter
-            }
-
-            Rectangle {
-                width:  32
-                height: 32
-                radius: brSm
-                color:  a(Colors.bg, 0.4)
-                border.width: 1
-                border.color: a(Colors.fg, 0.1)
 
                 Text {
-                    anchors.centerIn: parent
-                    text: "󰅂"
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "Loading more..."
                     color: Colors.fg
-                    font { pixelSize: 12; family: "JetBrainsMono Nerd Font" }
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        currentPage++
-                        loadingSearch = true
-                        searchProc.runSearch(keyInput.text, currentPage)
-                    }
+                    font { pixelSize: 9; family: "JetBrainsMono Nerd Font"; bold: true }
                 }
             }
         }
@@ -1154,32 +1496,56 @@ PanelWindow {
 
             Row {
                 anchors.fill: parent
-                anchors.leftMargin:  11
-                anchors.rightMargin: 11
+                anchors.leftMargin:  12
+                anchors.rightMargin: 12
                 spacing: 8
 
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
                     text:  ""
                     color: searching ? Colors.accent : a(Colors.fg, 0.3)
-                    font { pixelSize: 11; family: "JetBrainsMono Nerd Font" }
+                    font { pixelSize: 12; family: "JetBrainsMono Nerd Font" }
                     Behavior on color { ColorAnimation { duration: Animations.fast } }
+                    SequentialAnimation on scale {
+                        running: searching
+                        loops: Animation.Infinite
+                        NumberAnimation { to: 1.1; duration: 800; easing.type: Easing.InOutSine }
+                        NumberAnimation { to: 1.0; duration: 800; easing.type: Easing.InOutSine }
+                    }
                 }
 
                 Text {
-                    width: parent.width - 60
+                    width: parent.width - 80
                     anchors.verticalCenter: parent.verticalCenter
-                    text: keyInput.text || (searching ? "" : (currentTab === "online" ? "/ search wallhaven" : "/ search"))
+                    text: keyInput.text || (searching ? "" : (currentTab === "online" ? "/ search wallhaven..." : "/ search local..."))
                     color: keyInput.text ? Colors.fg : a(Colors.fg, 0.25)
                     font { pixelSize: 11; family: "JetBrainsMono Nerd Font" }
                     elide: Text.ElideRight
+                }
+
+                Rectangle {
+                    visible: searching
+                    width: escHint.width + 8; height: 18
+                    radius: 3
+                    color: a(Colors.fg, 0.05)
+                    border.width: 1
+                    border.color: a(Colors.fg, 0.08)
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    Text {
+                        id: escHint
+                        anchors.centerIn: parent
+                        text: "Esc"
+                        color: a(Colors.fg, 0.3)
+                        font { pixelSize: 8; family: "JetBrainsMono Nerd Font" }
+                    }
                 }
 
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
                     text:    "󰅖"
                     color:   clrMa.containsMouse ? Colors.fg : a(Colors.fg, 0.3)
-                    font { pixelSize: 9; family: "JetBrainsMono Nerd Font" }
+                    font { pixelSize: 10; family: "JetBrainsMono Nerd Font" }
                     visible: keyInput.text.length > 0
                     Behavior on color { ColorAnimation { duration: Animations.fast } }
 
@@ -1213,9 +1579,653 @@ PanelWindow {
                 bottomMargin: 24
                 horizontalCenter: parent.horizontalCenter
             }
-            text: L10n.tr("wallpaper_help", "Press Tab to switch tabs • / to search • Vim Keys (HJKL) to navigate • Enter to select")
+            text: L10n.tr("wallpaper_help", "Tab: switch tabs • /: search • HJKL: navigate • Enter: select • D: delete • R: random")
             color: a(Colors.fg, 0.25)
             font { pixelSize: 9; family: "JetBrainsMono Nerd Font" }
+        }
+
+        // Delete confirmation popup
+        Rectangle {
+            id: deletePopup
+            anchors.centerIn: parent
+            width: 280
+            height: 140
+            radius: brCard
+            color: a(Colors.bg, UIState.transparencyEnabled ? 0.95 : 1.0)
+            border.width: 2
+            border.color: Colors.red
+            visible: showDeleteConfirm
+            opacity: showDeleteConfirm ? 1 : 0
+            scale: showDeleteConfirm ? 1 : 0.9
+
+            Behavior on opacity { NumberAnimation { duration: Animations.fast; easing.type: Easing.OutCubic } }
+            Behavior on scale { NumberAnimation { duration: Animations.fast; easing.type: Easing.OutBack; easing.overshoot: Animations.springPower } }
+
+            Column {
+                anchors.centerIn: parent
+                spacing: 16
+
+                Column {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    spacing: 8
+
+                    Text {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: "󰩺"
+                        color: Colors.red
+                        font { pixelSize: 28; family: "JetBrainsMono Nerd Font" }
+                    }
+
+                    Text {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: "Delete this wallpaper?"
+                        color: Colors.fg
+                        font { pixelSize: 13; family: "JetBrainsMono Nerd Font"; bold: true }
+                    }
+
+                    Text {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: pendingDeleteWall ? prettyName(pendingDeleteWall.name) : ""
+                        color: a(Colors.fg, 0.5)
+                        font { pixelSize: 10; family: "JetBrainsMono Nerd Font" }
+                        elide: Text.ElideRight
+                        width: 240
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+                }
+
+                Row {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    spacing: 12
+
+                    Rectangle {
+                        id: yesBtn
+                        width: 80; height: 32
+                        radius: brSm
+                        color: yesMa.containsMouse ? a(Colors.red, 0.2) : a(Colors.fg, 0.05)
+                        border.width: 1
+                        border.color: yesMa.containsMouse ? Colors.red : a(Colors.fg, 0.1)
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "Y - Yes"
+                            color: yesMa.containsMouse ? Colors.red : Colors.fg
+                            font { pixelSize: 10; family: "JetBrainsMono Nerd Font"; bold: true }
+                        }
+
+                        MouseArea {
+                            id: yesMa
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (pendingDeleteWall) {
+                                    deleteProc.deleteWallpaper(pendingDeleteWall)
+                                    showDeleteConfirm = false
+                                    pendingDeleteWall = null
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        id: noBtn
+                        width: 80; height: 32
+                        radius: brSm
+                        color: noMa.containsMouse ? a(Colors.fg, 0.1) : a(Colors.fg, 0.05)
+                        border.width: 1
+                        border.color: noMa.containsMouse ? a(Colors.fg, 0.2) : a(Colors.fg, 0.1)
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "N - No"
+                            color: Colors.fg
+                            font { pixelSize: 10; family: "JetBrainsMono Nerd Font"; bold: true }
+                        }
+
+                        MouseArea {
+                            id: noMa
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                showDeleteConfirm = false
+                                pendingDeleteWall = null
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Help popup with keybinds
+        Rectangle {
+            id: helpPopup
+            anchors.centerIn: parent
+            width: 340
+            height: helpColumn.implicitHeight + 40
+            radius: brCard
+            color: a(Colors.bg, UIState.transparencyEnabled ? 0.95 : 1.0)
+            border.width: 1.5
+            border.color: a(Colors.accent, 0.4)
+            visible: showHelp
+            opacity: showHelp ? 1 : 0
+            scale: showHelp ? 1 : 0.9
+
+            Behavior on opacity { NumberAnimation { duration: Animations.fast; easing.type: Easing.OutCubic } }
+            Behavior on scale { NumberAnimation { duration: Animations.fast; easing.type: Easing.OutBack; easing.overshoot: Animations.springPower } }
+
+            Column {
+                id: helpColumn
+                anchors {
+                    top: parent.top
+                    left: parent.left
+                    right: parent.right
+                    margins: 20
+                }
+                spacing: 14
+
+                // Header
+                Row {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    spacing: 8
+
+                    Text {
+                        text: ""
+                        color: Colors.accent
+                        font { pixelSize: 16; family: "JetBrainsMono Nerd Font" }
+                    }
+
+                    Text {
+                        text: "Keyboard Shortcuts"
+                        color: Colors.fg
+                        font { pixelSize: 14; family: "JetBrainsMono Nerd Font"; bold: true }
+                    }
+                }
+
+                // Separator
+                Rectangle {
+                    width: parent.width
+                    height: 1
+                    color: a(Colors.fg, 0.08)
+                }
+
+                // Common shortcuts section
+                Text {
+                    text: "Common"
+                    color: Colors.accent
+                    font { pixelSize: 10; family: "JetBrainsMono Nerd Font"; bold: true }
+                }
+
+                Column {
+                    width: parent.width
+                    spacing: 6
+
+                    Repeater {
+                        model: [
+                            { key: "Tab", desc: "Switch between Local / Wallhaven" },
+                            { key: "/", desc: "Start search" },
+                            { key: "Esc", desc: "Close popup / clear search" },
+                            { key: "?", desc: "Toggle this help" }
+                        ]
+
+                        Row {
+                            width: parent.width
+                            spacing: 12
+
+                            Rectangle {
+                                width: 50; height: 20
+                                radius: 4
+                                color: a(Colors.accent, 0.12)
+                                border.width: 1
+                                border.color: a(Colors.accent, 0.25)
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: modelData.key
+                                    color: Colors.accent
+                                    font { pixelSize: 9; family: "JetBrainsMono Nerd Font"; bold: true }
+                                }
+                            }
+
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: modelData.desc
+                                color: a(Colors.fg, 0.7)
+                                font { pixelSize: 10; family: "JetBrainsMono Nerd Font" }
+                            }
+                        }
+                    }
+                }
+
+                // Local tab shortcuts
+                Text {
+                    text: "Local Tab"
+                    color: Colors.accent
+                    font { pixelSize: 10; family: "JetBrainsMono Nerd Font"; bold: true }
+                    visible: currentTab === "local"
+                }
+
+                Column {
+                    width: parent.width
+                    spacing: 6
+                    visible: currentTab === "local"
+
+                    Repeater {
+                        model: [
+                            { key: "H / ←", desc: "Previous wallpaper" },
+                            { key: "L / →", desc: "Next wallpaper" },
+                            { key: "Enter", desc: "Apply wallpaper" },
+                            { key: "R", desc: "Random wallpaper" },
+                            { key: "D", desc: "Delete wallpaper" }
+                        ]
+
+                        Row {
+                            width: parent.width
+                            spacing: 12
+
+                            Rectangle {
+                                width: 50; height: 20
+                                radius: 4
+                                color: a(Colors.accent, 0.12)
+                                border.width: 1
+                                border.color: a(Colors.accent, 0.25)
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: modelData.key
+                                    color: Colors.accent
+                                    font { pixelSize: 9; family: "JetBrainsMono Nerd Font"; bold: true }
+                                }
+                            }
+
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: modelData.desc
+                                color: a(Colors.fg, 0.7)
+                                font { pixelSize: 10; family: "JetBrainsMono Nerd Font" }
+                            }
+                        }
+                    }
+                }
+
+                // Online tab shortcuts
+                Text {
+                    text: "Wallhaven Tab"
+                    color: Colors.accent
+                    font { pixelSize: 10; family: "JetBrainsMono Nerd Font"; bold: true }
+                    visible: currentTab === "online"
+                }
+
+                Column {
+                    width: parent.width
+                    spacing: 6
+                    visible: currentTab === "online"
+
+                    Repeater {
+                        model: [
+                            { key: "HJKL", desc: "Navigate grid" },
+                            { key: "Enter", desc: "Download wallpaper" },
+                            { key: "Scroll", desc: "Infinite scroll loads more" },
+                            { key: "F", desc: "Filters panel" }
+                        ]
+
+                        Row {
+                            width: parent.width
+                            spacing: 12
+
+                            Rectangle {
+                                width: 50; height: 20
+                                radius: 4
+                                color: a(Colors.accent, 0.12)
+                                border.width: 1
+                                border.color: a(Colors.accent, 0.25)
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: modelData.key
+                                    color: Colors.accent
+                                    font { pixelSize: 9; family: "JetBrainsMono Nerd Font"; bold: true }
+                                }
+                            }
+
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: modelData.desc
+                                color: a(Colors.fg, 0.7)
+                                font { pixelSize: 10; family: "JetBrainsMono Nerd Font" }
+                            }
+                        }
+                    }
+                }
+
+                // Footer hint
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: "Press ? or Esc to close"
+                    color: a(Colors.fg, 0.35)
+                    font { pixelSize: 9; family: "JetBrainsMono Nerd Font" }
+                }
+            }
+        }
+
+        // Filters panel
+        Rectangle {
+            id: filtersPopup
+            anchors.centerIn: parent
+            width: 420
+            height: filtersColumn.implicitHeight + 40
+            radius: brCard
+            color: a(Colors.bg, UIState.transparencyEnabled ? 0.95 : 1.0)
+            border.width: 1.5
+            border.color: a(Colors.accent, 0.4)
+            visible: showFilters && currentTab === "online"
+            opacity: showFilters ? 1 : 0
+            scale: showFilters ? 1 : 0.9
+
+            Behavior on opacity { NumberAnimation { duration: Animations.fast; easing.type: Easing.OutCubic } }
+            Behavior on scale { NumberAnimation { duration: Animations.fast; easing.type: Easing.OutBack; easing.overshoot: Animations.springPower } }
+
+            Flickable {
+                anchors.fill: parent
+                anchors.margins: 20
+                contentHeight: filtersColumn.implicitHeight
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
+
+                Column {
+                    id: filtersColumn
+                    width: parent.width
+                    spacing: 14
+
+                    // Header
+                    Row {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        spacing: 8
+
+                        Text {
+                            text: ""
+                            color: Colors.accent
+                            font { pixelSize: 16; family: "JetBrainsMono Nerd Font" }
+                        }
+
+                        Text {
+                            text: "Search Filters"
+                            color: Colors.fg
+                            font { pixelSize: 14; family: "JetBrainsMono Nerd Font"; bold: true }
+                        }
+                    }
+
+                    Rectangle { width: parent.width; height: 1; color: a(Colors.fg, 0.08) }
+
+                    // Categories
+                    Text { text: "Categories"; color: Colors.accent; font { pixelSize: 10; family: "JetBrainsMono Nerd Font"; bold: true } }
+                    Row {
+                        spacing: 8
+                        Repeater {
+                            model: [
+                                { label: "General", bit: 0 },
+                                { label: "Anime", bit: 1 },
+                                { label: "People", bit: 2 }
+                            ]
+                            Rectangle {
+                                width: 90; height: 28
+                                radius: brSm
+                                color: (parseInt(whCategories[parseInt(modelData.bit)] || "0") === 1) ? a(Colors.accent, 0.2) : a(Colors.fg, 0.05)
+                                border.width: 1
+                                border.color: (parseInt(whCategories[parseInt(modelData.bit)] || "0") === 1) ? Colors.accent : a(Colors.fg, 0.1)
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: modelData.label
+                                    color: (parseInt(whCategories[parseInt(modelData.bit)] || "0") === 1) ? Colors.accent : a(Colors.fg, 0.6)
+                                    font { pixelSize: 10; family: "JetBrainsMono Nerd Font"; bold: true }
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        var bits = whCategories.split("")
+                                        bits[parseInt(modelData.bit)] = bits[parseInt(modelData.bit)] === "1" ? "0" : "1"
+                                        whCategories = bits.join("")
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Sorting
+                    Text { text: "Sort By"; color: Colors.accent; font { pixelSize: 10; family: "JetBrainsMono Nerd Font"; bold: true } }
+                    Row {
+                        spacing: 6
+                        Repeater {
+                            model: [
+                                { label: "Relevance", value: "relevance" },
+                                { label: "Date", value: "date_added" },
+                                { label: "Views", value: "views" },
+                                { label: "Favorites", value: "favorites" },
+                                { label: "Toplist", value: "toplist" },
+                                { label: "Random", value: "random" }
+                            ]
+                            Rectangle {
+                                width: 60; height: 28
+                                radius: brSm
+                                color: whSorting === modelData.value ? a(Colors.accent, 0.2) : a(Colors.fg, 0.05)
+                                border.width: 1
+                                border.color: whSorting === modelData.value ? Colors.accent : a(Colors.fg, 0.1)
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: modelData.label
+                                    color: whSorting === modelData.value ? Colors.accent : a(Colors.fg, 0.6)
+                                    font { pixelSize: 9; family: "JetBrainsMono Nerd Font"; bold: true }
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: whSorting = modelData.value
+                                }
+                            }
+                        }
+                    }
+
+                    // Top Range (only visible when toplist is selected)
+                    Column {
+                        visible: whSorting === "toplist"
+                        spacing: 6
+                        width: parent.width
+
+                        Text { text: "Top Range"; color: Colors.accent; font { pixelSize: 10; family: "JetBrainsMono Nerd Font"; bold: true } }
+                        Row {
+                            spacing: 6
+                            Repeater {
+                                model: [
+                                    { label: "1 Day", value: "1d" },
+                                    { label: "3 Days", value: "3d" },
+                                    { label: "1 Week", value: "1w" },
+                                    { label: "1 Month", value: "1M" },
+                                    { label: "3 Months", value: "3M" },
+                                    { label: "6 Months", value: "6M" },
+                                    { label: "1 Year", value: "1y" }
+                                ]
+                                Rectangle {
+                                    width: 50; height: 26
+                                    radius: brSm
+                                    color: whTopRange === modelData.value ? a(Colors.accent, 0.2) : a(Colors.fg, 0.05)
+                                    border.width: 1
+                                    border.color: whTopRange === modelData.value ? Colors.accent : a(Colors.fg, 0.1)
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: modelData.label
+                                        color: whTopRange === modelData.value ? Colors.accent : a(Colors.fg, 0.6)
+                                        font { pixelSize: 8; family: "JetBrainsMono Nerd Font"; bold: true }
+                                    }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: whTopRange = modelData.value
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Min Resolution
+                    Text { text: "Min Resolution"; color: Colors.accent; font { pixelSize: 10; family: "JetBrainsMono Nerd Font"; bold: true } }
+                    Row {
+                        spacing: 6
+                        Repeater {
+                            model: [
+                                { label: "Any", value: "" },
+                                { label: "1080p", value: "1920x1080" },
+                                { label: "1440p", value: "2560x1440" },
+                                { label: "4K", value: "3840x2160" },
+                                { label: "8K", value: "7680x4320" }
+                            ]
+                            Rectangle {
+                                width: 60; height: 26
+                                radius: brSm
+                                color: whAtleast === modelData.value ? a(Colors.accent, 0.2) : a(Colors.fg, 0.05)
+                                border.width: 1
+                                border.color: whAtleast === modelData.value ? Colors.accent : a(Colors.fg, 0.1)
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: modelData.label
+                                    color: whAtleast === modelData.value ? Colors.accent : a(Colors.fg, 0.6)
+                                    font { pixelSize: 9; family: "JetBrainsMono Nerd Font"; bold: true }
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: whAtleast = modelData.value
+                                }
+                            }
+                        }
+                    }
+
+                    // Aspect Ratio
+                    Text { text: "Aspect Ratio"; color: Colors.accent; font { pixelSize: 10; family: "JetBrainsMono Nerd Font"; bold: true } }
+                    Row {
+                        spacing: 6
+                        Repeater {
+                            model: [
+                                { label: "Any", value: "" },
+                                { label: "16:9", value: "16x9" },
+                                { label: "16:10", value: "16x10" },
+                                { label: "21:9", value: "21x9" },
+                                { label: "32:9", value: "32x9" },
+                                { label: "4:3", value: "4x3" },
+                                { label: "5:4", value: "5x4" }
+                            ]
+                            Rectangle {
+                                width: 50; height: 26
+                                radius: brSm
+                                color: whRatios === modelData.value ? a(Colors.accent, 0.2) : a(Colors.fg, 0.05)
+                                border.width: 1
+                                border.color: whRatios === modelData.value ? Colors.accent : a(Colors.fg, 0.1)
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: modelData.label
+                                    color: whRatios === modelData.value ? Colors.accent : a(Colors.fg, 0.6)
+                                    font { pixelSize: 9; family: "JetBrainsMono Nerd Font"; bold: true }
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: whRatios = modelData.value
+                                }
+                            }
+                        }
+                    }
+
+                    // File Type
+                    Text { text: "File Type"; color: Colors.accent; font { pixelSize: 10; family: "JetBrainsMono Nerd Font"; bold: true } }
+                    Row {
+                        spacing: 6
+                        Repeater {
+                            model: [
+                                { label: "Any", value: "" },
+                                { label: "PNG", value: "png" },
+                                { label: "JPG", value: "jpg" },
+                                { label: "WEBP", value: "webp" }
+                            ]
+                            Rectangle {
+                                width: 50; height: 26
+                                radius: brSm
+                                color: whTypes === modelData.value ? a(Colors.accent, 0.2) : a(Colors.fg, 0.05)
+                                border.width: 1
+                                border.color: whTypes === modelData.value ? Colors.accent : a(Colors.fg, 0.1)
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: modelData.label
+                                    color: whTypes === modelData.value ? Colors.accent : a(Colors.fg, 0.6)
+                                    font { pixelSize: 9; family: "JetBrainsMono Nerd Font"; bold: true }
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: whTypes = modelData.value
+                                }
+                            }
+                        }
+                    }
+
+                    // Apply button
+                    Rectangle {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        width: 120; height: 32
+                        radius: brSm
+                        color: applyFiltersMa.containsMouse ? a(Colors.accent, 0.3) : a(Colors.accent, 0.15)
+                        border.width: 1.5
+                        border.color: Colors.accent
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "Apply Filters"
+                            color: Colors.accent
+                            font { pixelSize: 11; family: "JetBrainsMono Nerd Font"; bold: true }
+                        }
+
+                        MouseArea {
+                            id: applyFiltersMa
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                showFilters = false
+                                if (keyInput.text.trim().length > 0) {
+                                    loadingSearch = true
+                                    searchProc.runSearch(keyInput.text.trim(), 1)
+                                }
+                            }
+                        }
+                    }
+
+                    // Footer
+                    Text {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: "Press F to toggle filters"
+                        color: a(Colors.fg, 0.35)
+                        font { pixelSize: 9; family: "JetBrainsMono Nerd Font" }
+                    }
+                }
+            }
         }
     }
 }
