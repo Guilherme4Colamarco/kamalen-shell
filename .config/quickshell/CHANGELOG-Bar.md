@@ -177,10 +177,44 @@ PillButton {
 
 ---
 
+## Fase 9 — Aba "Mango" no Dashboard (Phase 2)
+**Data:** 6 jul 2026
+
+**Objetivo:** Refatorar o Dashboard monolítico em tabs separadas e adicionar uma aba completa para configurar o MangoWM visualmente.
+
+**Solução:**
+1. **Refatoração do `Dashboard.qml` (~1100 → ~650 linhas)**
+   - Replaced cinco inline `Column`s por `StackLayout`
+   - Array de tabs expandido para 6 entradas (Quick, Display, Media, System, Look, Mango)
+   - Lógica compartilhada (uptime, power mode, avatar picker, helpers) permaneceu no Dashboard
+2. **Novos arquivos em `tabs/`**
+   - `QuickTab.qml`, `DisplayTab.qml`, `MediaTab.qml`, `SystemTab.qml`, `LookTab.qml`, `MangoTab.qml`
+   - Cada tab encapsula seu próprio estado e processos
+3. **Componentes reutilizáveis em `components/`**
+   - `ConfigSection` — seção colapsável
+   - `ConfigSlider` — slider com apply no release
+   - `ConfigToggle` — switch
+   - `ConfigSpinner` — ciclo de valores
+   - `ConfigColorRow` — picker de cor no formato Mango (`0xRRGGBBAA`)
+   - `TileButton`, `InfoRow`, `SliderRow` — extraídos do Dashboard
+4. **Aba `MangoTab.qml`**
+   - Scrollável (`Flickable` + `Column`)
+   - Seções colapsáveis: Tiling, Blur, Shadows, Opacity, Input, Focus, Animations, Colors
+   - Todos os controles ligados a `MangoConfig` e aplicam ao vivo via `MangoConfig.set()`
+5. **`qmldir` atualizado**
+   - Registrados todos os novos tabs e componentes
+
+**Resultado:**
+- Dashboard modular e mais fácil de manter
+- Aba "Mango" funcional com aplicação ao vivo de gaps, borders, blur, shadows, opacity, input, focus, animations e colors
+- QuickShell recarregado e validado sem erros de QML
+
+---
+
 ## Próximas fases (planejadas)
 
 - **Fase 4:** Padronizar hover (eliminar underline restante)
 - **Fase 5:** Tooltips em todos os botões
 - **Fase 6:** Clock com data opcional (hover expande)
 - **Fase 7:** Mais estilos de barra (blur, liquid, TUI, ctOS)
-- **Fase 9:** Aba "Mango" no Dashboard com sliders/toggles para todas as opções
+- **Fase 10:** Editores de binds, window rules e monitors no Dashboard

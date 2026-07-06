@@ -42,6 +42,11 @@ Singleton {
     property int  mangoShadowPosX: 0
     property int  mangoShadowPosY: 6
 
+    // Layout
+    property bool mangoSmartGaps: false
+    property real mangoDefaultMfact: 0.55
+    property int  mangoDefaultNmaster: 1
+
     // Input
     property int  mangoRepeatRate: 50
     property int  mangoRepeatDelay: 300
@@ -49,8 +54,45 @@ Singleton {
     property bool mangoTrackpadNaturalScroll: false
 
     // Focus
+    property bool mangoFocusOnActivate: true
     property bool mangoSloppyFocus: true
     property bool mangoWarpCursor: true
+    property bool mangoFocusCrossMonitor: false
+    property bool mangoFocusCrossTag: false
+    property bool mangoEnableFloatingSnap: true
+    property int  mangoSnapDistance: 30
+    property bool mangoDragTileToTile: true
+
+    // Animations
+    property bool mangoAnimations: true
+    property bool mangoLayerAnimations: true
+    property bool mangoAnimationFadeIn: true
+    property bool mangoAnimationFadeOut: true
+    property int  mangoAnimationDirection: 1
+    property int  mangoAnimationDurationOpen: 350
+    property int  mangoAnimationDurationClose: 220
+    property int  mangoAnimationDurationMove: 320
+    property int  mangoAnimationDurationTag: 380
+    property int  mangoAnimationDurationFocus: 180
+    property real mangoZoomInitialRatio: 0.82
+    property real mangoZoomEndRatio: 1.02
+    property real mangoFadeinBeginOpacity: 0.0
+    property real mangoFadeoutBeginOpacity: 1.0
+    property string mangoAnimationTypeOpen: "slide"
+    property string mangoAnimationTypeClose: "slide"
+    property string mangoLayerAnimationTypeOpen: "slide"
+    property string mangoLayerAnimationTypeClose: "slide"
+
+    // Colors (stored as MangoWM hex strings like "0xaabbccdd")
+    property string mangoRootColor: "0x000000ff"
+    property string mangoBorderColor: "0x75704aff"
+    property string mangoFocusColor: "0xd0b883ff"
+    property string mangoUrgentColor: "0xb68e54ff"
+    property string mangoScratchpadColor: "0xd0b883ff"
+    property string mangoGlobalColor: "0xd0b883ff"
+    property string mangoOverlayColor: "0x84b654ff"
+    property string mangoMaximizescreenColor: "0xb69f54ff"
+    property string mangoShadowColor: "0x00000040"
 
     // -------------------------------------------------------------------------
     // Internal state
@@ -60,7 +102,6 @@ Singleton {
     property var    _data: ({})        // grouped JSON payload from get-all
     property bool   _ready: false
 
-    // Maps MangoWM config keys to QML property names.
     property var keyToProperty: ({
         // gaps
         "gappih": "mangoGappih",
@@ -94,6 +135,11 @@ Singleton {
         "shadows_position_x": "mangoShadowPosX",
         "shadows_position_y": "mangoShadowPosY",
 
+        // layout
+        "smartgaps": "mangoSmartGaps",
+        "default_mfact": "mangoDefaultMfact",
+        "default_nmaster": "mangoDefaultNmaster",
+
         // input-keyboard
         "repeat_rate": "mangoRepeatRate",
         "repeat_delay": "mangoRepeatDelay",
@@ -103,8 +149,45 @@ Singleton {
         "trackpad_natural_scrolling": "mangoTrackpadNaturalScroll",
 
         // focus
+        "focus_on_activate": "mangoFocusOnActivate",
         "sloppyfocus": "mangoSloppyFocus",
-        "warpcursor": "mangoWarpCursor"
+        "warpcursor": "mangoWarpCursor",
+        "focus_cross_monitor": "mangoFocusCrossMonitor",
+        "focus_cross_tag": "mangoFocusCrossTag",
+        "enable_floating_snap": "mangoEnableFloatingSnap",
+        "snap_distance": "mangoSnapDistance",
+        "drag_tile_to_tile": "mangoDragTileToTile",
+
+        // animations
+        "animations": "mangoAnimations",
+        "layer_animations": "mangoLayerAnimations",
+        "animation_fade_in": "mangoAnimationFadeIn",
+        "animation_fade_out": "mangoAnimationFadeOut",
+        "tag_animation_direction": "mangoAnimationDirection",
+        "animation_duration_open": "mangoAnimationDurationOpen",
+        "animation_duration_close": "mangoAnimationDurationClose",
+        "animation_duration_move": "mangoAnimationDurationMove",
+        "animation_duration_tag": "mangoAnimationDurationTag",
+        "animation_duration_focus": "mangoAnimationDurationFocus",
+        "zoom_initial_ratio": "mangoZoomInitialRatio",
+        "zoom_end_ratio": "mangoZoomEndRatio",
+        "fadein_begin_opacity": "mangoFadeinBeginOpacity",
+        "fadeout_begin_opacity": "mangoFadeoutBeginOpacity",
+        "animation_type_open": "mangoAnimationTypeOpen",
+        "animation_type_close": "mangoAnimationTypeClose",
+        "layer_animation_type_open": "mangoLayerAnimationTypeOpen",
+        "layer_animation_type_close": "mangoLayerAnimationTypeClose",
+
+        // colors
+        "rootcolor": "mangoRootColor",
+        "bordercolor": "mangoBorderColor",
+        "focuscolor": "mangoFocusColor",
+        "urgentcolor": "mangoUrgentColor",
+        "scratchpadcolor": "mangoScratchpadColor",
+        "globalcolor": "mangoGlobalColor",
+        "overlaycolor": "mangoOverlayColor",
+        "maximizescreencolor": "mangoMaximizescreenColor",
+        "shadowscolor": "mangoShadowColor"
     })
 
     property var propertyToKey: ({
@@ -135,14 +218,53 @@ Singleton {
         "mangoShadowPosX": "shadows_position_x",
         "mangoShadowPosY": "shadows_position_y",
 
+        "mangoSmartGaps": "smartgaps",
+        "mangoDefaultMfact": "default_mfact",
+        "mangoDefaultNmaster": "default_nmaster",
+
         "mangoRepeatRate": "repeat_rate",
         "mangoRepeatDelay": "repeat_delay",
 
         "mangoTapToClick": "tap_to_click",
         "mangoTrackpadNaturalScroll": "trackpad_natural_scrolling",
 
+        "mangoFocusOnActivate": "focus_on_activate",
         "mangoSloppyFocus": "sloppyfocus",
-        "mangoWarpCursor": "warpcursor"
+        "mangoWarpCursor": "warpcursor",
+        "mangoFocusCrossMonitor": "focus_cross_monitor",
+        "mangoFocusCrossTag": "focus_cross_tag",
+        "mangoEnableFloatingSnap": "enable_floating_snap",
+        "mangoSnapDistance": "snap_distance",
+        "mangoDragTileToTile": "drag_tile_to_tile",
+
+        "mangoAnimations": "animations",
+        "mangoLayerAnimations": "layer_animations",
+        "mangoAnimationFadeIn": "animation_fade_in",
+        "mangoAnimationFadeOut": "animation_fade_out",
+        "mangoAnimationDirection": "tag_animation_direction",
+        "mangoAnimationDurationOpen": "animation_duration_open",
+        "mangoAnimationDurationClose": "animation_duration_close",
+        "mangoAnimationDurationMove": "animation_duration_move",
+        "mangoAnimationDurationTag": "animation_duration_tag",
+        "mangoAnimationDurationFocus": "animation_duration_focus",
+        "mangoZoomInitialRatio": "zoom_initial_ratio",
+        "mangoZoomEndRatio": "zoom_end_ratio",
+        "mangoFadeinBeginOpacity": "fadein_begin_opacity",
+        "mangoFadeoutBeginOpacity": "fadeout_begin_opacity",
+        "mangoAnimationTypeOpen": "animation_type_open",
+        "mangoAnimationTypeClose": "animation_type_close",
+        "mangoLayerAnimationTypeOpen": "layer_animation_type_open",
+        "mangoLayerAnimationTypeClose": "layer_animation_type_close",
+
+        "mangoRootColor": "rootcolor",
+        "mangoBorderColor": "bordercolor",
+        "mangoFocusColor": "focuscolor",
+        "mangoUrgentColor": "urgentcolor",
+        "mangoScratchpadColor": "scratchpadcolor",
+        "mangoGlobalColor": "globalcolor",
+        "mangoOverlayColor": "overlaycolor",
+        "mangoMaximizescreenColor": "maximizescreencolor",
+        "mangoShadowColor": "shadowscolor"
     })
 
     property var keyToModule: ({
@@ -173,14 +295,53 @@ Singleton {
         "shadows_position_x": "shadows",
         "shadows_position_y": "shadows",
 
+        "smartgaps": "layout",
+        "default_mfact": "layout",
+        "default_nmaster": "layout",
+
         "repeat_rate": "input-keyboard",
         "repeat_delay": "input-keyboard",
 
         "tap_to_click": "input-trackpad",
         "trackpad_natural_scrolling": "input-trackpad",
 
+        "focus_on_activate": "focus",
         "sloppyfocus": "focus",
-        "warpcursor": "focus"
+        "warpcursor": "focus",
+        "focus_cross_monitor": "focus",
+        "focus_cross_tag": "focus",
+        "enable_floating_snap": "focus",
+        "snap_distance": "focus",
+        "drag_tile_to_tile": "focus",
+
+        "animations": "animations",
+        "layer_animations": "animations",
+        "animation_fade_in": "animations",
+        "animation_fade_out": "animations",
+        "tag_animation_direction": "animations",
+        "animation_duration_open": "animations",
+        "animation_duration_close": "animations",
+        "animation_duration_move": "animations",
+        "animation_duration_tag": "animations",
+        "animation_duration_focus": "animations",
+        "zoom_initial_ratio": "animations",
+        "zoom_end_ratio": "animations",
+        "fadein_begin_opacity": "animations",
+        "fadeout_begin_opacity": "animations",
+        "animation_type_open": "animations",
+        "animation_type_close": "animations",
+        "layer_animation_type_open": "animations",
+        "layer_animation_type_close": "animations",
+
+        "rootcolor": "colors",
+        "bordercolor": "colors",
+        "focuscolor": "colors",
+        "urgentcolor": "colors",
+        "scratchpadcolor": "colors",
+        "globalcolor": "colors",
+        "overlaycolor": "colors",
+        "maximizescreencolor": "colors",
+        "shadowscolor": "colors"
     })
 
     property var _boolKeys: ({
@@ -192,10 +353,20 @@ Singleton {
         "shadows": true,
         "layer_shadows": true,
         "shadow_only_floating": true,
+        "smartgaps": true,
         "tap_to_click": true,
         "trackpad_natural_scrolling": true,
+        "focus_on_activate": true,
         "sloppyfocus": true,
-        "warpcursor": true
+        "warpcursor": true,
+        "focus_cross_monitor": true,
+        "focus_cross_tag": true,
+        "enable_floating_snap": true,
+        "drag_tile_to_tile": true,
+        "animations": true,
+        "layer_animations": true,
+        "animation_fade_in": true,
+        "animation_fade_out": true
     })
 
     // -------------------------------------------------------------------------

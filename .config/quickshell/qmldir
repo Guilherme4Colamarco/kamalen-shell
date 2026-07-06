@@ -23,3 +23,17 @@ MIcon 1.0 MIcon.qml
 AudioIndicator 1.0 AudioIndicator.qml
 HandleStyleSwitch 1.0 HandleStyleSwitch.qml
 PillButton 1.0 PillButton.qml
+ConfigSection 1.0 components/ConfigSection.qml
+ConfigSlider 1.0 components/ConfigSlider.qml
+ConfigToggle 1.0 components/ConfigToggle.qml
+ConfigSpinner 1.0 components/ConfigSpinner.qml
+ConfigColorRow 1.0 components/ConfigColorRow.qml
+TileButton 1.0 components/TileButton.qml
+InfoRow 1.0 components/InfoRow.qml
+SliderRow 1.0 components/SliderRow.qml
+QuickTab 1.0 tabs/QuickTab.qml
+DisplayTab 1.0 tabs/DisplayTab.qml
+MediaTab 1.0 tabs/MediaTab.qml
+SystemTab 1.0 tabs/SystemTab.qml
+LookTab 1.0 tabs/LookTab.qml
+MangoTab 1.0 tabs/MangoTab.qml
