@@ -95,9 +95,45 @@ PillButton {
 
 ---
 
+---
+
+## Fase 3 — Pill/island bar mode + Dashboard tabs
+**Data:** 6 jul 2026
+
+**Problema:**
+- Barra só tinha estilos full-width (`fixed`, `floating`, `autohide`)
+- Usuário queria um modo "pill/island" centralizado, compacto, como no reddit r/hyprland
+- Dashboard era uma coluna monolítica; difícil achar configurações
+
+**Solução:**
+1. **Bar.qml — modo `pill`**
+   - Novo `barMode: "pill"` (ciclo: fixed → floating → autohide → pill)
+   - `PillBarContent` component: pill centralizado, largura ajustada ao conteúdo
+   - Layout: bateria + WiFi | tags 1-5 | BT + volume + clock + dashboard
+   - Fontes e espaçamento reduzidos; tags menores (14×14)
+   - Background com `radius: 14`, borda sutil, animação de entrada
+2. **Dashboard.qml — abas**
+   - Tab bar com 5 abas: Quick, Display, Media, System, Look
+   - **Quick:** quick-settings grid + notificações
+   - **Display:** brilho, blur, border radius
+   - **Media:** volume, animações
+   - **System:** uptime, power mode, bar mode
+   - **Look:** tema dark/light, transparência, avatar
+   - Novos componentes reutilizáveis: `TileButton`, `InfoRow`
+3. **UIState.qml**
+   - `barMode` agora aceita `"pill"`
+   - save/load atualizados
+
+**Resultado:**
+- Estilo pill/island funcional e centralizado
+- Dashboard organizado por categorias
+- Ciclo de bar mode inclui pill
+
+---
+
 ## Próximas fases (planejadas)
 
-- **Fase 3:** Agrupar right cluster com separators sutis
 - **Fase 4:** Padronizar hover (eliminar underline restante)
 - **Fase 5:** Tooltips em todos os botões
 - **Fase 6:** Clock com data opcional (hover expande)
+- **Fase 7:** Mais estilos de barra (blur, liquid, TUI, ctOS)

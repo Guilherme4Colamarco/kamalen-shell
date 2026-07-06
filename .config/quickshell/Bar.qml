@@ -799,6 +799,251 @@ Scope {
         }
     }
 
+    component PillBarContent: Item {
+        id: pillContent
+
+        implicitWidth:  pillRow.implicitWidth
+        implicitHeight: pillRow.implicitHeight
+        anchors.centerIn: parent
+
+        Row {
+            id: pillRow
+            anchors.centerIn: parent
+            spacing: 8
+
+            // ── left: battery + wifi ──
+            Row {
+                spacing: 6
+                anchors.verticalCenter: parent.verticalCenter
+                visible: hasBattery
+
+                Text {
+                    text:    batIcon()
+                    color:   batColor()
+                    font { pixelSize: 12; family: "JetBrainsMono Nerd Font" }
+                    opacity: plug && !batFull ? pulse : 1
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                Text {
+                    text:  bat + "%"
+                    color: batColor()
+                    font { pixelSize: 9; family: "JetBrainsMono Nerd Font" }
+                    anchors.verticalCenter: parent.verticalCenter
+                    opacity: bat <= 30 || plug ? 1 : 0.55
+                }
+            }
+
+            PillButton {
+                icon: wifi ? "󰤨" : "󰤭"
+                iconSize: 11
+                active: wifi
+                activeColor: Colors.accent
+                inactiveColor: wifiMa_hov ? Colors.red : Colors.fg
+                property bool wifiMa_hov: containsMouse && !wifi
+                onClicked: wifiToggle.running = true
+            }
+
+            // ── center: tags ──
+            Row {
+                spacing: 2
+                anchors.verticalCenter: parent.verticalCenter
+
+                Repeater {
+                    model: 5
+
+                    Item {
+                        required property int index
+                        property bool active: tag === index + 1
+                        property bool used:   occ[index]
+                        property bool show:   active || used
+                        property bool hov:    tagMa.containsMouse
+
+                        width:  show ? pill.width + 2 : 0
+                        height: 18
+                        clip:   true
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        Behavior on width { NumberAnimation { duration: Animations.medium; easing.type: Easing.OutBack; easing.overshoot: 1.6 } }
+
+                        Rectangle {
+                            id: pill
+                            width:  tagNum.implicitWidth + 10
+                            height: 14
+                            radius: 7
+                            anchors.centerIn: parent
+                            color: active ? a(Colors.accent, 0.12) : hov ? a(Colors.fg, 0.045) : "transparent"
+                            border.width: active ? 1 : 0
+                            border.color: a(Colors.accent, 0.15)
+                            Behavior on color { ColorAnimation { duration: Animations.fast } }
+
+                            Text {
+                                id: tagNum
+                                anchors.centerIn: parent
+                                text: index + 1
+                                color: active ? a(Colors.accent, 0.85) : hov ? a(Colors.fg, 0.70) : a(Colors.fg, 0.40)
+                                font { pixelSize: 8; family: "JetBrainsMono Nerd Font"; bold: active }
+                                Behavior on color { ColorAnimation { duration: Animations.fast } }
+                            }
+                        }
+
+                        MouseArea {
+                            id: tagMa
+                            anchors.fill: parent
+                            anchors.margins: -3
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                tagSet.command = ["mmsg", "dispatch", "view," + String(index + 1)]
+                                tagSet.running = true
+                            }
+                            onWheel: (wheel) => {
+                                var newTag = (wheel.angleDelta.y > 0) ? (tag - 1) : (tag + 1)
+                                if (newTag < 1) newTag = 5
+                                if (newTag > 5) newTag = 1
+                                tagSet.command = ["mmsg", "dispatch", "view," + String(newTag)]
+                                tagSet.running = true
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ── right: volume + clock + dashboard ──
+            Row {
+                spacing: 6
+                anchors.verticalCenter: parent.verticalCenter
+
+                PillButton {
+                    icon: bt ? "󰂯" : "󰂲"
+                    iconSize: 10
+                    active: bt
+                    activeOpacity: 0.55
+                    inactiveColor: btMa_hov ? Colors.red : Colors.fg
+                    property bool btMa_hov: containsMouse && !bt
+                    activeColor: Colors.fg
+                    onClicked: btToggle.running = true
+                }
+
+                Item {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width:  volPillRow.implicitWidth
+                    height: volPillRow.implicitHeight
+
+                    Row {
+                        id: volPillRow
+                        spacing: 4
+                        anchors.verticalCenter: parent.verticalCenter
+                        scale: volMa.containsMouse ? Animations.hoverScale : 1.0
+                        transformOrigin: Item.Center
+                        Behavior on scale { NumberAnimation { duration: Animations.fast; easing.type: Easing.OutCubic } }
+
+                        Text {
+                            text:  volIcon()
+                            color: UIState.muted ? a(Colors.fg, 0.18) : volMa.containsMouse ? a(Colors.fg, 0.85) : a(Colors.fg, 0.60)
+                            font { pixelSize: 11; family: "JetBrainsMono Nerd Font" }
+                            anchors.verticalCenter: parent.verticalCenter
+                            Behavior on color { ColorAnimation { duration: Animations.fast } }
+                        }
+
+                        Text {
+                            text:  UIState.volume
+                            color: UIState.muted ? a(Colors.fg, 0.18) : volMa.containsMouse ? a(Colors.fg, 0.85) : a(Colors.fg, 0.45)
+                            font { pixelSize: 8; family: "JetBrainsMono Nerd Font" }
+                            anchors.verticalCenter: parent.verticalCenter
+                            Behavior on color { ColorAnimation { duration: Animations.fast } }
+                        }
+                    }
+
+                    MouseArea {
+                        id: volMa
+                        anchors.fill: parent
+                        anchors.margins: -6
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: volToggle.running = true
+                        onWheel: function(wheel) { adjustVol(wheel.angleDelta.y > 0 ? 5 : -5) }
+                    }
+                }
+
+                Item {
+                    width:  clockTextPill.implicitWidth
+                    height: 18
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    Text {
+                        id: clockTextPill
+                        anchors.centerIn: parent
+                        text: time
+                        color: clockMaPill.containsMouse ? a(Colors.accent, 0.85) : a(Colors.fg, 0.70)
+                        font { pixelSize: 9; family: "JetBrainsMono Nerd Font"; letterSpacing: 0.5 }
+                        Behavior on color { ColorAnimation { duration: Animations.fast } }
+                    }
+
+                    MouseArea {
+                        id: clockMaPill
+                        anchors.fill: parent
+                        anchors.margins: -4
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: UIState.toggleDropdown("calendar")
+                    }
+                }
+
+                PillButton {
+                    icon: "󰺔"
+                    iconSize: 10
+                    active: UIState.activeDropdown === "dashboard"
+                    activeColor: Colors.accent
+                    hoverColor: Colors.accent
+                    property bool lit: containsMouse || UIState.activeDropdown === "dashboard"
+                    onClicked: UIState.toggleDropdown("dashboard")
+                }
+            }
+        }
+    }
+
+    Variants {
+        model: Quickshell.screens
+
+        PanelWindow {
+            property var modelData
+            screen: modelData
+            visible: UIState.barMode === "pill"
+            anchors { top: true; left: true; right: true }
+            implicitHeight: 44
+            color: "transparent"
+            exclusionMode: ExclusionMode.Auto
+            WlrLayershell.layer: WlrLayer.Top
+            WlrLayershell.namespace: "bar-pill"
+
+            Rectangle {
+                id: pillBg
+                anchors.top: parent.top
+                anchors.topMargin:    barReady ? 8 : 0
+                anchors.horizontalCenter: parent.horizontalCenter
+                width:  pillLayout.implicitWidth + 20
+                height: 28
+                radius: 14
+                color:  a(Colors.bg, UIState.barOpacity)
+                border.width: 1
+                border.color: a(Colors.fg, 0.06)
+                opacity: barReady ? 1 : 0
+                scale:   barReady ? 1 : 0.9
+
+                Behavior on anchors.topMargin { NumberAnimation { duration: Animations.xslow; easing.type: Easing.OutExpo } }
+                Behavior on opacity { NumberAnimation { duration: Animations.slow; easing.type: Easing.OutCubic } }
+                Behavior on scale   { NumberAnimation { duration: Animations.slow; easing.type: Easing.OutBack; easing.overshoot: Animations.springPower } }
+                Behavior on color   { ColorAnimation  { duration: Animations.slow } }
+
+                PillBarContent {
+                    id: pillLayout
+                    anchors.centerIn: parent
+                }
+            }
+        }
+    }
+
     // ── tray popup (styled menu) ─────────────────────────────────────
     TrayPopup {}
 }

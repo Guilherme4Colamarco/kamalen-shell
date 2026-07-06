@@ -36,6 +36,15 @@ PanelWindow {
     property bool powerMenu:   false
     property var expandedGroups: ({})
 
+    property int activeTab: 0
+    property var tabs: [
+        { icon: "󰍜", label: L10n.tr("quick", "Quick") },
+        { icon: "󰍹", label: L10n.tr("display", "Display") },
+        { icon: "󰎆", label: L10n.tr("media", "Media") },
+        { icon: "󰒓", label: L10n.tr("system", "System") },
+        { icon: "󰏘", label: L10n.tr("appearance", "Look") }
+    ]
+
     property bool wifiOn: true
     property bool btOn:   false
     property bool nightLightOn: false
@@ -257,20 +266,22 @@ PanelWindow {
     }
 
     function cycleBarMode() {
-        var modes = ["fixed", "floating", "autohide"]
+        var modes = ["fixed", "floating", "autohide", "pill"]
         var idx   = modes.indexOf(UIState.barMode)
         var next  = modes[(idx + 1) % modes.length]
         UIState.setBarMode(next)
     }
 
     function getBarModeIcon() {
-        if (UIState.barMode === "floating")  return ""
-        if (UIState.barMode === "autohide") return ""
-        return ""
+        if (UIState.barMode === "pill")     return "󰑯"
+        if (UIState.barMode === "floating") return "󰉈"
+        if (UIState.barMode === "autohide") return "󰁐"
+        return "󰑮"
     }
 
     function getBarModeLabel() {
-        if (UIState.barMode === "floating")  return L10n.tr("floating", "Floating")
+        if (UIState.barMode === "pill")     return L10n.tr("pill", "Pill")
+        if (UIState.barMode === "floating") return L10n.tr("floating", "Floating")
         if (UIState.barMode === "autohide") return L10n.tr("autohide", "Autohide")
         return L10n.tr("fixed", "Fixed")
     }
@@ -534,11 +545,76 @@ PanelWindow {
                     }
                 }
 
+                // ── Tab bar ─────────────────────────────────────────────────────
+                Row {
+                    id: tabBar
+                    width: parent.width
+                    height: 32
+                    spacing: 6
+
+                    Repeater {
+                        model: tabs
+
+                        Item {
+                            required property int index
+                            required property var modelData
+                            width:  (tabBar.width - 24) / 5
+                            height: 32
+
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: brSm
+                                color: activeTab === index
+                                    ? a(Colors.accent, 0.15)
+                                    : tabMa.containsMouse
+                                        ? a(Colors.fg, 0.07)
+                                        : a(Colors.fg, 0.03)
+                                border.width: activeTab === index ? 1 : 0
+                                border.color: a(Colors.accent, 0.25)
+
+                                Behavior on color  { ColorAnimation { duration: Animations.fast } }
+                                Behavior on radius { NumberAnimation { duration: Animations.medium; easing.type: Easing.OutCubic } }
+                            }
+
+                            Column {
+                                anchors.centerIn: parent
+                                spacing: 2
+
+                                Text {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    text:  modelData.icon
+                                    color: activeTab === index ? Colors.accent : a(Colors.fg, 0.35)
+                                    font { pixelSize: 12; family: "JetBrainsMono Nerd Font" }
+                                    Behavior on color { ColorAnimation { duration: Animations.fast } }
+                                }
+
+                                Text {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    text:  modelData.label
+                                    color: activeTab === index ? Colors.accent : a(Colors.fg, 0.25)
+                                    font { pixelSize: 7; family: "JetBrainsMono Nerd Font" }
+                                    Behavior on color { ColorAnimation { duration: Animations.fast } }
+                                }
+                            }
+
+                            MouseArea {
+                                id: tabMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: activeTab = index
+                            }
+                        }
+                    }
+                }
+
                 Rectangle { width: parent.width; height: 1; color: a(Colors.fg, 0.06) }
 
+                // ── Tab content ──────────────────────────────────────────────────
                 Column {
                     width: parent.width
                     spacing: 8
+                    visible: activeTab === 0
 
                     Item {
                         width:  parent.width
@@ -678,19 +754,11 @@ PanelWindow {
                     }
                 }
 
-                Rectangle { width: parent.width; height: 1; color: a(Colors.fg, 0.06) }
-
+                // ── Tab 1: Display ───────────────────────────────────────────────
                 Column {
                     width:   parent.width
                     spacing: 16
-
-                    SliderRow {
-                        width:     parent.width
-                        icon:      UIState.volume == 0 ? "󰝟" : UIState.volume < 50 ? "󰖀" : "󰕾"
-                        iconColor: Colors.accent
-                        value:     UIState.volume
-                        onMoved:   v => UIState.setVolume(v)
-                    }
+                    visible: activeTab === 1
 
                     SliderRow {
                         width:     parent.width
@@ -700,15 +768,124 @@ PanelWindow {
                         minValue:  1
                         onMoved:   v => UIState.setBrightness(v)
                     }
+
+                    TileButton {
+                        width: parent.width
+                        icon: getBlurIcon()
+                        label: getBlurLabel()
+                        sublabel: L10n.tr("blur_profile", "Blur")
+                        active: UIState.blurProfile !== "none"
+                        onClicked: cycleBlur()
+                    }
+
+                    TileButton {
+                        width: parent.width
+                        icon: getBorderRadiusIcon()
+                        label: getBorderRadiusLabel()
+                        sublabel: L10n.tr("border_radius", "Radius")
+                        active: UIState.borderRadius > 0
+                        onClicked: cycleBorderRadius()
+                    }
                 }
 
-                Rectangle { width: parent.width; height: 1; color: a(Colors.fg, 0.06) }
+                // ── Tab 2: Media ─────────────────────────────────────────────────
+                Column {
+                    width:   parent.width
+                    spacing: 16
+                    visible: activeTab === 2
 
+                    SliderRow {
+                        width:     parent.width
+                        icon:      UIState.volume == 0 ? "󰝟" : UIState.volume < 50 ? "󰖀" : "󰕾"
+                        iconColor: Colors.accent
+                        value:     UIState.volume
+                        onMoved:   v => UIState.setVolume(v)
+                    }
+
+                    TileButton {
+                        width: parent.width
+                        icon: Animations.getIcon()
+                        label: Animations.getLabel()
+                        sublabel: L10n.tr("animations", "Animations")
+                        active: Animations.profile !== "none"
+                        onClicked: cycleAnimations()
+                    }
+                }
+
+                // ── Tab 3: System ────────────────────────────────────────────────
+                Column {
+                    width:   parent.width
+                    spacing: 10
+                    visible: activeTab === 3
+
+                    InfoRow {
+                        width: parent.width
+                        icon: "󰔟"
+                        label: L10n.tr("uptime", "Uptime")
+                        value: uptime
+                    }
+
+                    TileButton {
+                        width: parent.width
+                        icon: getPowerModeIcon()
+                        label: getPowerModeLabel()
+                        sublabel: L10n.tr("power_mode", "Power Mode")
+                        active: true
+                        onClicked: cyclePowerMode()
+                    }
+
+                    TileButton {
+                        width: parent.width
+                        icon: getBarModeIcon()
+                        label: getBarModeLabel()
+                        sublabel: L10n.tr("bar_mode", "Bar Mode")
+                        active: true
+                        onClicked: cycleBarMode()
+                    }
+                }
+
+                // ── Tab 4: Appearance ────────────────────────────────────────────
+                Column {
+                    width:   parent.width
+                    spacing: 10
+                    visible: activeTab === 4
+
+                    TileButton {
+                        width: parent.width
+                        icon: UIState.darkMode ? "󰖔" : "󰖕"
+                        label: UIState.darkMode ? L10n.tr("dark", "Dark") : L10n.tr("light", "Light")
+                        sublabel: L10n.tr("theme", "Theme")
+                        active: UIState.darkMode
+                        onClicked: UIState.toggleDarkMode()
+                    }
+
+                    TileButton {
+                        width: parent.width
+                        icon: UIState.transparencyEnabled ? "󱡔" : "󱡔"
+                        label: UIState.transparencyEnabled ? L10n.tr("transparent", "Glass") : L10n.tr("opaque", "Solid")
+                        sublabel: L10n.tr("transparency", "Transparency")
+                        active: UIState.transparencyEnabled
+                        onClicked: UIState.toggleTransparency()
+                    }
+
+                    TileButton {
+                        width: parent.width
+                        icon: "󰀄"
+                        label: L10n.tr("avatar", "Avatar")
+                        sublabel: L10n.tr("choose_avatar", "Choose profile picture")
+                        active: false
+                        onClicked: pfpPicker = true
+                    }
+                }
+
+                // ── Tab 0: Quick (notifications) ─────────────────────────────────
                 Item {
-                    width: parent.width; height: 18
+                    width: parent.width
+                    height: 18
+                    visible: activeTab === 0
 
                     Text {
-                        text:  "Notificações"
+                        text:  L10n.tr("notifications", "Notifications")
                         color: a(Colors.fg, 0.45)
                         font { pixelSize: 12; family: "JetBrainsMono Nerd Font"; bold: true }
                         anchors { left: parent.left; verticalCenter: parent.verticalCenter }
@@ -725,7 +902,7 @@ PanelWindow {
                         }
 
                         Text {
-                            text:  UIState.notifications.length > 0 ? "Limpar tudo" : ""
+                            text:  UIState.notifications.length > 0 ? L10n.tr("clear_all", "Clear all") : ""
                             color: clearMa.containsMouse ? Colors.accent : a(Colors.accent, 0.5)
                             font { pixelSize: 10; family: "JetBrainsMono Nerd Font" }
                             Behavior on color { ColorAnimation { duration: Animations.fast } }
@@ -745,6 +922,7 @@ PanelWindow {
                     width:  parent.width
                     height: parent.height - y
                     clip:   true
+                    visible: activeTab === 0
 
                     Rectangle {
                         anchors.fill: parent
@@ -756,7 +934,7 @@ PanelWindow {
                     Text {
                         anchors.centerIn: parent
                         visible: UIState.notifications.length === 0
-                        text:    "Tudo limpo 󰸞"
+                        text:    L10n.tr("all_clean", "All clean 󰸞")
                         color:   a(Colors.fg, 0.15)
                         font { pixelSize: 12; family: "JetBrainsMono Nerd Font" }
                     }
@@ -1200,6 +1378,107 @@ PanelWindow {
                     }
                 }
             }
+        }
+    }
+
+    component TileButton: Rectangle {
+        property string icon
+        property string label
+        property string sublabel
+        property bool active: false
+        signal clicked()
+
+        height: 50
+        radius: brCard
+        color: active ? a(Colors.accent, 0.12) : tileMa.containsMouse ? a(Colors.fg, 0.06) : a(Colors.fg, 0.025)
+        border.width: active ? 1 : 0
+        border.color: a(Colors.accent, 0.2)
+
+        Behavior on color  { ColorAnimation { duration: Animations.fast } }
+        Behavior on radius { NumberAnimation { duration: Animations.medium; easing.type: Easing.OutCubic } }
+
+        Row {
+            anchors { left: parent.left; leftMargin: 14; verticalCenter: parent.verticalCenter }
+            spacing: 12
+
+            Text {
+                text:  icon
+                color: active ? Colors.accent : a(Colors.fg, 0.45)
+                font { pixelSize: 18; family: "JetBrainsMono Nerd Font" }
+                anchors.verticalCenter: parent.verticalCenter
+            }
+
+            Column {
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 2
+
+                Text {
+                    text:  label
+                    color: active ? Colors.accent : Colors.fg
+                    font { pixelSize: 11; family: "JetBrainsMono Nerd Font"; bold: true }
+                }
+
+                Text {
+                    text:  sublabel
+                    color: a(Colors.fg, 0.3)
+                    font { pixelSize: 8; family: "JetBrainsMono Nerd Font" }
+                }
+            }
+        }
+
+        Text {
+            anchors { right: parent.right; rightMargin: 14; verticalCenter: parent.verticalCenter }
+            text:  "󰅂"
+            color: a(Colors.fg, 0.25)
+            font { pixelSize: 11; family: "JetBrainsMono Nerd Font" }
+        }
+
+        MouseArea {
+            id: tileMa
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: parent.clicked()
+        }
+    }
+
+    component InfoRow: Item {
+        property string icon
+        property string label
+        property string value
+
+        height: 34
+
+        Rectangle {
+            anchors.fill: parent
+            radius: brCard
+            color: a(Colors.fg, 0.025)
+        }
+
+        Row {
+            anchors { left: parent.left; leftMargin: 14; verticalCenter: parent.verticalCenter }
+            spacing: 10
+
+            Text {
+                text:  icon
+                color: a(Colors.fg, 0.45)
+                font { pixelSize: 14; family: "JetBrainsMono Nerd Font" }
+                anchors.verticalCenter: parent.verticalCenter
+            }
+
+            Text {
+                text:  label
+                color: a(Colors.fg, 0.55)
+                font { pixelSize: 10; family: "JetBrainsMono Nerd Font" }
+                anchors.verticalCenter: parent.verticalCenter
+            }
+        }
+
+        Text {
+            anchors { right: parent.right; rightMargin: 14; verticalCenter: parent.verticalCenter }
+            text:  value
+            color: Colors.fg
+            font { pixelSize: 10; family: "JetBrainsMono Nerd Font"; bold: true }
         }
     }
 
