@@ -12,7 +12,7 @@ QtObject {
         if (profile === "snappy")  return 120
         if (profile === "calm")    return 200
         if (profile === "bubbly")  return 140
-        if (profile === "elegant") return 240
+        if (profile === "extraslow") return 240
         return 140
     }
     
@@ -21,7 +21,7 @@ QtObject {
         if (profile === "snappy")  return 180
         if (profile === "calm")    return 320
         if (profile === "bubbly")  return 220
-        if (profile === "elegant") return 400
+        if (profile === "extraslow") return 400
         return 220
     }
     
@@ -30,7 +30,7 @@ QtObject {
         if (profile === "snappy")  return 240
         if (profile === "calm")    return 420
         if (profile === "bubbly")  return 320
-        if (profile === "elegant") return 560
+        if (profile === "extraslow") return 560
         return 320
     }
     
@@ -39,7 +39,7 @@ QtObject {
         if (profile === "snappy")  return 280
         if (profile === "calm")    return 560
         if (profile === "bubbly")  return 380
-        if (profile === "elegant") return 720
+        if (profile === "extraslow") return 720
         return 380
     }
     
@@ -48,7 +48,7 @@ QtObject {
         if (profile === "snappy")  return 320
         if (profile === "calm")    return 740
         if (profile === "bubbly")  return 540
-        if (profile === "elegant") return 900
+        if (profile === "extraslow") return 900
         return 540
     }
 
@@ -57,7 +57,7 @@ QtObject {
         if (profile === "snappy")  return 0.3
         if (profile === "calm")    return 0.5
         if (profile === "bubbly")  return 1.5
-        if (profile === "elegant") return 0.0
+        if (profile === "extraslow") return 0.0
         return 1.5
     }
 
@@ -66,7 +66,7 @@ QtObject {
         if (profile === "snappy")  return 240
         if (profile === "calm")    return 480
         if (profile === "bubbly")  return 350
-        if (profile === "elegant") return 640
+        if (profile === "extraslow") return 640
         return 350
     }
     
@@ -75,7 +75,7 @@ QtObject {
         if (profile === "snappy")  return 180
         if (profile === "calm")    return 300
         if (profile === "bubbly")  return 220
-        if (profile === "elegant") return 480
+        if (profile === "extraslow") return 480
         return 220
     }
 
@@ -84,7 +84,7 @@ QtObject {
         if (profile === "snappy")  return 0.98
         if (profile === "calm")    return 0.97
         if (profile === "bubbly")  return 0.94
-        if (profile === "elegant") return 0.98
+        if (profile === "extraslow") return 0.98
         return 0.96
     }
     
@@ -93,7 +93,7 @@ QtObject {
         if (profile === "snappy")  return 1.02
         if (profile === "calm")    return 1.02
         if (profile === "bubbly")  return 1.04
-        if (profile === "elegant") return 1.01
+        if (profile === "extraslow") return 1.01
         return 1.03
     }
 

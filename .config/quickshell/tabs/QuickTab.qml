@@ -5,6 +5,7 @@ import Qt5Compat.GraphicalEffects
 import ".."
 
 Item {
+    id: root
     property var helpers
     property bool qsExpanded: false
     property bool wifiOn: true
@@ -154,7 +155,7 @@ Item {
 
         Item {
             width:  parent.width
-            height: qsExpanded ? Math.ceil(quickSettings.length / 4) * 66 : 58
+            height: qsExpanded ? Math.ceil(root.quickSettings.length / 4) * 66 : 58
             clip:   true
 
             Behavior on height {
@@ -168,7 +169,7 @@ Item {
                 spacing: 8
 
                 Repeater {
-                    model: quickSettings
+                    model: root.quickSettings
 
                     Rectangle {
                         property int row: Math.floor(index / 4)
@@ -542,7 +543,7 @@ Item {
                                 }
 
                                 Text {
-                                    text:    groupDelegate.itemCount > 1 ? "+" + (groupDelegate.itemCount - 1) + " mais" : ""
+                                    text:    groupDelegate.itemCount > 1 ? "+" + (groupDelegate.itemCount - 1) + " " + L10n.tr("more", "more") : ""
                                     color:   Colors.a(Colors.accent, 0.5)
                                     font { pixelSize: 9; family: "JetBrainsMono Nerd Font" }
                                     visible: groupDelegate.itemCount > 1

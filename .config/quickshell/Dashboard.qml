@@ -508,7 +508,7 @@ PanelWindow {
                     id: tabStack
                     currentIndex: activeTab
                     width: parent.width
-                    height: parent.height - tabBar.height - separator.height - 40
+                    Layout.fillHeight: true
 
                     QuickTab { helpers: dashHelpers }
                     DisplayTab { helpers: dashHelpers }

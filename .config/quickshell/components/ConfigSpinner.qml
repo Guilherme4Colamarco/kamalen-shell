@@ -19,6 +19,7 @@ Item {
     }
 
     Rectangle {
+        id: bg
         anchors.fill: parent
         radius: UIState.borderRadius * 0.625
         color: rowMa.containsMouse ? Colors.a(Colors.fg, 0.05) : "transparent"
@@ -32,6 +33,13 @@ Item {
         text: root.label
         color: Colors.a(Colors.fg, 0.85)
         font { pixelSize: 11; family: "JetBrainsMono Nerd Font" }
+    }
+
+    MouseArea {
+        id: rowMa
+        anchors.fill: parent
+        hoverEnabled: true
+        z: -1
     }
 
     Row {
@@ -120,12 +128,5 @@ Item {
                 }
             }
         }
-    }
-
-    MouseArea {
-        id: rowMa
-        anchors.fill: parent
-        hoverEnabled: true
-        cursorShape: Qt.PointingHandCursor
     }
 }

@@ -23,7 +23,7 @@ Item {
         }
 
         Item {
-            width:  parent.width - 68
+            width:  parent.width - 78
             height: 6
             anchors.verticalCenter: parent.verticalCenter
 
