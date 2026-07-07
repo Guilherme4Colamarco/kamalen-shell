@@ -35,11 +35,12 @@ MangoWM rice/dotfiles for Arch Linux. Quickshell (QML) desktop shell with bar, d
 
 ### Dashboard tabs (`tabs/`)
 
-Dashboard uses `StackLayout` with 6 tabs: Quick, Display, Media, System, Look, Mango.
+Dashboard uses `StackLayout` with 9 tabs: Quick, Display, Media, System, Look, Mango, Binds, Rules, Monitors.
 
 - Tabs receive `helpers` QtObject from Dashboard for shared functions (cycle power mode, blur, etc.)
 - `helpers` is evaluated lazily — use `function() { if (helpers) helpers.fn() }` not `helpers ? helpers.fn : function(){}`
 - MangoTab uses `MangoConfig.set()` for live MangoWM configuration
+- BindsTab, WindowRulesTab and MonitorsTab use `MangoConfig.listDirectives()` / `addDirective()` / `removeDirective()` for MangoWM directive management
 
 ### Reusable components (`components/`)
 
@@ -76,7 +77,7 @@ python3 ~/.config/mango/mango_config.py validate
 
 **Mango key naming**: No underscores in some keys. Check `conf.d/` files for exact names. Boolean values are `0`/`1`, not `true`/`false`.
 
-**QML wrapper**: `MangoConfig` singleton loads values on startup, exposes reactive properties, writes via Python backend.
+**QML wrapper**: `MangoConfig` singleton loads values on startup, exposes reactive properties, writes via Python backend, and provides `listDirectives(module, callback)` / `addDirective(module, prefix, value)` / `removeDirective(module, index)` for managing binds, window rules and monitor rules.
 
 ## CRITICAL: Single quickshell instance
 

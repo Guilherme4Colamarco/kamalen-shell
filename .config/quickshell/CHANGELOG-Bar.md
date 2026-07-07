@@ -211,10 +211,52 @@ PillButton {
 
 ---
 
+## Fase 10 — Editores de Binds, Window Rules e Monitors no Dashboard
+**Data:** 6 jul 2026
+
+**Objetivo:** Permitir gerenciar binds, window rules e configuração de monitores do MangoWM diretamente pelo Dashboard, com persistência e aplicação ao vivo.
+
+**Solução:**
+1. **Dashboard.qml expandido para 9 abas**
+   - Tabs: Quick, Display, Media, System, Look, Mango, Binds, Rules, Monitors
+   - Largura dos tabs ajustada dinamicamente ao número total de abas
+2. **Novos arquivos em `tabs/`**
+   - `BindsTab.qml` (391 linhas) — editor de binds, mousebinds, axisbinds e gesturebinds
+   - `WindowRulesTab.qml` (220 linhas) — editor de window rules
+   - `MonitorsTab.qml` (343 linhas) — editor de monitor rules
+3. **API de directives em `MangoConfig.qml`**
+   - `listDirectives(module, callback)` — retorna lista indexada de directives
+   - `addDirective(module, prefix, value)` — adiciona nova directive
+   - `removeDirective(module, index)` — remove directive pelo índice
+   - Usa `Process` separado (`dirProc`) para evitar race conditions
+4. **Backend Python `mango_config.py`**
+   - Novos comandos: `cmd_list_directives`, `cmd_add_directive`, `cmd_remove_directive`
+   - Filtro por prefixo (`bind`, `windowrule`, `monitorrule`, etc.)
+   - Preserva comentários e linhas vazias
+   - Chama `reload_config` automaticamente após add/remove
+5. **BindsTab**
+   - Lista todas as directives de `binds.conf`
+   - Formulário "Add Bind" com key, action, tipo (bind/mousebind/axisbind/gesturebind)
+   - Delete com hover vermelho + clique
+6. **WindowRulesTab**
+   - Lista `windowrule=` directives
+   - Formulário "Add Rule" com string crua da regra
+   - Seção "Examples" colapsada com regras comuns prontas para copiar
+7. **MonitorsTab**
+   - Lista `monitorrule=` directives
+   - Formulário "Add Monitor" com name, width, height, refresh, scale, x, y
+   - Formato serializado: `name:NAME,width:W,height:H,refresh:Hz,x:X,y:Y,scale:S`
+
+**Resultado:**
+- Dashboard gerencia binds, window rules e monitors sem editar arquivos manualmente
+- Aplicação ao vivo via `reload_config` do MangoWM
+- Audit completo dos 3 novos tabs (BindsTab, WindowRulesTab, MonitorsTab)
+
+---
+
 ## Próximas fases (planejadas)
 
 - **Fase 4:** Padronizar hover (eliminar underline restante)
 - **Fase 5:** Tooltips em todos os botões
 - **Fase 6:** Clock com data opcional (hover expande)
 - **Fase 7:** Mais estilos de barra (blur, liquid, TUI, ctOS)
-- **Fase 10:** Editores de binds, window rules e monitors no Dashboard
