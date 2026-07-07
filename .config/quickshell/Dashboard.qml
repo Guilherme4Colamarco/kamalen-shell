@@ -14,7 +14,7 @@ PanelWindow {
     property real panelHeight: screen ? Math.min(820, Math.max(600, screen.height * 0.82)) : 720
 
     visible: _visible
-    anchors { top: true; horizontalCenter: true }
+    anchors { top: true }
     margins { top: 62 }
     implicitWidth:  panelWidth
     implicitHeight: panelHeight
