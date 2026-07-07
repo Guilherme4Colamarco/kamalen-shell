@@ -192,7 +192,7 @@ install_deps() {
     if $DRY_RUN; then
         info "dry-run: sudo pacman -S --needed ${pacman_pkgs[*]}"
     else
-        sudo -S -p '' pacman -S --needed "${pacman_pkgs[@]}" || {
+        sudo pacman -S --needed "${pacman_pkgs[@]}" || {
             error "Failed to install some pacman packages"
             return 1
         }
@@ -215,8 +215,8 @@ install_deps() {
     # Enable services
     info "Enabling services..."
     if ! $DRY_RUN; then
-        sudo -S -p '' systemctl enable --now NetworkManager 2>/dev/null || true
-        sudo -S -p '' systemctl enable --now bluetooth 2>/dev/null || true
+        sudo systemctl enable --now NetworkManager 2>/dev/null || true
+        sudo systemctl enable --now bluetooth 2>/dev/null || true
         systemctl --user enable --now mpd 2>/dev/null || true
         systemctl --user enable --now mpd-mpris 2>/dev/null || true
     fi
@@ -255,7 +255,7 @@ install_mango_ext() {
 
     info "Installing..."
     if ! $DRY_RUN; then
-        sudo -S -p '' meson install -C build || { error "meson install failed"; cd "$SCRIPT_DIR"; rm -rf "$tmp_dir"; return 1; }
+        sudo meson install -C build || { error "meson install failed"; cd "$SCRIPT_DIR"; rm -rf "$tmp_dir"; return 1; }
     fi
 
     cd "$SCRIPT_DIR"
@@ -271,7 +271,7 @@ setup_pam() {
         info "Setting up PAM lockscreen service..."
         if ! $DRY_RUN; then
             echo "auth required pam_unix.so nodelay nullok
-account required pam_unix.so" | sudo -S -p '' tee /etc/pam.d/lockscreen > /dev/null
+account required pam_unix.so" | sudo tee /etc/pam.d/lockscreen > /dev/null
         fi
         log "PAM lockscreen configured"
     else
@@ -426,7 +426,7 @@ install_configs() {
     if ! $DRY_RUN; then
         cat > ~/.local/bin/start-quickshell.sh << 'EOF'
 #!/bin/bash
-pkill -9 quickshell 2>/dev/null
+pkill quickshell 2>/dev/null
 sleep 0.3
 nohup quickshell &>/dev/null &
 EOF
@@ -510,6 +510,15 @@ unlink_configs() {
     else
         info "No backups found to restore"
     fi
+
+    # Remove launcher script
+    local launcher=~/.local/bin/start-quickshell.sh
+    if [[ -f "$launcher" ]]; then
+        step "Removing launcher script"
+        if ! $DRY_RUN; then
+            rm "$launcher"
+        fi
+    fi
 }
 
 # ── Configure User Shell ────────────────────────────────────────
@@ -551,8 +560,8 @@ configure_user_shell() {
             mkdir -p ~/.config/fish
             local fish_config=~/.config/fish/config.fish
             if [[ -f "$fish_config" ]]; then
-                # Back up existing config
-                cp "$fish_config" "$fish_config.bak"
+                # Back up existing config with timestamp (preserve previous backups)
+                cp "$fish_config" "$fish_config.bak.$(date +%s)"
             fi
 
             # Add interactive config & vi key bindings
@@ -606,14 +615,18 @@ EOF
                 cp "$zsh_config" "$zsh_config.bak"
             fi
 
-            cat << 'EOF' >> "$zsh_config"
+            if ! grep -q "starship init zsh" "$zsh_config" 2>/dev/null; then
+                cat << 'EOF' >> "$zsh_config"
 
 # Initialize Starship Prompt
 if command -v starship &>/dev/null; then
     eval "$(starship init zsh)"
 fi
 EOF
-            log "Zsh Shell configured successfully with Starship."
+                log "Zsh Shell configured successfully with Starship."
+            else
+                step "Starship zsh block already present — skipping"
+            fi
             ;;
         3)
             # Configure Bash
@@ -623,14 +636,18 @@ EOF
                 cp "$bash_config" "$bash_config.bak"
             fi
 
-            cat << 'EOF' >> "$bash_config"
+            if ! grep -q "starship init bash" "$bash_config" 2>/dev/null; then
+                cat << 'EOF' >> "$bash_config"
 
 # Initialize Starship Prompt
 if command -v starship &>/dev/null; then
     eval "$(starship init bash)"
 fi
 EOF
-            log "Bash Shell configured successfully with Starship."
+                log "Bash Shell configured successfully with Starship."
+            else
+                step "Starship bash block already present — skipping"
+            fi
             ;;
         *)
             info "Shell setup skipped."
