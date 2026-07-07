@@ -138,6 +138,8 @@ Item {
                     ]
 
                     Rectangle {
+                        required property var modelData
+
                         width: (presetGrid.width - (presetGrid.columns - 1) * presetGrid.spacing) / presetGrid.columns
                         height: width
                         radius: width * 0.3

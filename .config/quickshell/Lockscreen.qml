@@ -108,6 +108,8 @@ PanelWindow {
         }
     }
 
+    Process { id: lockscreenBtnProc }
+
     Process {
         id: authProc
         onExited: code => {
@@ -437,6 +439,8 @@ PanelWindow {
                         { icon: "󰒲", cmd: "systemctl suspend", color: "accent" }
                     ]
                     Item {
+                        required property int index
+                        required property var modelData
                         width: 44
                         height: 44
 
@@ -464,9 +468,8 @@ PanelWindow {
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
-                                var proc = Qt.createQmlObject('import Quickshell.Io 1.0; Process {}', parent)
-                                proc.command = ["bash", "-c", modelData.cmd]
-                                proc.running = true
+                                lockscreenBtnProc.command = ["bash", "-c", modelData.cmd]
+                                lockscreenBtnProc.running = true
                             }
                         }
                     }

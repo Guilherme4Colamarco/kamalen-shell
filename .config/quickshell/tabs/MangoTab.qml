@@ -18,70 +18,70 @@ Flickable {
 
         // ── Tiling ───────────────────────────────────────────────────────────
         ConfigSection {
-            title: "Tiling"
+            title: L10n.tr("tiling", "Tiling")
             icon: "󰙀"
             expanded: false
             width: parent.width
 
             ConfigSlider {
-                label: "Inner gap (horizontal)"
+                label: L10n.tr("inner_gap_h", "Inner gap (horizontal)")
                 value: MangoConfig.mangoGappih
                 minValue: 0; maxValue: 64; stepSize: 1; unit: "px"
                 onValueModified: v => MangoConfig.set("gappih", v)
             }
             ConfigSlider {
-                label: "Inner gap (vertical)"
+                label: L10n.tr("inner_gap_v", "Inner gap (vertical)")
                 value: MangoConfig.mangoGappiv
                 minValue: 0; maxValue: 64; stepSize: 1; unit: "px"
                 onValueModified: v => MangoConfig.set("gappiv", v)
             }
             ConfigSlider {
-                label: "Outer gap (horizontal)"
+                label: L10n.tr("outer_gap_h", "Outer gap (horizontal)")
                 value: MangoConfig.mangoGappoh
                 minValue: 0; maxValue: 64; stepSize: 1; unit: "px"
                 onValueModified: v => MangoConfig.set("gappoh", v)
             }
             ConfigSlider {
-                label: "Outer gap (vertical)"
+                label: L10n.tr("outer_gap_v", "Outer gap (vertical)")
                 value: MangoConfig.mangoGappov
                 minValue: 0; maxValue: 64; stepSize: 1; unit: "px"
                 onValueModified: v => MangoConfig.set("gappov", v)
             }
             ConfigSlider {
-                label: "Border width"
+                label: L10n.tr("border_width", "Border width")
                 value: MangoConfig.mangoBorderPx
                 minValue: 0; maxValue: 8; stepSize: 1; unit: "px"
                 onValueModified: v => MangoConfig.set("borderpx", v)
             }
             ConfigSlider {
-                label: "Border radius"
+                label: L10n.tr("border_radius", "Border radius")
                 value: MangoConfig.mangoBorderRadius
                 minValue: 0; maxValue: 32; stepSize: 1; unit: "px"
                 onValueModified: v => MangoConfig.set("border_radius", v)
             }
             ConfigToggle {
-                label: "No border when single"
+                label: L10n.tr("no_border_single", "No border when single")
                 checked: MangoConfig.mangoNoBorderWhenSingle
                 onToggled: c => MangoConfig.set("no_border_when_single", c)
             }
             ConfigToggle {
-                label: "No radius when single"
+                label: L10n.tr("no_radius_single", "No radius when single")
                 checked: MangoConfig.mangoNoRadiusWhenSingle
                 onToggled: c => MangoConfig.set("no_radius_when_single", c)
             }
             ConfigToggle {
-                label: "Smart gaps"
+                label: L10n.tr("smart_gaps", "Smart gaps")
                 checked: MangoConfig.mangoSmartGaps
                 onToggled: c => MangoConfig.set("smartgaps", c)
             }
             ConfigSlider {
-                label: "Master factor"
+                label: L10n.tr("master_factor", "Master factor")
                 value: MangoConfig.mangoDefaultMfact
                 minValue: 0.1; maxValue: 0.9; stepSize: 0.05
                 onValueModified: v => MangoConfig.set("default_mfact", v)
             }
             ConfigSlider {
-                label: "Master count"
+                label: L10n.tr("master_count", "Master count")
                 value: MangoConfig.mangoDefaultNmaster
                 minValue: 1; maxValue: 5; stepSize: 1
                 onValueModified: v => MangoConfig.set("default_nmaster", v)
@@ -90,34 +90,34 @@ Flickable {
 
         // ── Blur ─────────────────────────────────────────────────────────────
         ConfigSection {
-            title: "Blur"
+            title: L10n.tr("blur", "Blur")
             icon: "󰂵"
             expanded: false
             width: parent.width
 
             ConfigToggle {
-                label: "Blur"
+                label: L10n.tr("blur", "Blur")
                 checked: MangoConfig.mangoBlur
                 onToggled: c => MangoConfig.set("blur", c)
             }
             ConfigToggle {
-                label: "Blur layer surfaces"
+                label: L10n.tr("blur_layer", "Blur layer surfaces")
                 checked: MangoConfig.mangoBlurLayer
                 onToggled: c => MangoConfig.set("blur_layer", c)
             }
             ConfigToggle {
-                label: "Optimized blur"
+                label: L10n.tr("blur_optimized", "Optimized blur")
                 checked: MangoConfig.mangoBlurOptimized
                 onToggled: c => MangoConfig.set("blur_optimized", c)
             }
             ConfigSlider {
-                label: "Blur passes"
+                label: L10n.tr("blur_passes", "Blur passes")
                 value: MangoConfig.mangoBlurPasses
                 minValue: 0; maxValue: 8; stepSize: 1
                 onValueModified: v => MangoConfig.set("blur_params_num_passes", v)
             }
             ConfigSlider {
-                label: "Blur radius"
+                label: L10n.tr("blur_radius", "Blur radius")
                 value: MangoConfig.mangoBlurRadius
                 minValue: 0; maxValue: 30; stepSize: 1; unit: "px"
                 onValueModified: v => MangoConfig.set("blur_params_radius", v)
@@ -126,46 +126,46 @@ Flickable {
 
         // ── Shadows ──────────────────────────────────────────────────────────
         ConfigSection {
-            title: "Shadows"
+            title: L10n.tr("shadows", "Shadows")
             icon: "󰧑"
             expanded: false
             width: parent.width
 
             ConfigToggle {
-                label: "Shadows"
+                label: L10n.tr("shadows", "Shadows")
                 checked: MangoConfig.mangoShadows
                 onToggled: c => MangoConfig.set("shadows", c)
             }
             ConfigToggle {
-                label: "Layer shadows"
+                label: L10n.tr("layer_shadows", "Layer shadows")
                 checked: MangoConfig.mangoShadowLayer
                 onToggled: c => MangoConfig.set("layer_shadows", c)
             }
             ConfigToggle {
-                label: "Shadow only on floating"
+                label: L10n.tr("shadow_float", "Shadow only on floating")
                 checked: MangoConfig.mangoShadowOnlyFloating
                 onToggled: c => MangoConfig.set("shadow_only_floating", c)
             }
             ConfigSlider {
-                label: "Shadow size"
+                label: L10n.tr("shadow_size", "Shadow size")
                 value: MangoConfig.mangoShadowSize
                 minValue: 0; maxValue: 48; stepSize: 1; unit: "px"
                 onValueModified: v => MangoConfig.set("shadows_size", v)
             }
             ConfigSlider {
-                label: "Shadow blur"
+                label: L10n.tr("shadow_blur", "Shadow blur")
                 value: MangoConfig.mangoShadowBlur
                 minValue: 0; maxValue: 40; stepSize: 1; unit: "px"
                 onValueModified: v => MangoConfig.set("shadows_blur", v)
             }
             ConfigSlider {
-                label: "Shadow offset X"
+                label: L10n.tr("shadow_x", "Shadow offset X")
                 value: MangoConfig.mangoShadowPosX
                 minValue: -20; maxValue: 20; stepSize: 1; unit: "px"
                 onValueModified: v => MangoConfig.set("shadows_position_x", v)
             }
             ConfigSlider {
-                label: "Shadow offset Y"
+                label: L10n.tr("shadow_y", "Shadow offset Y")
                 value: MangoConfig.mangoShadowPosY
                 minValue: -20; maxValue: 20; stepSize: 1; unit: "px"
                 onValueModified: v => MangoConfig.set("shadows_position_y", v)
@@ -174,19 +174,19 @@ Flickable {
 
         // ── Opacity ──────────────────────────────────────────────────────────
         ConfigSection {
-            title: "Opacity"
+            title: L10n.tr("opacity", "Opacity")
             icon: "󰌁"
             expanded: false
             width: parent.width
 
             ConfigSlider {
-                label: "Focused opacity"
+                label: L10n.tr("focus_opacity", "Focused opacity")
                 value: MangoConfig.mangoFocusedOpacity
                 minValue: 0.2; maxValue: 1.0; stepSize: 0.05
                 onValueModified: v => MangoConfig.set("focused_opacity", v)
             }
             ConfigSlider {
-                label: "Unfocused opacity"
+                label: L10n.tr("unfocus_opacity", "Unfocused opacity")
                 value: MangoConfig.mangoUnfocusedOpacity
                 minValue: 0.2; maxValue: 1.0; stepSize: 0.05
                 onValueModified: v => MangoConfig.set("unfocused_opacity", v)
@@ -195,30 +195,30 @@ Flickable {
 
         // ── Input ────────────────────────────────────────────────────────────
         ConfigSection {
-            title: "Input"
+            title: L10n.tr("input", "Input")
             icon: "󰌌"
             expanded: false
             width: parent.width
 
             ConfigSlider {
-                label: "Repeat rate"
+                label: L10n.tr("repeat_rate", "Repeat rate")
                 value: MangoConfig.mangoRepeatRate
                 minValue: 10; maxValue: 100; stepSize: 5
                 onValueModified: v => MangoConfig.set("repeat_rate", v)
             }
             ConfigSlider {
-                label: "Repeat delay"
+                label: L10n.tr("repeat_delay", "Repeat delay")
                 value: MangoConfig.mangoRepeatDelay
                 minValue: 100; maxValue: 1000; stepSize: 50; unit: "ms"
                 onValueModified: v => MangoConfig.set("repeat_delay", v)
             }
             ConfigToggle {
-                label: "Tap to click"
+                label: L10n.tr("tap_click", "Tap to click")
                 checked: MangoConfig.mangoTapToClick
                 onToggled: c => MangoConfig.set("tap_to_click", c)
             }
             ConfigToggle {
-                label: "Natural scrolling"
+                label: L10n.tr("natural_scroll", "Natural scrolling")
                 checked: MangoConfig.mangoTrackpadNaturalScroll
                 onToggled: c => MangoConfig.set("trackpad_natural_scrolling", c)
             }
@@ -226,48 +226,48 @@ Flickable {
 
         // ── Focus ────────────────────────────────────────────────────────────
         ConfigSection {
-            title: "Focus"
+            title: L10n.tr("focus", "Focus")
             icon: "󰁥"
             expanded: false
             width: parent.width
 
             ConfigToggle {
-                label: "Focus on activate"
+                label: L10n.tr("focus_activate", "Focus on activate")
                 checked: MangoConfig.mangoFocusOnActivate
                 onToggled: c => MangoConfig.set("focus_on_activate", c)
             }
             ConfigToggle {
-                label: "Sloppy focus"
+                label: L10n.tr("sloppy_focus", "Sloppy focus")
                 checked: MangoConfig.mangoSloppyFocus
                 onToggled: c => MangoConfig.set("sloppyfocus", c)
             }
             ConfigToggle {
-                label: "Warp cursor"
+                label: L10n.tr("warp_cursor", "Warp cursor")
                 checked: MangoConfig.mangoWarpCursor
                 onToggled: c => MangoConfig.set("warpcursor", c)
             }
             ConfigToggle {
-                label: "Focus cross monitor"
+                label: L10n.tr("focus_monitor", "Focus cross monitor")
                 checked: MangoConfig.mangoFocusCrossMonitor
                 onToggled: c => MangoConfig.set("focus_cross_monitor", c)
             }
             ConfigToggle {
-                label: "Focus cross tag"
+                label: L10n.tr("focus_tag", "Focus cross tag")
                 checked: MangoConfig.mangoFocusCrossTag
                 onToggled: c => MangoConfig.set("focus_cross_tag", c)
             }
             ConfigToggle {
-                label: "Floating snap"
+                label: L10n.tr("float_snap", "Floating snap")
                 checked: MangoConfig.mangoEnableFloatingSnap
                 onToggled: c => MangoConfig.set("enable_floating_snap", c)
             }
             ConfigToggle {
-                label: "Drag tile to tile"
+                label: L10n.tr("drag_tile", "Drag tile to tile")
                 checked: MangoConfig.mangoDragTileToTile
                 onToggled: c => MangoConfig.set("drag_tile_to_tile", c)
             }
             ConfigSlider {
-                label: "Snap distance"
+                label: L10n.tr("snap_distance", "Snap distance")
                 value: MangoConfig.mangoSnapDistance
                 minValue: 0; maxValue: 100; stepSize: 1; unit: "px"
                 onValueModified: v => MangoConfig.set("snap_distance", v)
@@ -276,111 +276,111 @@ Flickable {
 
         // ── Animations ───────────────────────────────────────────────────────
         ConfigSection {
-            title: "Animations"
+            title: L10n.tr("animations", "Animations")
             icon: "󰔵"
             expanded: false
             width: parent.width
 
             ConfigToggle {
-                label: "Animations"
+                label: L10n.tr("animations", "Animations")
                 checked: MangoConfig.mangoAnimations
                 onToggled: c => MangoConfig.set("animations", c)
             }
             ConfigToggle {
-                label: "Layer animations"
+                label: L10n.tr("layer_anim", "Layer animations")
                 checked: MangoConfig.mangoLayerAnimations
                 onToggled: c => MangoConfig.set("layer_animations", c)
             }
             ConfigToggle {
-                label: "Fade in"
+                label: L10n.tr("fade_in", "Fade in")
                 checked: MangoConfig.mangoAnimationFadeIn
                 onToggled: c => MangoConfig.set("animation_fade_in", c)
             }
             ConfigToggle {
-                label: "Fade out"
+                label: L10n.tr("fade_out", "Fade out")
                 checked: MangoConfig.mangoAnimationFadeOut
                 onToggled: c => MangoConfig.set("animation_fade_out", c)
             }
             ConfigSpinner {
-                label: "Open animation"
+                label: L10n.tr("open_anim", "Open animation")
                 model: animationTypes
                 currentIndex: animationTypes.indexOf(MangoConfig.mangoAnimationTypeOpen)
                 onActivated: idx => MangoConfig.set("animation_type_open", animationTypes[idx])
             }
             ConfigSpinner {
-                label: "Close animation"
+                label: L10n.tr("close_anim", "Close animation")
                 model: animationTypes
                 currentIndex: animationTypes.indexOf(MangoConfig.mangoAnimationTypeClose)
                 onActivated: idx => MangoConfig.set("animation_type_close", animationTypes[idx])
             }
             ConfigSpinner {
-                label: "Layer open animation"
+                label: L10n.tr("layer_open", "Layer open animation")
                 model: animationTypes
                 currentIndex: animationTypes.indexOf(MangoConfig.mangoLayerAnimationTypeOpen)
                 onActivated: idx => MangoConfig.set("layer_animation_type_open", animationTypes[idx])
             }
             ConfigSpinner {
-                label: "Layer close animation"
+                label: L10n.tr("layer_close", "Layer close animation")
                 model: animationTypes
                 currentIndex: animationTypes.indexOf(MangoConfig.mangoLayerAnimationTypeClose)
                 onActivated: idx => MangoConfig.set("layer_animation_type_close", animationTypes[idx])
             }
             ConfigSpinner {
-                label: "Tag animation direction"
+                label: L10n.tr("tag_dir", "Tag animation direction")
                 model: directionLabels
                 currentIndex: MangoConfig.mangoAnimationDirection
                 onActivated: idx => MangoConfig.set("tag_animation_direction", idx)
             }
             ConfigSlider {
-                label: "Open duration"
+                label: L10n.tr("open_dur", "Open duration")
                 value: MangoConfig.mangoAnimationDurationOpen
                 minValue: 0; maxValue: 1000; stepSize: 20; unit: "ms"
                 onValueModified: v => MangoConfig.set("animation_duration_open", v)
             }
             ConfigSlider {
-                label: "Close duration"
+                label: L10n.tr("close_dur", "Close duration")
                 value: MangoConfig.mangoAnimationDurationClose
                 minValue: 0; maxValue: 1000; stepSize: 20; unit: "ms"
                 onValueModified: v => MangoConfig.set("animation_duration_close", v)
             }
             ConfigSlider {
-                label: "Move duration"
+                label: L10n.tr("move_dur", "Move duration")
                 value: MangoConfig.mangoAnimationDurationMove
                 minValue: 0; maxValue: 1000; stepSize: 20; unit: "ms"
                 onValueModified: v => MangoConfig.set("animation_duration_move", v)
             }
             ConfigSlider {
-                label: "Tag duration"
+                label: L10n.tr("tag_dur", "Tag duration")
                 value: MangoConfig.mangoAnimationDurationTag
                 minValue: 0; maxValue: 1000; stepSize: 20; unit: "ms"
                 onValueModified: v => MangoConfig.set("animation_duration_tag", v)
             }
             ConfigSlider {
-                label: "Focus duration"
+                label: L10n.tr("focus_dur", "Focus duration")
                 value: MangoConfig.mangoAnimationDurationFocus
                 minValue: 0; maxValue: 1000; stepSize: 20; unit: "ms"
                 onValueModified: v => MangoConfig.set("animation_duration_focus", v)
             }
             ConfigSlider {
-                label: "Zoom initial ratio"
+                label: L10n.tr("zoom_init", "Zoom initial ratio")
                 value: MangoConfig.mangoZoomInitialRatio
                 minValue: 0.1; maxValue: 1.0; stepSize: 0.02
                 onValueModified: v => MangoConfig.set("zoom_initial_ratio", v)
             }
             ConfigSlider {
-                label: "Zoom end ratio"
+                label: L10n.tr("zoom_end", "Zoom end ratio")
                 value: MangoConfig.mangoZoomEndRatio
                 minValue: 1.0; maxValue: 1.2; stepSize: 0.02
                 onValueModified: v => MangoConfig.set("zoom_end_ratio", v)
             }
             ConfigSlider {
-                label: "Fade-in begin opacity"
+                label: L10n.tr("fade_in_begin", "Fade-in begin opacity")
                 value: MangoConfig.mangoFadeinBeginOpacity
                 minValue: 0.0; maxValue: 1.0; stepSize: 0.05
                 onValueModified: v => MangoConfig.set("fadein_begin_opacity", v)
             }
             ConfigSlider {
-                label: "Fade-out begin opacity"
+                label: L10n.tr("fade_out_begin", "Fade-out begin opacity")
                 value: MangoConfig.mangoFadeoutBeginOpacity
                 minValue: 0.0; maxValue: 1.0; stepSize: 0.05
                 onValueModified: v => MangoConfig.set("fadeout_begin_opacity", v)
@@ -389,53 +389,53 @@ Flickable {
 
         // ── Colors ───────────────────────────────────────────────────────────
         ConfigSection {
-            title: "Colors"
+            title: L10n.tr("colors", "Colors")
             icon: "󰏘"
             expanded: false
             width: parent.width
 
             ConfigColorRow {
-                label: "Root"
+                label: L10n.tr("color_root", "Root")
                 colorValue: MangoConfig.mangoRootColor
                 onColorChanged: c => MangoConfig.set("rootcolor", c)
             }
             ConfigColorRow {
-                label: "Border"
+                label: L10n.tr("color_border", "Border")
                 colorValue: MangoConfig.mangoBorderColor
                 onColorChanged: c => MangoConfig.set("bordercolor", c)
             }
             ConfigColorRow {
-                label: "Focus"
+                label: L10n.tr("color_focus", "Focus")
                 colorValue: MangoConfig.mangoFocusColor
                 onColorChanged: c => MangoConfig.set("focuscolor", c)
             }
             ConfigColorRow {
-                label: "Urgent"
+                label: L10n.tr("color_urgent", "Urgent")
                 colorValue: MangoConfig.mangoUrgentColor
                 onColorChanged: c => MangoConfig.set("urgentcolor", c)
             }
             ConfigColorRow {
-                label: "Scratchpad"
+                label: L10n.tr("color_scratchpad", "Scratchpad")
                 colorValue: MangoConfig.mangoScratchpadColor
                 onColorChanged: c => MangoConfig.set("scratchpadcolor", c)
             }
             ConfigColorRow {
-                label: "Global"
+                label: L10n.tr("color_global", "Global")
                 colorValue: MangoConfig.mangoGlobalColor
                 onColorChanged: c => MangoConfig.set("globalcolor", c)
             }
             ConfigColorRow {
-                label: "Overlay"
+                label: L10n.tr("color_overlay", "Overlay")
                 colorValue: MangoConfig.mangoOverlayColor
                 onColorChanged: c => MangoConfig.set("overlaycolor", c)
             }
             ConfigColorRow {
-                label: "Maximized screen"
+                label: L10n.tr("color_maximize", "Maximized screen")
                 colorValue: MangoConfig.mangoMaximizescreenColor
                 onColorChanged: c => MangoConfig.set("maximizescreencolor", c)
             }
             ConfigColorRow {
-                label: "Shadows"
+                label: L10n.tr("color_shadows", "Shadows")
                 colorValue: MangoConfig.mangoShadowColor
                 onColorChanged: c => MangoConfig.set("shadowscolor", c)
             }

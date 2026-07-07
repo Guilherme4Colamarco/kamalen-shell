@@ -92,6 +92,8 @@ PanelWindow {
                     ]
 
                     Rectangle {
+                        required property int index
+                        required property var modelData
                         width: parent.width
                         height: 36
                         radius: Math.max(0, brCard - 4)

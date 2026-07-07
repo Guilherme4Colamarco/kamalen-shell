@@ -394,6 +394,8 @@ PanelWindow {
                             ]
 
                             Item {
+                                required property int index
+                                required property var modelData
                                 width:  52
                                 height: 46
 

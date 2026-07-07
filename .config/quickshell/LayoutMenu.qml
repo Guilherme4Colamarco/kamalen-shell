@@ -179,6 +179,9 @@ PanelWindow {
                     model: layoutMenu.layoutModel
 
                     Item {
+                        required property int index
+                        required property var modelData
+
                         width: 108
                         height: 76
 

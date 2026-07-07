@@ -172,6 +172,9 @@ Item {
                     model: root.quickSettings
 
                     Rectangle {
+                        required property int index
+                        required property var modelData
+
                         property int row: Math.floor(index / 4)
                         property bool shouldShow:    row === 0 || qsExpanded
                         property bool isDarkTile:    index === 4
@@ -377,16 +380,20 @@ Item {
 
                 delegate: Item {
                     id: groupDelegate
+
+                    required property string app
+                    required property string items
+                    required property int bump
+
                     width:  notifList.width
                     height: groupCol.implicitHeight
                     clip:   true
 
-                    property string groupApp:  model.app
-                    property var parsedItems:  JSON.parse(model.items)
-                    property bool expanded:    isGroupExpanded(model.app)
+                    property string groupApp:  app
+                    property var parsedItems:  JSON.parse(items)
+                    property bool expanded:    isGroupExpanded(app)
                     property int itemCount:    parsedItems.length
                     property var latestItem:   parsedItems[0]
-                    property int bump:         model.bump
 
                     onBumpChanged: {
                         if (bump > 0) {
@@ -570,6 +577,10 @@ Item {
 
                                     Rectangle {
                                         id: notifCard
+
+                                        required property int index
+                                        required property var modelData
+
                                         width:  parent.width
                                         height: nTitle.implicitHeight + (nBody.visible ? nBody.implicitHeight + 6 : 0) + 32
                                         radius: UIState.borderRadius * 0.75
