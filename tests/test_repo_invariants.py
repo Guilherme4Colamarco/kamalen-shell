@@ -43,6 +43,17 @@ class MangoConfigLayoutTests(unittest.TestCase):
         missing = [source for source in sources if not (MANGO_DIR / source).is_file()]
         self.assertEqual([], missing, f"missing sourced modules: {missing}")
 
+    def test_relative_sources_use_mango_supported_prefix(self) -> None:
+        """Mango only resolves relative includes when they start with ./ ."""
+        sources = [
+            line.split("=", 1)[1].strip()
+            for line in active_lines(MAIN_CONFIG)
+            if line.startswith("source=")
+        ]
+
+        invalid = [source for source in sources if not source.startswith("./")]
+        self.assertEqual([], invalid, f"non-portable relative sources: {invalid}")
+
     def test_sources_are_unique(self) -> None:
         """A module must not be loaded more than once."""
         sources = [

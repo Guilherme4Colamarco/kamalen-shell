@@ -348,7 +348,7 @@ def write_modules(modules, main_lines=None):
     new_sources = []
     for module_name in active_modules:
         if module_name not in sourced:
-            new_sources.append(f"source=conf.d/{module_name}.conf")
+            new_sources.append(f"source=./conf.d/{module_name}.conf")
 
     if new_sources:
         # Preserve existing content, appending new source lines.
@@ -764,7 +764,7 @@ def cmd_migrate():
             )
 
         # Replace main config with source= directives only.
-        main_lines = [f"source=conf.d/{mod}.conf" for mod in modules.keys()]
+        main_lines = [f"source=./conf.d/{mod}.conf" for mod in modules.keys()]
         atomic_write_text(CONFIG_FILE, "\n".join(main_lines) + "\n")
 
         # Validate.

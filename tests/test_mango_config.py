@@ -52,7 +52,7 @@ class BatchWriteTests(unittest.TestCase):
         self.conf_dir = self.config_dir / "conf.d"
         self.conf_dir.mkdir()
         (self.config_dir / "config.conf").write_text(
-            "source=conf.d/gaps.conf\n", encoding="utf-8"
+            "source=./conf.d/gaps.conf\n", encoding="utf-8"
         )
         (self.conf_dir / "gaps.conf").write_text(
             "gappih=6\ngappiv=6\n", encoding="utf-8"
@@ -81,6 +81,15 @@ class BatchWriteTests(unittest.TestCase):
         self.assertIn("gappih=12", (self.conf_dir / "gaps.conf").read_text())
         self.assertIn("gappiv=14", (self.conf_dir / "gaps.conf").read_text())
         self.assertTrue(json.loads(output.getvalue())["ok"])
+
+    def test_write_modules_emits_mango_relative_source_syntax(self) -> None:
+        self.backend.write_modules(
+            {"gaps": ["gappih=6"], "borders": ["borderpx=2"]},
+            ["source=./conf.d/gaps.conf"],
+        )
+
+        main = (self.config_dir / "config.conf").read_text(encoding="utf-8")
+        self.assertIn("source=./conf.d/borders.conf", main)
 
 
 if __name__ == "__main__":
