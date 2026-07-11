@@ -462,6 +462,31 @@ def mmsg_dispatch(args_list):
         raise RuntimeError("mmsg not found in PATH")
 
 
+def validate_config():
+    """Raise when Mango rejects the persisted configuration."""
+    try:
+        result = subprocess.run(
+            ["mango", "-p"],
+            cwd=str(CONFIG_DIR),
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError as exc:
+        raise RuntimeError("mango binary not found in PATH") from exc
+
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout or "configuration validation failed").strip()
+        raise RuntimeError(detail)
+
+
+def restore_file(path, previous_content):
+    """Restore a file snapshot, removing files that did not previously exist."""
+    if previous_content is None:
+        path.unlink(missing_ok=True)
+    else:
+        atomic_write_text(path, previous_content)
+
+
 def cmd_get(key):
     modules, _ = parse_modules()
     for lines in modules.values():
@@ -572,11 +597,37 @@ def cmd_apply(key, value):
 
 
 def cmd_set_apply(key, value):
+    modules, main_lines = parse_modules()
+    existing_module, _ = find_key_location(modules, key)
+    target = existing_module or MODULE_MAPPING.get(key, "misc")
+    module_path = CONF_D_DIR / f"{target}.conf"
+    previous_module = module_path.read_text() if module_path.exists() else None
+    previous_main = CONFIG_FILE.read_text() if CONFIG_FILE.exists() else None
+
     try:
-        target = set_key(key, value)
-        mmsg_dispatch([f"setoption,{key},{value}"])
-        print(json.dumps({"ok": True, "module": target, "key": key, "value": value}))
+        set_key_in_modules(modules, key, value, module=target)
+        write_modules(modules, main_lines)
+        validate_config()
+        mmsg_dispatch(["reload_config"])
+        print(
+            json.dumps(
+                {
+                    "ok": True,
+                    "module": target,
+                    "key": key,
+                    "value": value,
+                    "persisted": True,
+                    "reloaded": True,
+                }
+            )
+        )
     except Exception as e:
+        restore_file(module_path, previous_module)
+        restore_file(CONFIG_FILE, previous_main)
+        try:
+            mmsg_dispatch(["reload_config"])
+        except Exception:
+            pass
         error(str(e))
 
 
@@ -673,38 +724,11 @@ def cmd_remove_directive(module, index):
 
 def cmd_validate():
     try:
-        result = subprocess.run(
-            ["mango", "-p"],
-            cwd=str(CONFIG_DIR),
-            capture_output=True,
-            text=True,
-        )
-        ok = result.returncode == 0
-        output = {
-            "ok": ok,
-            "returncode": result.returncode,
-            "stdout": result.stdout,
-            "stderr": result.stderr,
-        }
-        print(json.dumps(output, indent=2))
-        return ok
-    except FileNotFoundError:
-        output = {
-            "ok": False,
-            "returncode": -1,
-            "stdout": "",
-            "stderr": "mango binary not found in PATH",
-        }
-        print(json.dumps(output, indent=2))
-        return False
+        validate_config()
+        print(json.dumps({"ok": True}, indent=2))
+        return True
     except Exception as e:
-        output = {
-            "ok": False,
-            "returncode": -1,
-            "stdout": "",
-            "stderr": str(e),
-        }
-        print(json.dumps(output, indent=2))
+        print(json.dumps({"ok": False, "error": str(e)}, indent=2))
         return False
 
 
