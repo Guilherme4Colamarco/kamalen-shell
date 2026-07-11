@@ -101,6 +101,14 @@ Singleton {
     property string _configPath: Quickshell.env("HOME") + "/.config/mango/mango_config.py"
     property var    _data: ({})        // grouped JSON payload from get-all
     property bool   _ready: false
+    property var    _pendingSets: []
+    property var    _activeSet: null
+    property string _setOutput: ""
+    property bool   applying: false
+    property string lastError: ""
+
+    signal configurationApplied(string key, var value)
+    signal configurationFailed(string key, string message)
 
     property var keyToProperty: ({
         // gaps
@@ -374,8 +382,10 @@ Singleton {
     // -------------------------------------------------------------------------
 
     function set(key, value) {
-        runCmd(["set-apply", key, _toMangoValue(value)])
-        _updateLocalProperty(key, value)
+        var pending = _pendingSets.slice()
+        pending.push({ key: key, value: value })
+        _pendingSets = pending
+        _startNextSet()
     }
 
     function setNoApply(key, value) {
@@ -415,6 +425,52 @@ Singleton {
     function loadAll() {
         loadProc.running = false
         loadProc.running = true
+    }
+
+    function _startNextSet() {
+        if (_activeSet || _pendingSets.length === 0) return
+
+        var pending = _pendingSets.slice()
+        var operation = pending.shift()
+        _pendingSets = pending
+        _activeSet = operation
+        _setOutput = ""
+        applying = true
+
+        setProc.command = ["python3", _configPath, "set-apply",
+                           operation.key, _toMangoValue(operation.value)]
+        setProc.running = true
+    }
+
+    function _finishSet(exitCode) {
+        var operation = _activeSet
+        var response = null
+        var message = ""
+
+        try {
+            response = JSON.parse(_setOutput)
+        } catch (e) {
+            message = "Mango backend returned an invalid response"
+        }
+
+        if (operation && exitCode === 0 && response && response.ok) {
+            _updateLocalProperty(operation.key, operation.value)
+            lastError = ""
+            configurationApplied(operation.key, operation.value)
+        } else if (operation) {
+            if (message === "") {
+                message = response && response.error
+                    ? response.error
+                    : "Mango configuration was not applied"
+            }
+            lastError = message
+            configurationFailed(operation.key, message)
+            loadAll()
+        }
+
+        _activeSet = null
+        applying = false
+        _startNextSet()
     }
 
     // -------------------------------------------------------------------------
@@ -530,6 +586,15 @@ Singleton {
                             "command:", JSON.stringify(command))
             }
         }
+    }
+
+    Process {
+        id: setProc
+        stdout: SplitParser {
+            splitMarker: ""
+            onRead: data => mangoConfig._setOutput += data
+        }
+        onExited: exitCode => mangoConfig._finishSet(exitCode)
     }
 
     Process {

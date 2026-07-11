@@ -16,6 +16,34 @@ Flickable {
         width: parent.width
         spacing: 10
 
+        Rectangle {
+            visible: MangoConfig.lastError !== ""
+            width: parent.width
+            height: visible ? errorText.implicitHeight + 16 : 0
+            radius: UIState.borderRadius * 0.625
+            color: Colors.a(Colors.red, 0.12)
+            border.width: 1
+            border.color: Colors.a(Colors.red, 0.35)
+
+            Text {
+                id: errorText
+                anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter }
+                anchors { leftMargin: 10; rightMargin: 10 }
+                text: L10n.tr("mango_apply_failed", "Mango configuration was not applied") + ": " + MangoConfig.lastError
+                color: Colors.a(Colors.fg, 0.9)
+                font { pixelSize: 10; family: "JetBrainsMono Nerd Font" }
+                wrapMode: Text.WordWrap
+                maximumLineCount: 2
+                elide: Text.ElideRight
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: MangoConfig.lastError = ""
+            }
+        }
+
         // ── Tiling ───────────────────────────────────────────────────────────
         ConfigSection {
             title: L10n.tr("tiling", "Tiling")
