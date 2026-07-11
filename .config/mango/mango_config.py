@@ -10,6 +10,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from collections import OrderedDict, defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -209,6 +210,28 @@ DIRECTIVE_MODULES = [
 ]
 
 
+def atomic_write_text(path, content):
+    """Atomically replace a text file while preserving its existing mode."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    mode = path.stat().st_mode & 0o777 if path.exists() else 0o644
+    fd, temp_name = tempfile.mkstemp(
+        dir=str(path.parent), prefix=f".{path.name}.", suffix=".tmp"
+    )
+    temp_path = Path(temp_name)
+
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.chmod(temp_path, mode)
+        os.replace(temp_path, path)
+    finally:
+        if temp_path.exists():
+            temp_path.unlink()
+
+
 def error(msg):
     print(json.dumps({"ok": False, "error": msg}))
     sys.exit(1)
@@ -307,7 +330,7 @@ def write_modules(modules, main_lines=None):
 
     for module_name, lines in modules.items():
         mod_path = CONF_D_DIR / f"{module_name}.conf"
-        mod_path.write_text("\n".join(lines) + ("\n" if lines else ""))
+        atomic_write_text(mod_path, "\n".join(lines) + ("\n" if lines else ""))
 
     if main_lines is None:
         main_lines = parse_main_config()
@@ -333,7 +356,7 @@ def write_modules(modules, main_lines=None):
         if out_lines and out_lines[-1].strip() != "":
             out_lines.append("")
         out_lines.extend(new_sources)
-        CONFIG_FILE.write_text("\n".join(out_lines) + "\n")
+        atomic_write_text(CONFIG_FILE, "\n".join(out_lines) + "\n")
 
 
 def find_key_location(modules, key):
@@ -351,14 +374,8 @@ def find_key_location(modules, key):
     return None, None
 
 
-def set_key(key, value, module=None):
-    """
-    Set a key=value option. If module is not specified, the key is updated in
-    its existing location if present; otherwise it is placed according to the
-    module mapping (defaulting to misc).
-    """
-    modules, main_lines = parse_modules()
-
+def set_key_in_modules(modules, key, value, module=None):
+    """Update a key in an already-loaded module mapping without writing it."""
     target_module = module
     if target_module is None:
         existing_module, _ = find_key_location(modules, key)
@@ -384,6 +401,17 @@ def set_key(key, value, module=None):
     if not updated:
         lines.append(f"{key}={value}")
 
+    return target_module
+
+
+def set_key(key, value, module=None):
+    """
+    Set a key=value option. If module is not specified, the key is updated in
+    its existing location if present; otherwise it is placed according to the
+    module mapping (defaulting to misc).
+    """
+    modules, main_lines = parse_modules()
+    target_module = set_key_in_modules(modules, key, value, module)
     write_modules(modules, main_lines)
     return target_module
 
@@ -484,9 +512,11 @@ def cmd_set_many(json_str, reload_after=False, apply_after=False):
 
     modules_touched = set()
     try:
+        modules, main_lines = parse_modules()
         for key, value in pairs.items():
-            target = set_key(key, str(value))
+            target = set_key_in_modules(modules, key, str(value))
             modules_touched.add(target)
+        write_modules(modules, main_lines)
         if apply_after:
             for key, value in pairs.items():
                 mmsg_dispatch([f"setoption,{key},{value}"])
@@ -518,8 +548,10 @@ def cmd_set_module(module, json_str, reload_after=False):
         error(f"Invalid JSON: {e}")
 
     try:
+        modules, main_lines = parse_modules()
         for key, value in pairs.items():
-            set_key(key, str(value), module=module)
+            set_key_in_modules(modules, key, str(value), module=module)
+        write_modules(modules, main_lines)
         if reload_after:
             mmsg_dispatch(["reload_config"])
         print(
@@ -726,13 +758,14 @@ def cmd_migrate():
 
         # Write module files.
         for mod, mod_lines in modules.items():
-            (CONF_D_DIR / f"{mod}.conf").write_text(
-                "\n".join(mod_lines) + ("\n" if mod_lines else "")
+            atomic_write_text(
+                CONF_D_DIR / f"{mod}.conf",
+                "\n".join(mod_lines) + ("\n" if mod_lines else ""),
             )
 
         # Replace main config with source= directives only.
         main_lines = [f"source=conf.d/{mod}.conf" for mod in modules.keys()]
-        CONFIG_FILE.write_text("\n".join(main_lines) + "\n")
+        atomic_write_text(CONFIG_FILE, "\n".join(main_lines) + "\n")
 
         # Validate.
         if not cmd_validate():
