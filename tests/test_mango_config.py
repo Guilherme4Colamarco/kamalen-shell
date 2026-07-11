@@ -92,5 +92,43 @@ class BatchWriteTests(unittest.TestCase):
         self.assertIn("source=./conf.d/borders.conf", main)
 
 
+class PersistentApplyTests(BatchWriteTests):
+    def test_set_apply_persists_validates_and_reloads(self) -> None:
+        output = StringIO()
+        with (
+            mock.patch.object(self.backend, "validate_config") as validate,
+            mock.patch.object(self.backend, "mmsg_dispatch") as dispatch,
+            redirect_stdout(output),
+        ):
+            self.backend.cmd_set_apply("gappih", "12")
+
+        self.assertIn("gappih=12", (self.conf_dir / "gaps.conf").read_text())
+        validate.assert_called_once_with()
+        dispatch.assert_called_once_with(["reload_config"])
+        result = json.loads(output.getvalue())
+        self.assertTrue(result["ok"])
+        self.assertTrue(result["persisted"])
+        self.assertTrue(result["reloaded"])
+
+    def test_set_apply_restores_persisted_value_when_reload_fails(self) -> None:
+        original = (self.conf_dir / "gaps.conf").read_text(encoding="utf-8")
+        output = StringIO()
+        with (
+            mock.patch.object(self.backend, "validate_config"),
+            mock.patch.object(
+                self.backend,
+                "mmsg_dispatch",
+                side_effect=RuntimeError("reload failed"),
+            ) as dispatch,
+            redirect_stdout(output),
+            self.assertRaises(SystemExit),
+        ):
+            self.backend.cmd_set_apply("gappih", "12")
+
+        self.assertEqual(original, (self.conf_dir / "gaps.conf").read_text())
+        self.assertEqual(2, dispatch.call_count)
+        self.assertIn("reload failed", json.loads(output.getvalue())["error"])
+
+
 if __name__ == "__main__":
     unittest.main()
