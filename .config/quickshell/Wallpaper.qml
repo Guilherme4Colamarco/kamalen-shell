@@ -728,16 +728,23 @@ PanelWindow {
             }
 
             Repeater {
-                model: filtered
+                // Keep a fixed seven-card window around the selection. Using
+                // the complete wallpaper list here decoded hundreds of images
+                // even though only nearby cards could ever be visible.
+                model: 7
 
                 Item {
                     id: slotItem
                     required property int index
-                    required property var modelData
 
-                    property real offset:    index - smoothSelected
+                    property int wallIndex: selected + index - 3
+                    property bool valid: wallIndex >= 0 && wallIndex < filtered.length
+                    property var wallData: valid
+                        ? filtered[wallIndex]
+                        : ({ name: "", isGif: false, isVideo: false })
+                    property real offset:    wallIndex - smoothSelected
                     property real absOffset: Math.abs(offset)
-                    property bool isCenter:  index === selected
+                    property bool isCenter:  valid && wallIndex === selected
 
                     width:  cardW
                     height: cardH
@@ -745,7 +752,7 @@ PanelWindow {
                     y:      0
                     scale:  sceneRoot.slotScale(offset)
                     opacity: sceneRoot.slotOpacity(offset)
-                    visible: absOffset < 3.0
+                    visible: valid && absOffset < 3.0
                     z:      isCenter ? 999 : Math.round((1.0 - Math.min(absOffset, 2.0) / 2.0) * 100)
 
                     transform: Rotation {
@@ -764,21 +771,23 @@ PanelWindow {
 
                         Behavior on radius { NumberAnimation { duration: Animations.medium; easing.type: Easing.OutCubic } }
 
-                        property bool isGif:   slotItem.isCenter && modelData.isGif
-                        property bool isVideo: slotItem.isCenter && modelData.isVideo
+                        property bool isGif:   slotItem.isCenter && slotItem.wallData.isGif
+                        property bool isVideo: slotItem.isCenter && slotItem.wallData.isVideo
 
                         Image {
                             anchors.fill: parent
-                            source: slotItem.isCenter && !slotRect.isGif && !slotRect.isVideo
+                            source: !slotItem.valid
+                                ? ""
+                                : slotItem.isCenter && !slotRect.isGif && !slotRect.isVideo
                                 ? (thumbVersion > 0
-                                    ? "file://" + cachePath + "/" + slotItem.modelData.name + ".thumb.jpg"
-                                    : "file://" + wallDir   + "/" + slotItem.modelData.name)
+                                    ? "file://" + cachePath + "/" + slotItem.wallData.name + ".thumb.jpg"
+                                    : "file://" + wallDir   + "/" + slotItem.wallData.name)
                                 : (!slotItem.isCenter
-                                    ? sceneRoot.thumbSource(slotItem.index)
+                                    ? sceneRoot.thumbSource(slotItem.wallIndex)
                                     : "")
                             onStatusChanged: {
-                                if (status === Image.Error && slotItem.isCenter)
-                                    source = "file://" + wallDir + "/" + slotItem.modelData.name
+                                if (status === Image.Error && slotItem.isCenter && slotItem.valid)
+                                    source = "file://" + wallDir + "/" + slotItem.wallData.name
                             }
                             fillMode: slotItem.isCenter ? Image.PreserveAspectFit : Image.PreserveAspectCrop
                             sourceSize.width: slotItem.isCenter ? 1920 : 400
@@ -792,7 +801,7 @@ PanelWindow {
                             active: slotRect.isGif
                             sourceComponent: AnimatedImage {
                                 anchors.fill: parent
-                                source: "file://" + wallDir + "/" + slotItem.modelData.name
+                                source: "file://" + wallDir + "/" + slotItem.wallData.name
                                 fillMode: Image.PreserveAspectFit
                                 playing: true
                                 asynchronous: true
@@ -806,7 +815,7 @@ PanelWindow {
                                 anchors.fill: parent
                                 MediaPlayer {
                                     id: slotVid
-                                    source: "file://" + wallDir + "/" + slotItem.modelData.name
+                                    source: "file://" + wallDir + "/" + slotItem.wallData.name
                                     loops: MediaPlayer.Infinite
                                     audioOutput: AudioOutput { muted: true }
                                     videoOutput: slotVidOut
@@ -847,14 +856,14 @@ PanelWindow {
                                 spacing: 10
 
                                 Text {
-                                    text:  prettyName(slotItem.modelData.name)
+                                    text:  prettyName(slotItem.wallData.name)
                                     color: "#fff"
                                     font { pixelSize: 12; family: "JetBrainsMono Nerd Font" }
                                     anchors.verticalCenter: parent.verticalCenter
                                 }
 
                                 Text {
-                                    visible: slotItem.modelData.name === currentWall
+                                    visible: slotItem.wallData.name === currentWall
                                     text:    "●"
                                     color:   Colors.green
                                     font { pixelSize: 8; family: "JetBrainsMono Nerd Font" }
@@ -867,8 +876,8 @@ PanelWindow {
                             anchors.fill: parent
                             radius: br
                             color:  "transparent"
-                            border.width: slotItem.isCenter ? 2 : slotItem.modelData.name === currentWall ? 1.5 : 0
-                            border.color: slotItem.modelData.name === currentWall ? Colors.green : Colors.accent
+                            border.width: slotItem.isCenter ? 2 : slotItem.wallData.name === currentWall ? 1.5 : 0
+                            border.color: slotItem.wallData.name === currentWall ? Colors.green : Colors.accent
                             Behavior on border.color { ColorAnimation  { duration: Animations.fast } }
                             Behavior on border.width { NumberAnimation { duration: Animations.fast } }
                             Behavior on radius       { NumberAnimation { duration: Animations.medium; easing.type: Easing.OutCubic } }
@@ -877,10 +886,11 @@ PanelWindow {
 
                     MouseArea {
                         anchors.fill: parent
+                        enabled: slotItem.valid
                         cursorShape: slotItem.isCenter ? Qt.PointingHandCursor : Qt.ArrowCursor
                         onClicked: {
-                            if (slotItem.isCenter) applyWallpaper(slotItem.modelData)
-                            else selected = slotItem.index
+                            if (slotItem.isCenter) applyWallpaper(slotItem.wallData)
+                            else selected = slotItem.wallIndex
                         }
                     }
                 }
