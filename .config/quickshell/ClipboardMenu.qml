@@ -451,11 +451,8 @@ PanelWindow {
                             // ── Image Row ──
                             Item {
                                 visible: isImg
-                                anchors {
-                                    top: parent.top; topMargin: 6
-                                    bottom: parent.bottom; bottomMargin: 6
-                                    left: parent.left; leftMargin: 12
-                                }
+                                height: parent.height - 12
+                                anchors.verticalCenter: parent.verticalCenter
                                 width: Math.min(180, parent.width - 40)
 
                                 Rectangle {

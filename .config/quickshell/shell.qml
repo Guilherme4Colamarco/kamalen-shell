@@ -128,7 +128,7 @@ ShellRoot {
 
     Process {
         id: tiramisu
-        command: ["/home/geko/.config/quickshell/dbus-notifier.py"]
+        command: [Quickshell.env("HOME") + "/.config/quickshell/dbus-notifier.py"]
         running: true
         stdout: SplitParser {
             onRead: data => {

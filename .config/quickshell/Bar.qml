@@ -283,7 +283,7 @@ Scope {
             if (UIState.barMode === "autohide") {
                 var dropdownOpen = UIState.activeDropdown === "dashboard"
                                 || UIState.activeDropdown === "calendar"
-                                || UIState.activeDropdown === "music"
+                                || UIState.activeDropdown === "media"
                 if (dropdownOpen) {
                     attachedVisible = true
                     attachedHideTimer.stop()
