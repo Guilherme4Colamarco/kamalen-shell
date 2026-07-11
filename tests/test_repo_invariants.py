@@ -54,5 +54,15 @@ class MangoConfigLayoutTests(unittest.TestCase):
         self.assertEqual(len(sources), len(set(sources)), "duplicate source= entries")
 
 
+class RepositoryHygieneTests(unittest.TestCase):
+    def test_temporary_patch_and_backup_artifacts_are_not_kept(self) -> None:
+        forbidden = [
+            REPO_ROOT / "patch.diff",
+            REPO_ROOT / ".config" / "quickshell" / "DynamicIsland.qml.bak",
+        ]
+        present = [str(path.relative_to(REPO_ROOT)) for path in forbidden if path.exists()]
+        self.assertEqual([], present, f"temporary artifacts still present: {present}")
+
+
 if __name__ == "__main__":
     unittest.main()
