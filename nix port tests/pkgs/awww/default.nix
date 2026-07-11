@@ -1,4 +1,5 @@
-{ pkgs }:
+# awww — Wayland wallpaper daemon with transitions.
+{ lib, pkgs, ... }:
 
 let
   version = "0.3.0";
@@ -6,14 +7,13 @@ let
   src = pkgs.fetchFromGitHub {
     owner = "LGFae";
     repo = "awww";
-    rev = rev;
-    sha256 = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="; # TODO: update with real hash
+    inherit rev;
+    hash = lib.fakeHash; # TODO: replace with real hash
   };
 in
 pkgs.stdenv.mkDerivation {
   pname = "awww";
-  inherit version;
-  inherit src;
+  inherit version src;
 
   nativeBuildInputs = with pkgs; [ pkg-config ];
 
@@ -25,7 +25,7 @@ pkgs.stdenv.mkDerivation {
     libinput
     pixman
     libglvnd
-    libseat
+    seatd
     libdisplay-info
     libliftoff
     hwdata
@@ -36,15 +36,13 @@ pkgs.stdenv.mkDerivation {
     systemd
   ];
 
-  makeFlags = [ "PREFIX=${pkgs.stdenv.lib.getPrefix pkgs}" ];
+  makeFlags = [ "PREFIX=$(out)" ];
 
-  installFlags = [ "PREFIX=${pkgs.stdenv.lib.getPrefix pkgs}" ];
-
-  meta = with pkgs.lib; {
+  meta = with lib; {
     description = "Wayland wallpaper daemon with transitions";
     homepage = "https://codeberg.org/LGFae/awww";
     license = licenses.gpl3;
-    maintainers = with maintainers; [ ];
+    maintainers = [ ];
     platforms = platforms.linux;
   };
 }

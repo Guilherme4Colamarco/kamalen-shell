@@ -1,22 +1,26 @@
-{ config, pkgs, lib, customPackages, ... }:
+# NixOS system configuration for the kamalen-test VM.
+#
+# This is an example/test host. On real hardware, run:
+#   nixos-generate-config --root /mnt
+# to generate a proper hardware-configuration.nix, then replace the one below.
+{ config, pkgs, lib, ... }:
 
 {
   imports = [
     ./hardware-configuration.nix
   ];
 
-  # Boot
+  # ── Boot ──────────────────────────────────────────────────────────────
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  # Networking
+  # ── Networking ────────────────────────────────────────────────────────
   networking.hostName = "kamalen-nixos";
   networking.networkmanager.enable = true;
 
-  # Time
+  # ── Time & Locale ─────────────────────────────────────────────────────
   time.timeZone = "America/Sao_Paulo";
 
-  # Locale
   i18n.defaultLocale = "pt_BR.UTF-8";
   i18n.extraLocaleSettings = {
     LC_ADDRESS = "pt_BR.UTF-8";
@@ -30,28 +34,21 @@
     LC_TIME = "pt_BR.UTF-8";
   };
 
-  # Users
+  # ── Users ─────────────────────────────────────────────────────────────
   users.users.geko = {
     isNormalUser = true;
     description = "Guilherme";
     extraGroups = [ "wheel" "networkmanager" "video" "seat" "render" "docker" ];
-    packages = with pkgs; [
-      git
-      vim
-      htop
-      btop
-      curl
-      wget
-      unzip
-      p7zip
-    ];
+    # Generate a hash with: mkpasswd -m sha-512
+    # hashedPassword = "$6$...";
   };
 
-  # Sudo
+  # ── Sudo ──────────────────────────────────────────────────────────────
   security.sudo.enable = true;
-  security.sudo.wheelNeedsPassword = false;
+  # NOTE: wheelNeedsPassword defaults to true (password required).
+  # The previous config set it to false, which is a security risk.
 
-  # Kamalen Shell
+  # ── Kamalen Shell ─────────────────────────────────────────────────────
   kamalen-shell = {
     enable = true;
     user = "geko";
@@ -70,7 +67,7 @@
     extraPackages = with pkgs; [
       firefox
       thunderbird
-      code
+      vscode
       discord
       spotify
       steam
@@ -79,7 +76,7 @@
       mangohud
       protonup-qt
       bottles
-      heroic-games-launcher
+      heroic
       obs-studio
       kdenlive
       blender
@@ -92,36 +89,27 @@
       bitwarden
       signal-desktop
       telegram-desktop
-      whatsie
       element-desktop
       vesktop
     ];
   };
 
-  # Hardware
+  # ── Hardware ──────────────────────────────────────────────────────────
   hardware.enableAllFirmware = true;
-  hardware.opengl.enable = true;
-  hardware.pulseaudio.enable = false;  # Using PipeWire
-  hardware.pipewire = {
-    enable = true;
-    alsa.enable = true;
-    alsa.support32Bit = true;
-    pulse.enable = true;
-    jack.enable = false;
-  };
+  hardware.graphics.enable = true;
+  # PipeWire is enabled by the kamalen-shell NixOS module.
+  # Do NOT enable PulseAudio — they conflict.
   hardware.bluetooth.enable = true;
 
-  # Virtualization
+  # ── Virtualization ────────────────────────────────────────────────────
   virtualisation.docker.enable = true;
   virtualisation.libvirtd.enable = true;
 
-  # Nix
+  # ── Nix ───────────────────────────────────────────────────────────────
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
   nix.settings.auto-optimise-store = true;
-  nix.settings.max-jobs = "auto";
-  nix.settings.cores = 0;
 
-  # System packages
+  # ── System packages (basic tools) ─────────────────────────────────────
   environment.systemPackages = with pkgs; [
     git
     vim
@@ -146,10 +134,13 @@
     fish
   ];
 
-  # Services
+  # ── Services ──────────────────────────────────────────────────────────
   services.flatpak.enable = true;
   services.distrobox.enable = true;
 
-  # Clean up
+  # ── Auto-upgrade (disabled for test VM) ───────────────────────────────
   system.autoUpgrade.enable = false;
+
+  # ── State version ─────────────────────────────────────────────────────
+  system.stateVersion = "24.11";
 }

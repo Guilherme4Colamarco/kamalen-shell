@@ -1,4 +1,5 @@
-{ pkgs }:
+# mpvpaper — Video wallpaper utility for Wayland using mpv.
+{ lib, pkgs, ... }:
 
 let
   version = "1.1.0";
@@ -6,14 +7,13 @@ let
   src = pkgs.fetchFromGitHub {
     owner = "GhostNaN";
     repo = "mpvpaper";
-    rev = rev;
-    sha256 = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="; # TODO: update with real hash
+    inherit rev;
+    hash = lib.fakeHash; # TODO: replace with real hash
   };
 in
 pkgs.stdenv.mkDerivation {
   pname = "mpvpaper";
-  inherit version;
-  inherit src;
+  inherit version src;
 
   nativeBuildInputs = with pkgs; [ meson ninja pkg-config ];
 
@@ -26,7 +26,7 @@ pkgs.stdenv.mkDerivation {
     libinput
     pixman
     libglvnd
-    libseat
+    seatd
     libdisplay-info
     libliftoff
     hwdata
@@ -39,16 +39,15 @@ pkgs.stdenv.mkDerivation {
   ];
 
   mesonFlags = [
-    "-Dprefix=${pkgs.stdenv.lib.getPrefix pkgs}"
     "-Dbuildtype=release"
     "-Db_ndebug=true"
   ];
 
-  meta = with pkgs.lib; {
+  meta = with lib; {
     description = "Video wallpaper utility for Wayland using mpv";
     homepage = "https://github.com/GhostNaN/mpvpaper";
     license = licenses.gpl3;
-    maintainers = with maintainers; [ ];
+    maintainers = [ ];
     platforms = platforms.linux;
   };
 }

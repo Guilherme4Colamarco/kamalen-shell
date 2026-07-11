@@ -1,14 +1,24 @@
-{ customPackages, ... }:
+# NixOS system-level module for Kamalen Shell.
+#
+# This module handles system-wide concerns:
+#   - PAM lockscreen service
+#   - PipeWire / WirePlumber audio
+#   - Seatd (Wayland seat management)
+#   - Graphics, fonts, D-Bus, polkit
+#   - NetworkManager, Bluetooth
+#   - Systemd user linger
+#
+# User-level services (quickshell, wallpaper daemon, notifications, MPD, etc.)
+# are handled by the home-manager module to avoid duplication.
+{ config, lib, pkgs, ... }:
 
 let
   cfg = config.kamalen-shell;
-  pkgs = config.pkgs;
 in
 {
   options.kamalen-shell = {
     enable = lib.mkEnableOption "Kamalen Shell desktop environment";
 
-    # User configuration
     user = lib.mkOption {
       type = lib.types.str;
       default = "geko";
@@ -20,7 +30,7 @@ in
       enable = lib.mkEnableOption "Enable mango-ext as window manager";
       package = lib.mkOption {
         type = lib.types.package;
-        default = customPackages.mango-ext;
+        default = pkgs.mango-ext;
         description = "mango-ext package to use";
       };
     };
@@ -30,7 +40,8 @@ in
       enable = lib.mkEnableOption "Enable awww wallpaper daemon";
       package = lib.mkOption {
         type = lib.types.package;
-        default = customPackages.awww;
+        default = pkgs.awww;
+        description = "awww package to use";
       };
     };
 
@@ -39,7 +50,8 @@ in
       enable = lib.mkEnableOption "Enable mpvpaper for video wallpapers";
       package = lib.mkOption {
         type = lib.types.package;
-        default = customPackages.mpvpaper;
+        default = pkgs.mpvpaper;
+        description = "mpvpaper package to use";
       };
     };
 
@@ -48,7 +60,8 @@ in
       enable = lib.mkEnableOption "Enable tiramisu notification daemon";
       package = lib.mkOption {
         type = lib.types.package;
-        default = customPackages.tiramisu;
+        default = pkgs.tiramisu;
+        description = "tiramisu package to use";
       };
     };
 
@@ -57,7 +70,8 @@ in
       enable = lib.mkEnableOption "Enable gpu-screen-recorder";
       package = lib.mkOption {
         type = lib.types.package;
-        default = customPackages.gpu-screen-recorder;
+        default = pkgs.gpu-screen-recorder;
+        description = "gpu-screen-recorder package to use";
       };
     };
 
@@ -67,6 +81,7 @@ in
       package = lib.mkOption {
         type = lib.types.package;
         default = pkgs.mpd;
+        description = "MPD package to use";
       };
       mpdMpris = lib.mkEnableOption "Enable mpd-mpris for MPRIS support";
     };
@@ -83,10 +98,11 @@ in
 
     # QuickShell
     quickshell = {
-      enable = lib.mkEnableOption "Enable QuickShell (installed via nixpkgs)";
+      enable = lib.mkEnableOption "Enable QuickShell";
       package = lib.mkOption {
         type = lib.types.package;
         default = pkgs.quickshell;
+        description = "QuickShell package to use";
       };
     };
 
@@ -95,7 +111,8 @@ in
       enable = lib.mkEnableOption "Install Kamalen Python utilities (iris, mango_config, etc.)";
       package = lib.mkOption {
         type = lib.types.package;
-        default = customPackages.kamalen-python;
+        default = pkgs.kamalen-python;
+        description = "kamalen-python package to use";
       };
     };
 
@@ -103,176 +120,87 @@ in
     extraPackages = lib.mkOption {
       type = lib.types.listOf lib.types.package;
       default = [ ];
-      description = "Additional packages to install";
+      description = "Additional packages to install at system level";
     };
   };
 
-  config = lib.mkIf cfg.enable {
-    # Window Manager: mango-ext
-    lib.mkIf cfg.windowManager.enable {
-      environment.systemPackages = [ cfg.windowManager.package ];
-
-      # Wayland session desktop entry
-      wayland.windowManager.mango-ext = {
+  config = lib.mkMerge [
+    # ── Always-on system services when kamalen-shell is enabled ──────────
+    (lib.mkIf cfg.enable {
+      # PipeWire audio (replaces PulseAudio)
+      services.pipewire = {
         enable = true;
-        package = cfg.windowManager.package;
+        alsa.enable = true;
+        alsa.support32Bit = true;
+        pulse.enable = true;
       };
+      services.wireplumber.enable = true;
 
-      # Autostart QuickShell and other services via mango-ext config
-      # (handled by home-manager module)
-    };
+      # Graphics (hardware.opengl was renamed to hardware.graphics in 24.05+)
+      hardware.graphics.enable = true;
 
-    # PAM for lockscreen
-    lib.mkIf cfg.pam.enable {
+      # Seat management for Wayland
+      services.seatd.enable = true;
+
+      # Font configuration
+      fonts.fontconfig.enable = true;
+      fonts.packages = with pkgs; [
+        (nerdfonts.override { fonts = [ "JetBrainsMono" ]; })
+        noto-fonts
+        noto-fonts-emoji
+        noto-fonts-cjk
+      ];
+
+      # D-Bus for desktop integration
+      services.dbus.enable = true;
+
+      # Polkit for authentication
+      security.polkit.enable = true;
+
+      # Udev rules for input devices
+      services.udev.packages = with pkgs; [ libinput ];
+
+      # NetworkManager
+      networking.networkmanager.enable = true;
+
+      # Bluetooth
+      hardware.bluetooth.enable = true;
+
+      # Enable systemd user services for the target user
+      systemd.user.lingerUsers = [ cfg.user ];
+
+      # Extra packages
+      environment.systemPackages = cfg.extraPackages;
+    })
+
+    # ── Window manager ───────────────────────────────────────────────────
+    (lib.mkIf (cfg.enable && cfg.windowManager.enable) {
+      environment.systemPackages = [ cfg.windowManager.package ];
+    })
+
+    # ── PAM lockscreen ──────────────────────────────────────────────────
+    (lib.mkIf (cfg.enable && cfg.pam.enable) {
       security.pam.services.${cfg.pam.serviceName} = {
         text = ''
           auth required pam_unix.so nodelay nullok
           account required pam_unix.so
         '';
       };
-    };
+    })
 
-    # Wallpaper daemon (awww) - systemd user service
-    lib.mkIf cfg.wallpaperDaemon.enable {
-      systemd.user.services.awww = {
-        description = "AWWW - Wayland Wallpaper Daemon";
-        wantedBy = [ "graphical-session.target" ];
-        serviceConfig = {
-          ExecStart = "${cfg.wallpaperDaemon.package}/bin/awww";
-          Restart = "on-failure";
-          RestartSec = 5;
-          Environment = "WAYLAND_DISPLAY=${config.services.wayland.displayName}";
-        };
-      };
-    };
-
-    # Video wallpaper (mpvpaper) - systemd user service
-    lib.mkIf cfg.videoWallpaper.enable {
-      systemd.user.services.mpvpaper = {
-        description = "MPVPaper - Video Wallpaper for Wayland";
-        wantedBy = [ "graphical-session.target" ];
-        serviceConfig = {
-          ExecStart = "${cfg.videoWallpaper.package}/bin/mpvpaper --fork '*' ${config.home.homeDirectory}/wallpapers/current";
-          Restart = "on-failure";
-          RestartSec = 5;
-          Environment = "WAYLAND_DISPLAY=${config.services.wayland.displayName}";
-        };
-      };
-    };
-
-    # Notification daemon (tiramisu)
-    lib.mkIf cfg.notifications.enable {
-      systemd.user.services.tiramisu = {
-        description = "Tiramisu - Notification Daemon for Wayland";
-        wantedBy = [ "graphical-session.target" ];
-        serviceConfig = {
-          ExecStart = "${cfg.notifications.package}/bin/tiramisu";
-          Restart = "on-failure";
-          RestartSec = 5;
-          Environment = "WAYLAND_DISPLAY=${config.services.wayland.displayName}";
-        };
-      };
-    };
-
-    # Screen recorder
-    lib.mkIf cfg.screenRecorder.enable {
+    # ── Screen recorder ─────────────────────────────────────────────────
+    (lib.mkIf (cfg.enable && cfg.screenRecorder.enable) {
       environment.systemPackages = [ cfg.screenRecorder.package ];
-    };
+    })
 
-    # MPD + mpd-mpris
-    lib.mkIf cfg.mpd.enable {
-      services.mpd = {
-        enable = true;
-        user = cfg.user;
-        network = {
-          bindToAddress = "127.0.0.1";
-          port = 6600;
-        };
-        database = "/home/${cfg.user}/.config/mpd/database";
-        logFile = "/home/${cfg.user}/.config/mpd/log";
-        pidFile = "/home/${cfg.user}/.config/mpd/pid";
-        stateFile = "/home/${cfg.user}/.config/mpd/state";
-        stickerFile = "/home/${cfg.user}/.config/mpd/sticker.sql";
-        musicDirectory = "/home/${cfg.user}/Music";
-        playlistDirectory = "/home/${cfg.user}/.config/mpd/playlists";
-        extraConfig = ''
-          audio_output {
-            type "pipewire"
-            name "PipeWire"
-          }
-        '';
-      };
-
-      lib.mkIf cfg.mpd.mpdMpris {
-        systemd.user.services.mpd-mpris = {
-          description = "MPD MPRIS Bridge";
-          wantedBy = [ "graphical-session.target" ];
-          after = [ "mpd.service" ];
-          serviceConfig = {
-            ExecStart = "${pkgs.mpd-mpris}/bin/mpd-mpris";
-            Restart = "on-failure";
-            RestartSec = 5;
-          };
-        };
-      };
-    };
-
-    # QuickShell
-    lib.mkIf cfg.quickshell.enable {
+    # ── QuickShell ──────────────────────────────────────────────────────
+    (lib.mkIf (cfg.enable && cfg.quickshell.enable) {
       environment.systemPackages = [ cfg.quickshell.package ];
-    };
+    })
 
-    # Python utilities
-    lib.mkIf cfg.pythonUtils.enable {
+    # ── Python utilities ────────────────────────────────────────────────
+    (lib.mkIf (cfg.enable && cfg.pythonUtils.enable) {
       environment.systemPackages = [ cfg.pythonUtils.package ];
-    };
-
-    # Extra packages
-    environment.systemPackages = cfg.extraPackages;
-
-    # Required services for Wayland
-    services.pipewire = {
-      enable = true;
-      alsa.enable = true;
-      alsa.support32Bit = true;
-      pulse.enable = true;
-      jack.enable = false;
-    };
-
-    services.wireplumber.enable = true;
-
-    hardware.opengl.enable = true;
-
-    # Seat management for Wayland
-    services.seatd.enable = true;
-
-    # Font configuration
-    fonts.fontconfig.enable = true;
-    fonts.packages = with pkgs; [
-      jetbrains-mono-nerdfonts
-      noto-fonts
-      noto-fonts-emoji
-      noto-fonts-cjk
-    ];
-
-    # D-Bus for desktop integration
-    services.dbus.enable = true;
-
-    # Polkit for authentication
-    services.polkit.enable = true;
-
-    # Udev rules for input devices
-    services.udev.packages = with pkgs; [ libinput ];
-
-    # NetworkManager for network management
-    services.networkmanager.enable = true;
-
-    # Bluetooth
-    services.bluez.enable = true;
-    hardware.bluetooth.enable = true;
-
-    # User services
-    systemd.user.enable = true;
-    systemd.user.lingerUsers = [ cfg.user ];
-  };
+    })
+  ];
 }

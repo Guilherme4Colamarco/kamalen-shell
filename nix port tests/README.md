@@ -1,6 +1,6 @@
-# Kamalen Shell - NixOS Port Tests
+# Kamalen Shell - NixOS Port
 
-This directory contains the NixOS port of Kamalen Shell, a dynamic Wayland desktop environment.
+NixOS port of Kamalen Shell, a dynamic Wayland desktop environment built on mango-ext (MangoWM) + QuickShell.
 
 ## Structure
 
@@ -12,48 +12,77 @@ nix port tests/
 │   ├── awww/                   # Wayland wallpaper daemon
 │   ├── mpvpaper/               # Video wallpaper utility
 │   ├── rmpc/                   # Rust MPD TUI client
-│   ├── tiramisu/               # Screenshot tool
+│   ├── tiramisu/               # Notification daemon
 │   ├── gpu-screen-recorder/    # GPU screen recorder
 │   ├── pokemon-colorscripts/   # Pokemon terminal art
 │   └── kamalen-python/         # Python utilities (iris, mango_config, etc.)
 ├── modules/
-│   ├── nixos/                  # NixOS system modules
-│   │   └── default.nix         # System-level: PAM, services, window manager
-│   └── home-manager/           # Home-manager user modules
-│       └── default.nix         # User-level: dotfiles, services, packages
+│   ├── nixos/                  # NixOS system module
+│   │   └── default.nix         # System-level: PAM, PipeWire, seatd, fonts, etc.
+│   └── home-manager/           # Home-manager user module
+│       └── default.nix         # User-level: dotfiles, services, packages, shell
 ├── hosts/
-│   ├── configuration.nix       # NixOS system configuration
+│   ├── configuration.nix       # NixOS system configuration (test VM)
+│   ├── hardware-configuration.nix  # QEMU/KVM hardware config (replace on real HW)
 │   └── home.nix                # Home-manager user configuration
 ├── lib/
+│   ├── default.nix             # Lib entry point
 │   └── helpers.nix             # Helper functions
-└── README.md                   # This file
+├── README.md                   # This file
+└── test-flake.sh               # Test script
 ```
+
+## Architecture
+
+### Overlay-based package access
+
+All custom packages are available via a flake overlay. Inside any module,
+they're accessible as `pkgs.mango-ext`, `pkgs.awww`, etc. — no need to pass
+`customPackages` as a special argument.
+
+### System vs User separation
+
+| Layer | Module | Responsibilities |
+|-------|--------|-----------------|
+| System | `modules/nixos/` | PAM, PipeWire, seatd, graphics, fonts, D-Bus, polkit, NetworkManager, Bluetooth |
+| User | `modules/home-manager/` | Dotfiles deployment, systemd user services, packages, shell config |
+
+User services (quickshell, awww, mpvpaper, tiramisu, MPD) are defined only in
+the home-manager module to avoid duplication with the NixOS module.
 
 ## Quick Start
 
-### 1. Test the flake
+### 1. Check flake validity
 
 ```bash
 cd /home/geko/kamalen-shell/"nix port tests"
+nix flake check --no-build
+```
 
-# Check flake validity
-nix flake check
+### 2. Build individual packages
 
-# Build all packages
-nix build .#checks.x86_64-linux.mango-ext
-nix build .#checks.x86_64-linux.awww
-nix build .#checks.x86_64-linux.mpvpaper
-nix build .#checks.x86_64-linux.rmpc
-nix build .#checks.x86_64-linux.tiramisu
-nix build .#checks.x86_64-linux.gpu-screen-recorder
-nix build .#checks.x86_64-linux.pokemon-colorscripts
-nix build .#checks.x86_64-linux.kamalen-python
+```bash
+nix build .#mango-ext
+nix build .#awww
+nix build .#mpvpaper
+nix build .#rmpc
+nix build .#tiramisu
+nix build .#gpu-screen-recorder
+nix build .#pokemon-colorscripts
+nix build .#kamalen-python
+```
 
-# Enter dev shell
+> **Note:** All packages use `lib.fakeHash` for source hashes. When you first
+> build, Nix will fail and print the correct hash. Replace `lib.fakeHash` with
+> the reported hash in each `pkgs/*/default.nix`.
+
+### 3. Enter dev shell
+
+```bash
 nix develop
 ```
 
-### 2. Test NixOS configuration (in VM)
+### 4. Test NixOS configuration (in VM)
 
 ```bash
 # Build VM
@@ -63,7 +92,7 @@ nix build .#nixosConfigurations.kamalen-test.config.system.build.vm
 ./result/bin/run-*-vm
 ```
 
-### 3. Test Home Manager (standalone)
+### 5. Test Home Manager (standalone)
 
 ```bash
 # Build home configuration
@@ -73,21 +102,29 @@ nix build .#homeConfigurations.geko.activationPackage
 ./result/activate
 ```
 
-### 4. Deploy to existing NixOS system
+### 6. Deploy to existing NixOS system
 
-```bash
-# Add to your flake.nix
-{
-  inputs.kamalen-shell.url = "github:Guilherme4Colamarco/kamalen-shell";
-  inputs.kamalen-shell.inputs.nixpkgs.follows = "nixpkgs";
-}
+Add to your flake inputs:
+```nix
+inputs.kamalen-shell.url = "github:Guilherme4Colamarco/kamalen-shell";
+inputs.kamalen-shell.inputs.nixpkgs.follows = "nixpkgs";
+```
 
-# Use modules
+Use in your NixOS config:
+```nix
 { config, inputs, ... }:
 {
   imports = [ inputs.kamalen-shell.nixosModules.kamalen-shell ];
-  kamalen-shell.enable = true;
-  kamalen-shell.user = "your-user";
+
+  # Apply the overlay so custom packages are available
+  nixpkgs.overlays = [ inputs.kamalen-shell.overlays.default ];
+
+  kamalen-shell = {
+    enable = true;
+    user = "your-user";
+    windowManager.enable = true;
+    # ...
+  };
 }
 ```
 
@@ -95,74 +132,47 @@ nix build .#homeConfigurations.geko.activationPackage
 
 | Package | Status | Notes |
 |---------|--------|-------|
-| mango-ext | 🔄 WIP | Needs wlroots 0.19, scenefx |
-| awww | 🔄 WIP | Simple Makefile build |
-| mpvpaper | 🔄 WIP | Meson build |
-| rmpc | 🔄 WIP | Cargo build |
-| tiramisu | 🔄 WIP | Meson build |
-| gpu-screen-recorder | 🔄 WIP | Meson build, many deps |
-| pokemon-colorscripts | 🔄 WIP | Simple Makefile |
-| kamalen-python | ✅ Ready | Python scripts bundled |
+| mango-ext | WIP | Needs wlroots, scenefx (may require nixpkgs-unstable) |
+| awww | WIP | Simple Makefile build |
+| mpvpaper | WIP | Meson build |
+| rmpc | WIP | Cargo build (`cargoHash`) |
+| tiramisu | WIP | Meson build |
+| gpu-screen-recorder | WIP | Meson build, many deps |
+| pokemon-colorscripts | WIP | Simple script copy |
+| kamalen-python | Ready | Python scripts bundled |
 
-## TODO: Update SHA256 Hashes
+## TODO: Update Hashes
 
-All packages currently have placeholder SHA256 hashes. Update them:
+All packages use `lib.fakeHash` as a placeholder. To get the real hash:
 
 ```bash
-# For GitHub sources
-nix-prefetch-github --owner ernestoCruz05 --repo mango-ext --rev main
+# Method 1: Just build and read the error
+nix build .#mango-ext
+# Nix will print: got: sha256-<real-hash>
+# Replace lib.fakeHash with the printed hash.
 
-# For GitLab sources
-nix-prefetch-gitlab --owner phoneybadner --repo pokemon-colorscripts --rev main
+# Method 2: Use nix-prefetch
+nix run nixpkgs#nix-prefetch -- --fetcher fetchFromGitHub --owner ernestoCruz05 --repo mango-ext --rev main
 
-# For Cargo packages
-nix-prefetch-cargo --url https://github.com/mierak/rmpc --rev v0.15.0
+# For Cargo packages (rmpc):
+# The cargoHash is separate — build will report it.
 ```
-
-## Architecture
-
-### System Layer (NixOS Module)
-- PAM configuration for lockscreen
-- Seat management (seatd)
-- PipeWire/WirePlumber audio
-- NetworkManager, Bluetooth
-- MPD system service (optional)
-- Window manager integration
-
-### User Layer (Home Manager)
-- Dotfiles deployment (symlinks to repo)
-- Systemd user services:
-  - quickshell
-  - awww (wallpaper daemon)
-  - mpvpaper (video wallpapers)
-  - tiramisu (notifications)
-  - mpd + mpd-mpris
-  - kamalen-dbus-notifier
-  - kamalen-wallpaper-pregen
-  - kamalen-wallpaper-apply
-- Shell configuration (Fish + Starship)
-- Package management
-
-### Development Layer (DevShell)
-- All build dependencies
-- Source packages for hacking
-- Environment variables set
 
 ## Key Differences from Arch install.sh
 
 | Aspect | Arch install.sh | NixOS Port |
 |--------|-----------------|------------|
 | Package management | pacman + AUR + manual builds | Nix packages + overlay |
-| Config deployment | Symlinks via bash script | home-manager declarative |
+| Config deployment | Symlinks via bash script | home-manager declarative (xdg.configFile) |
 | Services | systemctl --user manual | systemd.user.services declarative |
-| PAM | Manual /etc/pam.d/lockscreen | security.pam.services.lockscreen |
+| PAM | Manual /etc/pam.d/lockscreen | security.pam.services |
 | Window manager | Manual mango-ext build | nixosModules + package |
 | Reproducibility | Partial | Full (flake.lock) |
 | Rollback | Manual backup restore | nixos-rebuild switch --rollback |
 
 ## Testing Checklist
 
-- [ ] All packages build successfully
+- [ ] All packages build with real hashes
 - [ ] DevShell enters correctly
 - [ ] NixOS VM boots to mango-ext
 - [ ] QuickShell starts and shows bar
@@ -174,11 +184,3 @@ nix-prefetch-cargo --url https://github.com/mierak/rmpc --rev v0.15.0
 - [ ] MPD + mpd-mpris works
 - [ ] Video wallpapers play
 - [ ] Home-manager activation works
-
-## Contributing
-
-1. Update SHA256 hashes for all packages
-2. Test on actual NixOS hardware
-3. Submit missing packages to nixpkgs upstream
-4. Add more configuration options
-5. Document any hardware-specific quirks

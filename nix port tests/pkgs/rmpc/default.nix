@@ -1,4 +1,5 @@
-{ pkgs }:
+# rmpc — MPD client written in Rust with TUI.
+{ lib, pkgs, ... }:
 
 let
   version = "0.15.0";
@@ -6,16 +7,15 @@ let
   src = pkgs.fetchFromGitHub {
     owner = "mierak";
     repo = "rmpc";
-    rev = rev;
-    sha256 = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="; # TODO: update with real hash
+    inherit rev;
+    hash = lib.fakeHash; # TODO: replace with real hash
   };
 in
 pkgs.rustPlatform.buildRustPackage {
   pname = "rmpc";
-  inherit version;
-  inherit src;
+  inherit version src;
 
-  cargoSha256 = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="; # TODO: update with real hash
+  cargoHash = lib.fakeHash; # TODO: replace with real hash
 
   nativeBuildInputs = with pkgs; [ pkg-config ];
 
@@ -33,14 +33,13 @@ pkgs.rustPlatform.buildRustPackage {
     libappindicator-gtk3
   ];
 
-  # RMPC uses cargo features
-  cargoFeatures = [ "notify" "dbus" "appindicator" ];
+  buildFeatures = [ "notify" "dbus" "appindicator" ];
 
-  meta = with pkgs.lib; {
+  meta = with lib; {
     description = "MPD client written in Rust with TUI";
     homepage = "https://github.com/mierak/rmpc";
     license = licenses.gpl3;
-    maintainers = with maintainers; [ ];
+    maintainers = [ ];
     platforms = platforms.linux;
   };
 }

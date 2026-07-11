@@ -1,52 +1,47 @@
-{ config, pkgs, lib, customPackages, ... }:
+# Home-manager configuration for user "geko".
+#
+# This file sets basic home info and configures the kamalen-shell
+# home-manager module with host-specific options.
+#
+# Programs (fish, starship, git, etc.) and packages are configured by the
+# kamalen-shell home-manager module itself — do not duplicate them here.
+{ config, pkgs, lib, ... }:
 
+let
+  # Path to the kamalen-shell repo root (two levels up from hosts/)
+  repoRoot = ./../..;
+in
 {
-  # Home-manager configuration for user "geko"
+  # ── Home basics ───────────────────────────────────────────────────────
   home.username = "geko";
   home.homeDirectory = "/home/geko";
   home.stateVersion = "24.11";
 
-  # Kamalen Shell home-manager module
+  # ── Kamalen Shell configuration ───────────────────────────────────────
   kamalen-shell = {
     enable = true;
     user = "geko";
 
-    # Config source (local repo)
-    configSource = ./../../..;
+    # Path to the kamalen-shell repo (for config file deployment)
+    configSource = repoRoot;
 
     # Wallpapers
     wallpapers = {
       enable = true;
-      source = ./../../../wallpapers;
+      source = repoRoot + "/wallpapers";
       targetDir = "/home/geko/wallpapers";
       setCurrent = true;
     };
 
-    # QuickShell
+    # Config deployments
     quickshell.enable = true;
-
-    # MangoWM
     mango.enable = true;
-
-    # Kitty
     kitty.enable = true;
-
-    # Neovim
     nvim.enable = true;
-
-    # Starship
     starship.enable = true;
-
-    # Cava
     cava.enable = true;
-
-    # RMPC
     rmpc.enable = true;
-
-    # Fastfetch
     fastfetch.enable = true;
-
-    # Scripts
     scripts.enable = true;
 
     # MPD
@@ -66,94 +61,8 @@
     ];
   };
 
-  # Additional packages
-  home.packages = with pkgs; [
-    firefox
-    thunderbird
-    code
-    discord
-    spotify
-    steam
-    lutris
-    gamemode
-    mangohud
-    protonup-qt
-    bottles
-    heroic-games-launcher
-    obs-studio
-    kdenlive
-    blender
-    gimp
-    inkscape
-    krita
-    libreoffice
-    zotero
-    keepassxc
-    bitwarden
-    signal-desktop
-    telegram-desktop
-    whatsie
-    element-desktop
-    vesktop
-  ];
-
-  # Programs
-  programs.fish = {
-    enable = true;
-    shellAliases = {
-      vim = "nvim";
-      gs = "git status";
-      gd = "git diff";
-      ga = "git add .";
-      gc = "git commit";
-      gp = "git push";
-    };
-    shellInit = ''
-      fish_vi_key_bindings
-      set -g fish_greeting
-      starship init fish | source
-    '';
-  };
-
-  programs.starship = {
-    enable = true;
-    enableFishIntegration = true;
-  };
-
-  programs.git = {
-    enable = true;
-    userName = "Guilherme4Colamarco";
-    userEmail = "guilherme@example.com";
-  };
-
-  programs.ssh = {
-    enable = true;
-    startAgent = true;
-  };
-
-  programs.gnupg = {
-    enable = true;
-    agent = {
-      enable = true;
-      enableSSHSupport = true;
-    };
-  };
-
-  programs.direnv.enable = true;
-  programs.zoxide.enable = true;
-  programs.fzf.enable = true;
-  programs.bat.enable = true;
-  programs.eza.enable = true;
-  programs.delta.enable = true;
-  programs.bottom.enable = true;
-  programs.lazygit.enable = true;
-
-  # Nix
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
-  nix.settings.auto-optimise-store = true;
-  nix.settings.max-jobs = "auto";
-  nix.settings.cores = 0;
-
-  # News
-  home-manager.news.enable = false;
+  # ── Host-specific packages (not in the module) ───────────────────────
+  # The kamalen-shell module already installs the core desktop packages.
+  # Add only host-specific applications here.
+  home.packages = with pkgs; [ ];
 }

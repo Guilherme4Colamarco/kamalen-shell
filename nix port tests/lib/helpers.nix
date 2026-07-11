@@ -1,99 +1,108 @@
-{ nixpkgs, ... }:
+# Library helpers for the Kamalen Shell flake.
+#
+# These are utility functions that can be used by other parts of the flake
+# or by consumers. They are not required for the core functionality.
+{ nixpkgs, lib ? nixpkgs.lib, ... }:
 
 {
-  # Helper functions for the flake
-
-  # Get package from custom packages
-  getCustomPackage = name: system: nixpkgs.legacyPackages.${system}.customPackages.${name};
-
-  # Create a simple derivation from a script
-  makeScript = { name, script, dependencies ? [ ], ... } @ attrs:
+  # Create a simple derivation that wraps a shell script as an executable.
+  makeScript =
+    { name
+    , script
+    , dependencies ? [ ]
+    , ...
+    } @ attrs:
     nixpkgs.stdenv.mkDerivation (attrs // {
       pname = name;
       version = "1.0.0";
-      src = nixpkgs.lib.cleanSourceWith {
-        src = nixpkgs.lib.fileset.fromSource {
-          root = ./.;
-          pattern = ".";
-        };
-        filter = _: _: false;
-      };
+      # Empty source — we only write the script in installPhase.
+      dontUnpack = true;
       nativeBuildInputs = dependencies;
       installPhase = ''
+        runHook preInstall
         mkdir -p $out/bin
-        cat > $out/bin/${name} << 'EOF'
-${script}
-EOF
+        cat > $out/bin/${name} << 'SCRIPT'
+        ${script}
+        SCRIPT
         chmod +x $out/bin/${name}
+        runHook postInstall
       '';
     });
 
-  # Fetch from GitHub with hash verification
-  fetchGitHubChecked = { owner, repo, rev, sha256 }:
-    nixpkgs.fetchFromGitHub { inherit owner repo rev sha256; };
+  # Fetch from GitHub with hash verification.
+  # Use lib.fakeHash during development; Nix will report the correct hash.
+  fetchGitHubChecked = { owner, repo, rev, hash ? lib.fakeHash, ... }:
+    nixpkgs.fetchFromGitHub { inherit owner repo rev hash; };
 
-  # Fetch from GitLab with hash verification
-  fetchGitLabChecked = { owner, repo, rev, sha256 }:
-    nixpkgs.fetchFromGitLab { inherit owner repo rev sha256; };
+  # Fetch from GitLab with hash verification.
+  fetchGitLabChecked = { owner, repo, rev, hash ? lib.fakeHash, ... }:
+    nixpkgs.fetchFromGitLab { inherit owner repo rev hash; };
 
-  # Create a Python package from local scripts
-  makePythonPackage = { name, version, scripts, dependencies ? [ ], ... } @ attrs:
+  # Create a Python package from local script files.
+  # `scripts` is a list of attrsets: { src = relative/path.py; dest = "name.py"; binName = "cli-name"; }
+  makePythonPackage =
+    { name
+    , version
+    , srcRoot
+    , scripts
+    , dependencies ? [ ]
+    , ...
+    } @ attrs:
     nixpkgs.python3Packages.buildPythonApplication (attrs // {
       pname = name;
       inherit version;
-      src = nixpkgs.lib.cleanSourceWith {
-        src = nixpkgs.lib.fileset.toSource {
-          root = ./.;
-          fileset = nixpkgs.lib.fileset.union (builtins.map (s: nixpkgs.lib.fileset.fromSource {
-            root = ./.;
-            pattern = s.src;
-          }) scripts);
-        };
-        filter = path: type: type != "directory";
-      };
+      src = srcRoot;
       postInstall = ''
         mkdir -p $out/bin
+        mkdir -p $out/share/${name}
         ${lib.concatStringsSep "\n" (builtins.map (s: ''
           cp $src/${s.src} $out/share/${name}/${s.dest}
-          ln -s $out/share/${name}/${s.dest} $out/bin/${s.binName}
           chmod +x $out/share/${name}/${s.dest}
+          ln -s $out/share/${name}/${s.dest} $out/bin/${s.binName}
         '') scripts)}
       '';
       propagatedBuildInputs = dependencies;
     });
 
-  # Merge multiple home-manager modules
-  mergeHomeModules = modules:
-    nixpkgs.lib.foldl' (acc: m: nixpkgs.lib.mergeEqualOption acc m) { } modules;
-
-  # Create systemd user service
-  makeUserService = { name, description, execStart, wantedBy ? [ "graphical-session.target" ], after ? [ ], environment ? { }, restart ? "on-failure", restartSec ? 5 }:
+  # Create a systemd user service attrset for home-manager.
+  makeUserService =
+    { name
+    , description
+    , execStart
+    , wantedBy ? [ "graphical-session.target" ]
+    , after ? [ ]
+    , environment ? { }
+    , restart ? "on-failure"
+    , restartSec ? 5
+    }:
     {
-      enable = true;
-      description = description;
-      wantedBy = wantedBy;
-      after = after;
+      inherit description wantedBy after;
       serviceConfig = {
         ExecStart = execStart;
         Restart = restart;
         RestartSec = toString restartSec;
-        Environment = nixpkgs.lib.concatStringsSep " " (builtins.map (kv: "${kv.name}=${kv.value}") (builtins.attrValues environment));
       };
+      environment = environment;
     };
 
-  # Create XDG config file entry
-  makeXdgConfig = { name, source, target, recursive ? true }:
-    {
-      source = source;
-      target = target;
-      recursive = recursive;
-    };
-
-  # Create home file entry
-  makeHomeFile = { name, source, target, recursive ? false, executable ? false, text ? null }:
-    (if text != null then
-      { text = text; executable = executable; }
+  # Create a home.file entry attrset.
+  makeHomeFile =
+    { source ? null
+    , target
+    , recursive ? false
+    , executable ? false
+    , text ? null
+    }:
+    if text != null then
+      { inherit text executable; }
     else
-      { source = source; target = target; recursive = recursive; executable = executable; }
-    );
+      { inherit source target recursive executable; };
+
+  # Create an xdg.configFile entry attrset.
+  makeXdgConfig =
+    { source
+    , target
+    , recursive ? true
+    }:
+    { inherit source target recursive; };
 }

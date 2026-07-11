@@ -1,4 +1,5 @@
-{ pkgs }:
+# pokemon-colorscripts — Pokemon terminal art colorscripts.
+{ lib, pkgs, ... }:
 
 let
   version = "1.0.0";
@@ -6,32 +7,37 @@ let
   src = pkgs.fetchFromGitLab {
     owner = "phoneybadner";
     repo = "pokemon-colorscripts";
-    rev = rev;
-    sha256 = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="; # TODO: update with real hash
+    inherit rev;
+    hash = lib.fakeHash; # TODO: replace with real hash
   };
 in
 pkgs.stdenv.mkDerivation {
   pname = "pokemon-colorscripts";
-  inherit version;
-  inherit src;
+  inherit version src;
 
-  nativeBuildInputs = with pkgs; [ ];
+  nativeBuildInputs = [ ];
 
   buildInputs = with pkgs; [ bash coreutils ];
 
+  # No build system — just install scripts.
+  dontConfigure = true;
+  dontBuild = true;
+
   installPhase = ''
+    runHook preInstall
     mkdir -p $out/bin
     mkdir -p $out/share/pokemon-colorscripts
     cp -r pokemon-colorscripts.sh $out/bin/pokemon-colorscripts
     cp -r colorscripts $out/share/pokemon-colorscripts/
     chmod +x $out/bin/pokemon-colorscripts
+    runHook postInstall
   '';
 
-  meta = with pkgs.lib; {
+  meta = with lib; {
     description = "Pokemon colorscripts for terminal";
     homepage = "https://gitlab.com/phoneybadner/pokemon-colorscripts";
     license = licenses.mit;
-    maintainers = with maintainers; [ ];
+    maintainers = [ ];
     platforms = platforms.linux;
   };
 }
