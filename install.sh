@@ -269,11 +269,16 @@ install_mango_ext() {
 
 # ── Setup PAM ───────────────────────────────────────────────────
 setup_pam() {
-    if [[ ! -f /etc/pam.d/lockscreen ]]; then
+    if [[ ! -f /etc/pam.d/lockscreen ]] || grep -qE 'pam_unix\.so.*nullok' /etc/pam.d/lockscreen; then
         info "Setting up PAM lockscreen service..."
         if ! $DRY_RUN; then
-            echo "auth required pam_unix.so nodelay nullok
-account required pam_unix.so" | sudo tee /etc/pam.d/lockscreen > /dev/null
+            local pam_tmp
+            pam_tmp=$(mktemp)
+            printf '%s\n' \
+                'auth required pam_unix.so nodelay' \
+                'account required pam_unix.so' > "$pam_tmp"
+            sudo install -m 0644 -o root -g root "$pam_tmp" /etc/pam.d/lockscreen
+            rm -f "$pam_tmp"
         fi
         log "PAM lockscreen configured"
     else

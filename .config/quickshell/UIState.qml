@@ -183,6 +183,10 @@ Singleton {
     }
 
     function lock() {
+        activeDropdown = ""
+        powerMenuVisible = false
+        layoutMenuVisible = false
+        clipboardMenuVisible = false
         locked = true
     }
 

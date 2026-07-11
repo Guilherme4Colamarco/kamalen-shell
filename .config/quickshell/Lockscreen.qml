@@ -12,6 +12,7 @@ PanelWindow {
     property string password: ""
     property bool authenticating: false
     property bool authFailed: false
+    property bool authInputPending: false
     property var pfpList: []
     property string timeText: ""
     property string dateText: ""
@@ -51,8 +52,12 @@ PanelWindow {
         if (password.length === 0 || authenticating) return
         authenticating = true
         authFailed = false
-        authProc.command = ["python3", "-u", "-c",
-            "import pam, sys; p = pam.pam(); sys.exit(0 if p.authenticate('" + Quickshell.env("USER") + "', '" + password.replace(/'/g, "'\\''") + "', service='lockscreen') else 1)"]
+        authInputPending = true
+        authProc.command = [
+            "python3",
+            Quickshell.env("HOME") + "/.config/quickshell/lockscreen_auth.py",
+            Quickshell.env("USER")
+        ]
         authProc.running = true
     }
 
@@ -112,6 +117,14 @@ PanelWindow {
 
     Process {
         id: authProc
+        onRunningChanged: {
+            if (running && authInputPending) {
+                authProc.write(password + "\n")
+                authInputPending = false
+                password = ""
+                hiddenInput.text = ""
+            }
+        }
         onExited: code => {
             authenticating = false
             if (code === 0) {

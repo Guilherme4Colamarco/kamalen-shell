@@ -19,7 +19,8 @@ class LockscreenSecurityTests(unittest.TestCase):
     def test_pam_configuration_never_allows_null_passwords(self) -> None:
         offenders = []
         for name in ("install.sh", "install-debian.sh"):
-            if "nullok" in (REPO_ROOT / name).read_text(encoding="utf-8"):
+            script = (REPO_ROOT / name).read_text(encoding="utf-8")
+            if re.search(r"auth required pam_unix\.so[^\n]*\bnullok\b", script):
                 offenders.append(name)
         self.assertEqual([], offenders)
 

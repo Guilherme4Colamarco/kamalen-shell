@@ -60,7 +60,7 @@ ShellRoot {
         id: launcherToggleWatch
         command: ["bash", "-c", "touch /tmp/qs-launcher-toggle; inotifywait -m -e close_write /tmp/qs-launcher-toggle 2>/dev/null"]
         running: true
-        stdout: SplitParser { onRead: data => UIState.toggleDropdown("launcher") }
+        stdout: SplitParser { onRead: data => { if (!UIState.locked) UIState.toggleDropdown("launcher") } }
         onExited: launcherToggleRestart.start()
     }
 
@@ -80,7 +80,7 @@ ShellRoot {
         id: powerMenuWatch
         command: ["bash", "-c", "touch /tmp/qs-power-menu; inotifywait -m -e close_write /tmp/qs-power-menu 2>/dev/null"]
         running: true
-        stdout: SplitParser { onRead: data => UIState.togglePowerMenu() }
+        stdout: SplitParser { onRead: data => { if (!UIState.locked) UIState.togglePowerMenu() } }
         onExited: powerMenuWatchRestart.start()
     }
 
@@ -90,7 +90,7 @@ ShellRoot {
         id: layoutMenuWatch
         command: ["bash", "-c", "touch /tmp/qs-layout-menu; inotifywait -m -e close_write /tmp/qs-layout-menu 2>/dev/null"]
         running: true
-        stdout: SplitParser { onRead: data => UIState.toggleLayoutMenu() }
+        stdout: SplitParser { onRead: data => { if (!UIState.locked) UIState.toggleLayoutMenu() } }
         onExited: layoutMenuWatchRestart.start()
     }
 
@@ -100,7 +100,7 @@ ShellRoot {
         id: clipboardMenuWatch
         command: ["bash", "-c", "touch /tmp/qs-clipboard-toggle; inotifywait -m -e close_write /tmp/qs-clipboard-toggle 2>/dev/null"]
         running: true
-        stdout: SplitParser { onRead: data => UIState.toggleClipboardMenu() }
+        stdout: SplitParser { onRead: data => { if (!UIState.locked) UIState.toggleClipboardMenu() } }
         onExited: clipboardMenuWatchRestart.start()
     }
 
@@ -110,7 +110,7 @@ ShellRoot {
         id: wallpaperToggleWatch
         command: ["bash", "-c", "touch /tmp/qs-wallpaper-toggle; inotifywait -m -e close_write /tmp/qs-wallpaper-toggle 2>/dev/null"]
         running: true
-        stdout: SplitParser { onRead: data => UIState.toggleDropdown("wallpaper") }
+        stdout: SplitParser { onRead: data => { if (!UIState.locked) UIState.toggleDropdown("wallpaper") } }
         onExited: wallpaperToggleRestart.start()
     }
 
@@ -120,7 +120,7 @@ ShellRoot {
         id: mediaToggleWatch
         command: ["bash", "-c", "touch /tmp/qs-media-toggle; inotifywait -m -e close_write /tmp/qs-media-toggle 2>/dev/null"]
         running: true
-        stdout: SplitParser { onRead: data => UIState.toggleDropdown("media") }
+        stdout: SplitParser { onRead: data => { if (!UIState.locked) UIState.toggleDropdown("media") } }
         onExited: mediaToggleRestart.start()
     }
 
