@@ -290,6 +290,105 @@ class QmlIntegrationTests(unittest.TestCase):
             self.assertIn("loop-file=inf", source)
         self.assertIn('locked ? "-STOP" : "-CONT"', shell)
 
+    def test_shell_uses_one_supervised_ipc_bridge(self) -> None:
+        shell = (QML_DIR / "shell.qml").read_text(encoding="utf-8")
+        runtime = (QML_DIR / "Runtime.qml").read_text(encoding="utf-8")
+        qmldir = (QML_DIR / "qmldir").read_text(encoding="utf-8")
+
+        self.assertIn("id: ipcBridge", shell)
+        self.assertIn("ipc_bridge.py", shell)
+        self.assertIn("Runtime.supervise", shell)
+        for obsolete in (
+            "launcherToggleWatch", "lockRequestWatch", "powerMenuWatch",
+            "layoutMenuWatch", "clipboardMenuWatch", "wallpaperToggleWatch",
+            "mediaToggleWatch",
+        ):
+            self.assertNotIn(obsolete, shell)
+        for route in ("dashboard", "settings", "shortcuts"):
+            self.assertIn('case "' + route + '"', shell)
+        self.assertIn("function supervise(command)", runtime)
+        self.assertIn("process_supervisor.py", runtime)
+        self.assertIn("singleton Runtime 1.0 Runtime.qml", qmldir)
+
+    def test_transient_layers_are_mutually_exclusive(self) -> None:
+        state = (QML_DIR / "UIState.qml").read_text(encoding="utf-8")
+
+        self.assertIn("property bool shortcutHelpVisible", state)
+        self.assertIn("function closeTransientSurfaces()", state)
+        self.assertIn("function showShortcutHelp()", state)
+        for function_name in (
+            "toggleDropdown", "togglePowerMenu", "toggleLayoutMenu",
+            "toggleClipboardMenu", "openSettings",
+        ):
+            body = re.search(
+                rf"function {function_name}\([^)]*\)\s*\{{(?P<body>.*?)\n\s*\}}",
+                state,
+                flags=re.DOTALL,
+            )
+            self.assertIsNotNone(body, function_name)
+            self.assertIn("closeTransientSurfaces", body.group("body"), function_name)
+
+    def test_dashboard_has_fullscreen_dismiss_layer_and_keyboard_routes(self) -> None:
+        dashboard = (QML_DIR / "Dashboard.qml").read_text(encoding="utf-8")
+
+        self.assertIn("anchors { top: true; right: true; bottom: true; left: true }", dashboard)
+        self.assertIn("WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive", dashboard)
+        self.assertIn("id: outsideDismissArea", dashboard)
+        self.assertIn("onClicked: UIState.closeDropdowns()", dashboard)
+        self.assertIn("Keys.onPressed", dashboard)
+        for key in ("Qt.Key_Escape", "Qt.Key_1", "Qt.Key_3", "Qt.Key_Question"):
+            self.assertIn(key, dashboard)
+
+    def test_shared_controls_are_keyboard_and_accessibility_ready(self) -> None:
+        button = (QML_DIR / "components" / "MaterialButton.qml").read_text(encoding="utf-8")
+        toggle = (QML_DIR / "components" / "ConfigToggle.qml").read_text(encoding="utf-8")
+        slider = (QML_DIR / "components" / "ConfigSlider.qml").read_text(encoding="utf-8")
+        settings = (QML_DIR / "SettingsWindow.qml").read_text(encoding="utf-8")
+
+        self.assertIn("FocusScope", button)
+        self.assertIn("activeFocusOnTab: true", button)
+        self.assertIn("Accessible.role: Accessible.Button", button)
+        self.assertIn("Qt.Key_Return", button)
+        self.assertIn("Qt.Key_Space", toggle)
+        for key in ("Qt.Key_Left", "Qt.Key_Right", "Qt.Key_Home", "Qt.Key_End"):
+            self.assertIn(key, slider)
+        self.assertIn("Qt.Key_Escape", settings)
+        self.assertIn("Qt.ControlModifier", settings)
+        self.assertIn("Qt.Key_1", settings)
+
+    def test_bar_outline_tracks_the_dynamic_window_accent(self) -> None:
+        bar = (QML_DIR / "Bar.qml").read_text(encoding="utf-8")
+        surface = (QML_DIR / "components" / "MaterialSurface.qml").read_text(encoding="utf-8")
+
+        self.assertGreaterEqual(bar.count("outlineColor: Colors.accent"), 4)
+        self.assertGreaterEqual(bar.count("outlineWidth:"), 4)
+        self.assertIn("property real outlineWidth", surface)
+        self.assertIn("property color outlineColor", surface)
+
+    def test_global_shell_shortcuts_are_declared(self) -> None:
+        binds = (REPO_ROOT / ".config" / "mango" / "conf.d" / "binds.conf").read_text(encoding="utf-8")
+
+        for binding in (
+            "bind=SUPER,a,spawn,touch /tmp/qs-dashboard-toggle",
+            "bind=SUPER,comma,spawn,touch /tmp/qs-settings-toggle",
+            "bind=SUPER+SHIFT,m,spawn,touch /tmp/qs-media-toggle",
+            "bind=SUPER+SHIFT,slash,spawn,touch /tmp/qs-shortcuts-toggle",
+        ):
+            self.assertIn(binding, binds)
+
+    def test_active_shell_surfaces_use_skin_geometry(self) -> None:
+        active_surfaces = (
+            "Dashboard.qml", "SettingsWindow.qml", "Wallpaper.qml", "Music.qml",
+            "Calendar.qml", "Lockscreen.qml", "tabs/QuickTab.qml",
+        )
+        offenders = []
+        for name in active_surfaces:
+            source = (QML_DIR / name).read_text(encoding="utf-8")
+            if "UIState.borderRadius" in source or "cycleBorderRadius" in source:
+                offenders.append(name)
+
+        self.assertEqual([], offenders, f"legacy geometry users: {offenders}")
+
 
 if __name__ == "__main__":
     unittest.main()
