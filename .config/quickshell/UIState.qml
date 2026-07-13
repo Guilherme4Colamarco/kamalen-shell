@@ -22,6 +22,7 @@ Singleton {
     property bool layoutMenuVisible: false
     property bool clipboardMenuVisible: false
     property bool settingsVisible: false
+    property bool shortcutHelpVisible: false
     property real uiScale: 1.15
     property bool vimNavigationEnabled: false
     property bool advancedMonitorParameters: false
@@ -35,7 +36,7 @@ Singleton {
     property int brightness: 100
 
     function openSettings() {
-        activeDropdown = ""
+        closeTransientSurfaces()
         settingsVisible = true
         MangoConfig.loadAll()
     }
@@ -246,18 +247,27 @@ Singleton {
     }
 
     function lock() {
+        closeTransientSurfaces()
+        settingsVisible = false
+        locked = true
+    }
+
+    function closeTransientSurfaces() {
         activeDropdown = ""
         powerMenuVisible = false
         layoutMenuVisible = false
         clipboardMenuVisible = false
-        locked = true
+        shortcutHelpVisible = false
     }
 
     function togglePowerMenu() {
-        powerMenuVisible = !powerMenuVisible
+        var opening = !powerMenuVisible
+        closeTransientSurfaces()
+        powerMenuVisible = opening
     }
 
     function showPowerMenu() {
+        closeTransientSurfaces()
         powerMenuVisible = true
     }
 
@@ -266,10 +276,13 @@ Singleton {
     }
 
     function toggleLayoutMenu() {
-        layoutMenuVisible = !layoutMenuVisible
+        var opening = !layoutMenuVisible
+        closeTransientSurfaces()
+        layoutMenuVisible = opening
     }
 
     function showLayoutMenu() {
+        closeTransientSurfaces()
         layoutMenuVisible = true
     }
 
@@ -278,10 +291,13 @@ Singleton {
     }
 
     function toggleClipboardMenu() {
-        clipboardMenuVisible = !clipboardMenuVisible
+        var opening = !clipboardMenuVisible
+        closeTransientSurfaces()
+        clipboardMenuVisible = opening
     }
 
     function showClipboardMenu() {
+        closeTransientSurfaces()
         clipboardMenuVisible = true
     }
 
@@ -290,11 +306,20 @@ Singleton {
     }
 
     function toggleDropdown(name) {
-        activeDropdown = activeDropdown === name ? "" : name
+        var opening = activeDropdown !== name
+        closeTransientSurfaces()
+        if (opening) activeDropdown = name
     }
 
     function closeDropdowns() {
         activeDropdown = ""
+        shortcutHelpVisible = false
+    }
+
+    function showShortcutHelp() {
+        closeTransientSurfaces()
+        shortcutHelpVisible = true
+        activeDropdown = "dashboard"
     }
 
     function addNotification(app, title, body) {
@@ -751,7 +776,7 @@ Singleton {
     Process {
         id: cavaProc
         running: mediaState === "playing"
-        command: ["cava", "-p", Quickshell.env("HOME") + "/.config/cava/config_raw"]
+        command: Runtime.supervise(["cava", "-p", Quickshell.env("HOME") + "/.config/cava/config_raw"])
         stdout: SplitParser {
             onRead: data => {
                 var p = data.trim().split(";")
@@ -788,8 +813,7 @@ Singleton {
     }
 
     function saveAppUsage() {
-        var escaped = JSON.stringify(appUsage).replace(/'/g, "'\\''")
-        appUsageSaveProc.command = ["bash", "-c", "printf '%s' '" + escaped + "' > " + _appUsagePath]
+        appUsageSaveProc.command = Runtime.writeJsonCommand(_appUsagePath, appUsage)
         appUsageSaveProc.running = true
     }
 
@@ -924,8 +948,7 @@ Singleton {
             wallhavenSorting:    wallhavenSorting,
             wallhavenCategories: wallhavenCategories
         }
-        var escaped = JSON.stringify(data).replace(/'/g, "'\\''")
-        saveProc.command = ["bash", "-c", "printf '%s' '" + escaped + "' > " + _settingsPath]
+        saveProc.command = Runtime.writeJsonCommand(_settingsPath, data)
         saveProc.running = true
     }
 
@@ -1030,7 +1053,7 @@ Singleton {
 
     Process {
         id: volWatch
-        command: ["pactl", "subscribe"]
+        command: Runtime.supervise(["pactl", "subscribe"])
         running: true
         stdout: SplitParser { onRead: data => { if (data.includes("sink")) volDebounce.restart() } }
         onExited: volWatchRestart.start()

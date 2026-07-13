@@ -250,10 +250,10 @@ Singleton {
 
     Process {
         id: wallWatch
-        command: ["bash", "-c",
+        command: Runtime.supervise(["bash", "-c",
             "inotifywait -m -e close_write,moved_to,create '" + 
             Quickshell.env("HOME") + "/wallpapers' 2>/dev/null | " +
-            "while read; do readlink -f '" + wallpaperPath + "' 2>/dev/null && sleep 0.1; done"]
+            "while read; do readlink -f '" + wallpaperPath + "' 2>/dev/null && sleep 0.1; done"])
         running: true
         stdout: SplitParser {
             onRead: data => {

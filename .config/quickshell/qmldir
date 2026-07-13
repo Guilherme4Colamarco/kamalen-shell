@@ -6,6 +6,7 @@ singleton MangoConfig 1.0 MangoConfig.qml
 singleton StyleProfiles 1.0 StyleProfiles.qml
 singleton Metrics 1.0 Metrics.qml
 singleton Skins 1.0 Skins.qml
+singleton Runtime 1.0 Runtime.qml
 Bar 1.0 Bar.qml
 Dashboard 1.0 Dashboard.qml
 SettingsWindow 1.0 SettingsWindow.qml

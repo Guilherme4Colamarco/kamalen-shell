@@ -96,7 +96,7 @@ Scope {
 
     Process {
         id: tagWatch
-        command: ["mmsg", "watch", "all-tags"]
+        command: Runtime.supervise(["mmsg", "watch", "all-tags"])
         running: true
         stdout: SplitParser { splitMarker: "\n"; onRead: data => parseTagOutput(data) }
         onExited: tagRestart.start()
@@ -120,7 +120,7 @@ Scope {
 
     Process {
         id: wifiWatch
-        command: ["nmcli", "monitor"]
+        command: Runtime.supervise(["nmcli", "monitor"])
         running: true
         stdout: SplitParser { onRead: data => wifiDebounce.restart() }
         onExited: wifiWatchRestart.start()
@@ -151,7 +151,7 @@ Scope {
 
     Process {
         id: btWatch
-        command: ["dbus-monitor", "--system", "type='signal',sender='org.bluez'"]
+        command: Runtime.supervise(["dbus-monitor", "--system", "type='signal',sender='org.bluez'"])
         running: true
         stdout: SplitParser { onRead: data => btDebounce.restart() }
         onExited: btWatchRestart.start()
@@ -184,7 +184,7 @@ Scope {
 
     Process {
         id: batWatch
-        command: ["upower", "--monitor-detail"]
+        command: Runtime.supervise(["upower", "--monitor-detail"])
         running: false
         stdout: SplitParser { onRead: data => { if (hasBattery) batDebounce.restart() } }
         onExited: { if (hasBattery) batWatchRestart.start() }

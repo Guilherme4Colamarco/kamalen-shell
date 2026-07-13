@@ -58,78 +58,49 @@ ShellRoot {
     }
 
     Process {
-        id: launcherToggleWatch
-        command: ["bash", "-c", "touch /tmp/qs-launcher-toggle; inotifywait -m -e close_write /tmp/qs-launcher-toggle 2>/dev/null"]
+        id: ipcBridge
+        command: Runtime.supervise([
+            "python3", Quickshell.env("HOME") + "/.config/quickshell/ipc_bridge.py",
+            "launcher=/tmp/qs-launcher-toggle",
+            "lock=" + Quickshell.env("HOME") + "/.cache/qs/lock",
+            "power=/tmp/qs-power-menu",
+            "layout=/tmp/qs-layout-menu",
+            "clipboard=/tmp/qs-clipboard-toggle",
+            "wallpaper=/tmp/qs-wallpaper-toggle",
+            "media=/tmp/qs-media-toggle",
+            "dashboard=/tmp/qs-dashboard-toggle",
+            "settings=/tmp/qs-settings-toggle",
+            "shortcuts=/tmp/qs-shortcuts-toggle"
+        ])
         running: true
-        stdout: SplitParser { onRead: data => { if (!UIState.locked) UIState.toggleDropdown("launcher") } }
-        onExited: launcherToggleRestart.start()
+        stdout: SplitParser {
+            splitMarker: "\n"
+            onRead: data => {
+                var route = data.trim()
+                if (!route || route === "READY") return
+                if (route !== "lock" && UIState.locked) return
+                switch (route) {
+                case "launcher": UIState.toggleDropdown("launcher"); break
+                case "lock": UIState.lock(); break
+                case "power": UIState.togglePowerMenu(); break
+                case "layout": UIState.toggleLayoutMenu(); break
+                case "clipboard": UIState.toggleClipboardMenu(); break
+                case "wallpaper": UIState.toggleDropdown("wallpaper"); break
+                case "media": UIState.toggleDropdown("media"); break
+                case "dashboard": UIState.toggleDropdown("dashboard"); break
+                case "settings": UIState.toggleSettings(); break
+                case "shortcuts": UIState.showShortcutHelp(); break
+                }
+            }
+        }
+        onExited: ipcBridgeRestart.start()
     }
 
-    Timer { id: launcherToggleRestart; interval: 1000; onTriggered: launcherToggleWatch.running = true }
-
-    Process {
-        id: lockWatch
-        command: ["bash", "-c", "touch ~/.cache/qs/lock; inotifywait -m -e close_write ~/.cache/qs/lock 2>/dev/null"]
-        running: true
-        stdout: SplitParser { onRead: data => UIState.lock() }
-        onExited: lockWatchRestart.start()
-    }
-
-    Timer { id: lockWatchRestart; interval: 1000; onTriggered: lockWatch.running = true }
-
-    Process {
-        id: powerMenuWatch
-        command: ["bash", "-c", "touch /tmp/qs-power-menu; inotifywait -m -e close_write /tmp/qs-power-menu 2>/dev/null"]
-        running: true
-        stdout: SplitParser { onRead: data => { if (!UIState.locked) UIState.togglePowerMenu() } }
-        onExited: powerMenuWatchRestart.start()
-    }
-
-    Timer { id: powerMenuWatchRestart; interval: 1000; onTriggered: powerMenuWatch.running = true }
-
-    Process {
-        id: layoutMenuWatch
-        command: ["bash", "-c", "touch /tmp/qs-layout-menu; inotifywait -m -e close_write /tmp/qs-layout-menu 2>/dev/null"]
-        running: true
-        stdout: SplitParser { onRead: data => { if (!UIState.locked) UIState.toggleLayoutMenu() } }
-        onExited: layoutMenuWatchRestart.start()
-    }
-
-    Timer { id: layoutMenuWatchRestart; interval: 1000; onTriggered: layoutMenuWatch.running = true }
-
-    Process {
-        id: clipboardMenuWatch
-        command: ["bash", "-c", "touch /tmp/qs-clipboard-toggle; inotifywait -m -e close_write /tmp/qs-clipboard-toggle 2>/dev/null"]
-        running: true
-        stdout: SplitParser { onRead: data => { if (!UIState.locked) UIState.toggleClipboardMenu() } }
-        onExited: clipboardMenuWatchRestart.start()
-    }
-
-    Timer { id: clipboardMenuWatchRestart; interval: 1000; onTriggered: clipboardMenuWatch.running = true }
-
-    Process {
-        id: wallpaperToggleWatch
-        command: ["bash", "-c", "touch /tmp/qs-wallpaper-toggle; inotifywait -m -e close_write /tmp/qs-wallpaper-toggle 2>/dev/null"]
-        running: true
-        stdout: SplitParser { onRead: data => { if (!UIState.locked) UIState.toggleDropdown("wallpaper") } }
-        onExited: wallpaperToggleRestart.start()
-    }
-
-    Timer { id: wallpaperToggleRestart; interval: 1000; onTriggered: wallpaperToggleWatch.running = true }
-
-    Process {
-        id: mediaToggleWatch
-        command: ["bash", "-c", "touch /tmp/qs-media-toggle; inotifywait -m -e close_write /tmp/qs-media-toggle 2>/dev/null"]
-        running: true
-        stdout: SplitParser { onRead: data => { if (!UIState.locked) UIState.toggleDropdown("media") } }
-        onExited: mediaToggleRestart.start()
-    }
-
-    Timer { id: mediaToggleRestart; interval: 1000; onTriggered: mediaToggleWatch.running = true }
+    Timer { id: ipcBridgeRestart; interval: 1000; onTriggered: ipcBridge.running = true }
 
     Process {
         id: tiramisu
-        command: [Quickshell.env("HOME") + "/.config/quickshell/dbus-notifier.py"]
+        command: Runtime.supervise([Quickshell.env("HOME") + "/.config/quickshell/dbus-notifier.py"])
         running: true
         stdout: SplitParser {
             onRead: data => {
