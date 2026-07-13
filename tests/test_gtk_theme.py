@@ -31,18 +31,17 @@ class GtkThemeTests(unittest.TestCase):
             "green": "#a6e3a1", "yellow": "#f9e2af",
         }
 
-    def test_profile_css_has_distinct_widget_geometry(self) -> None:
-        tui = self.helper.aesthetic_css("tui-style", 4)
-        pills = self.helper.aesthetic_css("pills", 4)
-        gnome = self.helper.aesthetic_css("gnome-like", 4)
-
-        self.assertIn("border-radius: 0px", tui)
-        self.assertIn("border-radius: 999px", pills)
-        self.assertIn("border-radius: 8px", gnome)
-        for css in (tui, pills, gnome):
-            self.assertIn("progressbar", css)
-            self.assertIn("scale slider", css)
-            self.assertIn("switch slider", css)
+    def test_commonality_material_is_complete_and_has_no_window_chrome(self) -> None:
+        css = self.helper.material_css("commonality", 4, self.palette)
+        self.assertIn("linear-gradient", css)
+        self.assertIn("border-radius: 0px", css)
+        self.assertIn("box-shadow:", css)
+        self.assertIn("progressbar", css)
+        self.assertIn("scale slider", css)
+        self.assertIn("switch slider", css)
+        self.assertNotIn("headerbar", css)
+        self.assertNotIn("titlebar", css)
+        self.assertNotIn("dock", css)
 
     def test_write_theme_preserves_user_css_and_imports_once(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -52,17 +51,18 @@ class GtkThemeTests(unittest.TestCase):
                 folder.mkdir()
                 (folder / "gtk.css").write_text("/* user rule */\nbutton.custom { color: red; }\n")
 
-            self.helper.write_theme(base, self.palette, "pills")
-            self.helper.write_theme(base, self.palette, "pills")
+            self.helper.write_theme(base, self.palette, "commonality")
+            self.helper.write_theme(base, self.palette, "commonality")
 
             for version in (3, 4):
                 folder = base / f"gtk-{version}.0"
                 root = (folder / "gtk.css").read_text()
                 self.assertIn("button.custom", root)
                 self.assertEqual(1, root.count('kamalen-colors.css'))
-                self.assertEqual(1, root.count('kamalen-aesthetic.css'))
+                self.assertEqual(1, root.count('kamalen-material.css'))
+                self.assertNotIn('kamalen-aesthetic.css', root)
                 self.assertTrue((folder / "kamalen-colors.css").exists())
-                self.assertIn("border-radius: 999px", (folder / "kamalen-aesthetic.css").read_text())
+                self.assertIn("border-radius: 0px", (folder / "kamalen-material.css").read_text())
 
 
 if __name__ == "__main__":

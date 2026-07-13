@@ -19,7 +19,7 @@ IRIS = QML_DIR / "iris" / "iris.py"
 
 
 class SddmQuickshellIntegrationTests(unittest.TestCase):
-    def test_iris_publishes_canonical_palette_atomically(self) -> None:
+    def test_iris_publishes_wallpaper_palette_atomically(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             home = Path(directory)
             wallpaper = home / "wallpaper.png"
@@ -44,9 +44,9 @@ class SddmQuickshellIntegrationTests(unittest.TestCase):
 
             self.assertEqual(0, result.returncode, result.stderr)
             palette = json.loads(result.stdout)
-            canonical = home / ".cache" / "qs" / "current-palette.json"
+            canonical = home / ".cache" / "qs" / "wallpaper-palette.json"
             self.assertEqual(palette, json.loads(canonical.read_text(encoding="utf-8")))
-            self.assertEqual([], list(canonical.parent.glob(".current-palette.*")))
+            self.assertEqual([], list(canonical.parent.glob(".wallpaper-palette.*")))
 
     def test_color_updates_debounce_sddm_sync(self) -> None:
         colors = (QML_DIR / "Colors.qml").read_text(encoding="utf-8")

@@ -124,39 +124,50 @@ class QmlIntegrationTests(unittest.TestCase):
         self.assertIn("revert-monitor-preview", monitors)
         self.assertNotIn("addMonitorFn", monitors)
 
-    def test_aesthetic_profiles_are_independent_and_tokenized(self) -> None:
-        aesthetics = (QML_DIR / "Aesthetics.qml").read_text(encoding="utf-8")
+    def test_skins_own_geometry_and_material_tokens(self) -> None:
+        skins = (QML_DIR / "Skins.qml").read_text(encoding="utf-8")
         state = (QML_DIR / "UIState.qml").read_text(encoding="utf-8")
         qmldir = (QML_DIR / "qmldir").read_text(encoding="utf-8")
 
-        for profile in ("tui-style", "pills", "gnome-like"):
-            self.assertIn('"' + profile + '"', aesthetics)
+        for profile in ("kamalen", "commonality"):
+            self.assertIn('"' + profile + '"', skins)
         for token in (
             "containerRadius", "controlRadius", "buttonRadius", "fieldRadius",
-            "sliderTrackHeight", "sliderThumbSize", "progressHeight", "switchWidth",
+            "sliderTrackHeight", "progressHeight", "borderWidth", "bevelWidth",
+            "textureSource", "controlHeight", "rowHeight",
         ):
-            self.assertIn(token, aesthetics)
-        self.assertIn('property string aestheticProfile: "pills"', state)
-        self.assertIn("function applyAestheticProfile", state)
-        self.assertIn("singleton Aesthetics 1.0 Aesthetics.qml", qmldir)
+            self.assertIn(token, skins)
+        self.assertIn('property string skinProfile: "kamalen"', state)
+        self.assertIn('property string colorMode: "auto"', state)
+        self.assertIn('property string colorPreset: "catppuccin"', state)
+        self.assertIn("function setSkinProfile", state)
+        self.assertIn("singleton Skins 1.0 Skins.qml", qmldir)
+        self.assertNotIn("singleton Aesthetics", qmldir)
 
-    def test_shared_controls_use_aesthetic_tokens(self) -> None:
+    def test_shared_controls_use_material_primitives(self) -> None:
         controls = "\n".join(
             (QML_DIR / "components" / name).read_text(encoding="utf-8")
             for name in ("ConfigToggle.qml", "ConfigSlider.qml", "ConfigSpinner.qml", "TileButton.qml")
         )
 
-        self.assertIn("Aesthetics.controlRadius", controls)
-        self.assertIn("Aesthetics.sliderTrackHeight", controls)
-        self.assertIn("Aesthetics.sliderThumbSize", controls)
-        self.assertIn("Aesthetics.switchWidth", controls)
+        self.assertIn("MaterialSurface", controls)
+        self.assertIn("MaterialTrack", controls)
+        self.assertIn("Skins.switchWidth", controls)
 
-    def test_appearance_exposes_three_aesthetic_previews(self) -> None:
+    def test_appearance_exposes_skin_color_motion_and_interface(self) -> None:
         appearance = (QML_DIR / "tabs" / "LookTab.qml").read_text(encoding="utf-8")
 
-        self.assertIn("Aesthetics.profiles", appearance)
-        self.assertIn("UIState.applyAestheticProfile(modelData.id)", appearance)
-        self.assertIn("AestheticPreview", appearance)
+        self.assertIn("Skins.profiles", appearance)
+        self.assertIn("UIState.setSkinProfile(modelData.id)", appearance)
+        for title in ("Skin", "Cores", "Movimento", "Interface"):
+            self.assertIn('title: "' + title + '"', appearance)
+        self.assertNotIn("Aesthetics.profiles", appearance)
+
+    def test_material_engine_does_not_implement_titlebars_or_docks(self) -> None:
+        material = (QML_DIR / "components" / "MaterialSurface.qml").read_text(encoding="utf-8").lower()
+        skins = (QML_DIR / "Skins.qml").read_text(encoding="utf-8").lower()
+        self.assertNotIn("titlebar", material + skins)
+        self.assertNotIn("dock", material + skins)
 
     def test_clipboard_row_children_do_not_use_horizontal_anchors(self) -> None:
         clipboard = (QML_DIR / "ClipboardMenu.qml").read_text(encoding="utf-8")
