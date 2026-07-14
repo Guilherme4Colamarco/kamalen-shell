@@ -1,21 +1,42 @@
 # Kamalen Shell
 
-[English](README.md)
+<p align="center">
+  <strong>Uma shell Wayland adaptativa para MangoWM.</strong><br>
+  Superfícies em Quickshell, configurações modulares do compositor e um desktop que muda de personalidade com o wallpaper.
+</p>
 
-Kamalen Shell é uma configuração de desktop Wayland para MangoWM/mango-ext. Ela combina uma interface em Quickshell, um pipeline de cores guiado pelo wallpaper e uma configuração modular do MangoWM.
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/Guilherme4Colamarco/kamalen-shell?style=for-the-badge&label=licen%C3%A7a&color=9b8afb&labelColor=292337" alt="Licença MIT"></a>
+  <img src="https://img.shields.io/badge/sess%C3%A3o-Wayland-76c7c0?style=for-the-badge&labelColor=292337" alt="Sessão Wayland">
+  <img src="https://img.shields.io/badge/shell-Quickshell-b4befe?style=for-the-badge&labelColor=292337" alt="Quickshell">
+  <a href="README.md"><img src="https://img.shields.io/badge/readme-English-f9e2af?style=for-the-badge&labelColor=292337" alt="Read in English"></a>
+</p>
+
+<p align="center">
+  <img src="docs/assets/screenshots/settings-appearance.webp" alt="Configurações de aparência do Kamalen Shell" width="880">
+</p>
+
+<p align="center">
+  <a href="#instalação">Instalar</a> ·
+  <a href="#uso-diário">Atalhos</a> ·
+  <a href="#screenshots">Screenshots</a> ·
+  <a href="#mapa-do-repositório">Documentação</a>
+</p>
+
+> [!NOTE]
+> **Adaptativo por padrão.** O Iris extrai a paleta do wallpaper e a aplica na shell, MangoWM, GTK, Neovim, Kitty e Starship — sem perder a skin visual escolhida.
 
 > Arch Linux é o alvo principal. Debian 12/13 e Ubuntu 24.04+ usam um instalador separado; a porta para NixOS é experimental.
 
 ## Destaques
 
-- Barra, dashboard, launcher, notificações, tela de bloqueio e seletor de wallpapers em Quickshell.
-- Pipeline Iris: trocar o wallpaper atualiza shell, bordas do MangoWM, GTK, Neovim, Kitty e Starship.
-- Janela de Configurações separada com Aparência, Monitores, Mango, Binds e Regras; monitores usam preview com confirmar/reverter.
-- Quatro skins adaptativas: Kamalen, Commonality, Aqua 2009 e Skeuos Workshop.
-- Layers orientadas a teclado: descarte por clique externo, ajuda de atalhos, escala global e navegação Vim opcional.
-- Configuração modular do MangoWM em `.config/mango/conf.d/`.
-- Wallpapers em vídeo locais com `mpvpaper` e navegador opcional do catálogo DesktopHut, com link para a fonte.
-- Testes para instalador, configuração Mango, integração QML, segurança da tela de bloqueio e providers de wallpaper.
+| Superfície | O que oferece |
+| --- | --- |
+| **Shell** | Barra reativa, dashboard, launcher, notificações, tela de bloqueio e seletor de wallpapers em Quickshell. |
+| **Aparência** | Quatro skins adaptativas — Kamalen, Commonality, Aqua 2009 e Skeuos Workshop — combinadas com cores guiadas pelo wallpaper. |
+| **Controle** | Janela de Configurações separada para Aparência, Monitores, Mango, Binds e Regras; monitores usam preview com confirmar/reverter. |
+| **Fluxo** | Layers orientadas a teclado, com descarte por clique externo, ajuda de atalhos, escala global e navegação Vim opcional. |
+| **Configuração** | Arquivos modulares do MangoWM em `.config/mango/conf.d/` e testes para instalador, ponte de configuração, integração QML, tela de bloqueio e providers de wallpaper. |
 
 ## Requisitos
 
@@ -80,6 +101,8 @@ O seletor inclui abas Local, Wallhaven e Live. A aba Live filtra o DesktopHut pe
 
 ## Screenshots
 
+<p align="center"><sub>Um pipeline de cores, quatro superfícies — a paleta continua responsiva enquanto o material muda.</sub></p>
+
 | Aparência e materiais | Configuração de monitores |
 | --- | --- |
 | ![Configurações de aparência](docs/assets/screenshots/settings-appearance.webp) | ![Configurações de monitores](docs/assets/screenshots/settings-monitors.webp) |
@@ -88,7 +111,7 @@ O seletor inclui abas Local, Wallhaven e Live. A aba Live filtra o DesktopHut pe
 | --- | --- |
 | ![Configurações do Mango](docs/assets/screenshots/settings-mango.webp) | ![Seletor de wallpapers](docs/assets/screenshots/wallpaper-picker.webp) |
 
-Consulte a [galeria completa](docs/screenshots.md) para o contexto de cada tela.
+<p align="center">Consulte a <a href="docs/screenshots.md">galeria completa</a> para o contexto de cada tela.</p>
 
 ## Mapa do repositório
 
@@ -114,6 +137,10 @@ wallpapers/              Coleção de wallpapers incluída
 - [Especificações e planos históricos](docs/archive/)
 - [Reviews técnicos históricos](docs/archive/reviews/)
 - [Porta experimental para NixOS](<nix port tests/README.md>)
+
+> [!TIP]
+> Comece pelo [guia atual da shell](docs/current-shell.md) para o uso diário e
+> consulte a [arquitetura](docs/architecture.md) antes de alterar a configuração ativa.
 
 ## Desenvolvimento e verificação
 

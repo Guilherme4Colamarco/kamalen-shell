@@ -1,21 +1,42 @@
 # Kamalen Shell
 
-[Português (pt-BR)](README.pt-BR.md)
+<p align="center">
+  <strong>A wallpaper-adaptive Wayland shell for MangoWM.</strong><br>
+  Quickshell surfaces, modular compositor settings, and a desktop that changes character with its wallpaper.
+</p>
 
-Kamalen Shell is a Wayland desktop configuration for MangoWM/mango-ext. It pairs a Quickshell interface with a wallpaper-driven color pipeline and a modular MangoWM configuration.
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/Guilherme4Colamarco/kamalen-shell?style=for-the-badge&label=license&color=9b8afb&labelColor=292337" alt="MIT License"></a>
+  <img src="https://img.shields.io/badge/session-Wayland-76c7c0?style=for-the-badge&labelColor=292337" alt="Wayland session">
+  <img src="https://img.shields.io/badge/shell-Quickshell-b4befe?style=for-the-badge&labelColor=292337" alt="Quickshell">
+  <a href="README.pt-BR.md"><img src="https://img.shields.io/badge/readme-pt--BR-f9e2af?style=for-the-badge&labelColor=292337" alt="Leia em português brasileiro"></a>
+</p>
+
+<p align="center">
+  <img src="docs/assets/screenshots/settings-appearance.webp" alt="Kamalen Shell appearance settings" width="880">
+</p>
+
+<p align="center">
+  <a href="#install">Install</a> ·
+  <a href="#everyday-use">Shortcuts</a> ·
+  <a href="#screenshots">Screenshots</a> ·
+  <a href="#repository-map">Documentation</a>
+</p>
+
+> [!NOTE]
+> **Adaptive by default.** Iris extracts the wallpaper palette and applies it across the shell, MangoWM, GTK, Neovim, Kitty, and Starship — without losing the selected visual skin.
 
 > Arch Linux is the primary target. Debian 12/13 and Ubuntu 24.04+ use a separate installer; the NixOS port is experimental.
 
 ## Highlights
 
-- Reactive Quickshell bar, dashboard, launcher, notifications, lock screen, and wallpaper picker.
-- Iris color pipeline: a wallpaper change updates the shell, MangoWM borders, GTK, Neovim, Kitty, and Starship.
-- Standalone Settings window with Appearance, Monitors, Mango, Binds, and Rules; monitor changes use confirm/revert previews.
-- Four adaptive visual skins: Kamalen, Commonality, Aqua 2009, and Skeuos Workshop.
-- Keyboard-first layers: outside dismissal, shortcut help, global scale, and optional Vim navigation.
-- Modular MangoWM configuration under `.config/mango/conf.d/`.
-- Local video wallpapers through `mpvpaper`, plus an optional DesktopHut browser with source links.
-- A test suite for installer behavior, Mango configuration, QML integration, lock-screen safety, and wallpaper providers.
+| Surface | What it brings |
+| --- | --- |
+| **Shell** | Reactive Quickshell bar, dashboard, launcher, notifications, lock screen, and wallpaper picker. |
+| **Appearance** | Four adaptive skins — Kamalen, Commonality, Aqua 2009, and Skeuos Workshop — plus wallpaper-driven colors. |
+| **Control** | A standalone Settings window for Appearance, Monitors, Mango, Binds, and Rules; monitor changes use confirm/revert previews. |
+| **Flow** | Keyboard-first layers with outside dismissal, shortcut help, global scale, and optional Vim navigation. |
+| **Configuration** | Modular MangoWM files under `.config/mango/conf.d/`, with a test suite covering the installer, configuration bridge, QML integration, lock screen, and wallpaper providers. |
 
 ## Requirements
 
@@ -80,6 +101,8 @@ The wallpaper picker includes Local, Wallhaven, and Live tabs. The Live tab filt
 
 ## Screenshots
 
+<p align="center"><sub>One color pipeline, four surfaces — the palette stays responsive while the material changes.</sub></p>
+
 | Appearance and materials | Monitor configuration |
 | --- | --- |
 | ![Appearance settings](docs/assets/screenshots/settings-appearance.webp) | ![Monitor settings](docs/assets/screenshots/settings-monitors.webp) |
@@ -88,7 +111,7 @@ The wallpaper picker includes Local, Wallhaven, and Live tabs. The Live tab filt
 | --- | --- |
 | ![Mango settings](docs/assets/screenshots/settings-mango.webp) | ![Wallpaper picker](docs/assets/screenshots/wallpaper-picker.webp) |
 
-See the [full screenshot gallery](docs/screenshots.md) for context.
+<p align="center">See the <a href="docs/screenshots.md">full screenshot gallery</a> for context.</p>
 
 ## Repository map
 
@@ -114,6 +137,10 @@ wallpapers/              Bundled wallpaper collection
 - [Historical specifications and plans](docs/archive/)
 - [Historical technical reviews](docs/archive/reviews/)
 - [Experimental NixOS port](<nix port tests/README.md>)
+
+> [!TIP]
+> Start with the [current shell guide](docs/current-shell.md) for daily use, then
+> use [architecture](docs/architecture.md) when changing the live configuration.
 
 ## Development and verification
 
