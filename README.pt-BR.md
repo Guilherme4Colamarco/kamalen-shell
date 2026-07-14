@@ -10,6 +10,9 @@ Kamalen Shell é uma configuração de desktop Wayland para MangoWM/mango-ext. E
 
 - Barra, dashboard, launcher, notificações, tela de bloqueio e seletor de wallpapers em Quickshell.
 - Pipeline Iris: trocar o wallpaper atualiza shell, bordas do MangoWM, GTK, Neovim, Kitty e Starship.
+- Janela de Configurações separada com Aparência, Monitores, Mango, Binds e Regras; monitores usam preview com confirmar/reverter.
+- Quatro skins adaptativas: Kamalen, Commonality, Aqua 2009 e Skeuos Workshop.
+- Layers orientadas a teclado: descarte por clique externo, ajuda de atalhos, escala global e navegação Vim opcional.
 - Configuração modular do MangoWM em `.config/mango/conf.d/`.
 - Wallpapers em vídeo locais com `mpvpaper` e navegador opcional do catálogo DesktopHut, com link para a fonte.
 - Testes para instalador, configuração Mango, integração QML, segurança da tela de bloqueio e providers de wallpaper.
@@ -61,7 +64,11 @@ O tema fica em `/usr/share/sddm/themes/kamalen`; os dados sincronizados do usuá
 | Atalho | Ação |
 | --- | --- |
 | `Super + D` | Abrir o launcher |
+| `Super + A` | Abrir a dashboard Quick/Mídia/Sistema |
+| `Super + ,` | Abrir Configurações |
 | `Super + W` | Abrir o seletor de wallpapers |
+| `Super + V` | Abrir histórico da área de transferência |
+| `Super + Shift + /` | Mostrar a referência de atalhos |
 | `Super + X` | Bloquear a sessão |
 | `Super + Enter` | Abrir o Kitty |
 | `Super + Space` | Alternar o layout de janelas |
@@ -87,6 +94,9 @@ wallpapers/              Coleção de wallpapers incluída
 ```
 
 - [Arquitetura](docs/architecture.md)
+- [Guia atual da shell](docs/current-shell.md)
+- [Roadmap](docs/TODO.md)
+- [Guia de screenshots](docs/screenshot-guide.md)
 - [Suporte por plataforma](docs/platform-support.md)
 - [Como contribuir](CONTRIBUTING.md)
 - [Especificações e planos históricos](docs/archive/)

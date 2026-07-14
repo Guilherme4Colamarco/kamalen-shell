@@ -10,6 +10,9 @@ Kamalen Shell is a Wayland desktop configuration for MangoWM/mango-ext. It pairs
 
 - Reactive Quickshell bar, dashboard, launcher, notifications, lock screen, and wallpaper picker.
 - Iris color pipeline: a wallpaper change updates the shell, MangoWM borders, GTK, Neovim, Kitty, and Starship.
+- Standalone Settings window with Appearance, Monitors, Mango, Binds, and Rules; monitor changes use confirm/revert previews.
+- Four adaptive visual skins: Kamalen, Commonality, Aqua 2009, and Skeuos Workshop.
+- Keyboard-first layers: outside dismissal, shortcut help, global scale, and optional Vim navigation.
 - Modular MangoWM configuration under `.config/mango/conf.d/`.
 - Local video wallpapers through `mpvpaper`, plus an optional DesktopHut browser with source links.
 - A test suite for installer behavior, Mango configuration, QML integration, lock-screen safety, and wallpaper providers.
@@ -61,7 +64,11 @@ The theme lives under `/usr/share/sddm/themes/kamalen`; synchronized user data i
 | Shortcut | Action |
 | --- | --- |
 | `Super + D` | Open the launcher |
+| `Super + A` | Open the Quick/Media/System dashboard |
+| `Super + ,` | Open Settings |
 | `Super + W` | Open the wallpaper picker |
+| `Super + V` | Open clipboard history |
+| `Super + Shift + /` | Show the shortcut reference |
 | `Super + X` | Lock the session |
 | `Super + Enter` | Open Kitty |
 | `Super + Space` | Cycle window layouts |
@@ -87,6 +94,9 @@ wallpapers/              Bundled wallpaper collection
 ```
 
 - [Architecture](docs/architecture.md)
+- [Current shell guide](docs/current-shell.md)
+- [Roadmap](docs/TODO.md)
+- [Screenshot guide](docs/screenshot-guide.md)
 - [Platform support](docs/platform-support.md)
 - [Contributing](CONTRIBUTING.md)
 - [Historical specifications and plans](docs/archive/)

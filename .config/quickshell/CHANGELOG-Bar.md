@@ -322,9 +322,38 @@ PillButton {
 
 ---
 
-## Próximas fases (planejadas)
+## Fase 14 — Paleta GTK consistente e documentação operacional
+**Data:** 14 jul 2026
 
-- **Fase 4:** Padronizar hover (eliminar underline restante)
-- **Fase 5:** Tooltips em todos os botões
-- **Fase 6:** Clock com data opcional (hover expande)
-- **Fase 7:** Mais estilos de barra (blur, liquid, TUI, ctOS)
+**Objetivo:** Eliminar a divergência visual em que widgets GTK usavam cores
+legadas enquanto Shell e materiais já respondiam à paleta efetiva do wallpaper;
+registrar o funcionamento atual e as próximas validações sem manter um roadmap
+histórico impreciso no changelog.
+
+**Solução:**
+1. `gtk_theme.py` passa a gerar a família completa de cores semânticas GTK,
+   incluindo variantes de sidebar, diálogo, headerbar e estados.
+2. A regeneração remove somente `@define-color` gerenciadas legadas do
+   `gtk.css` raiz e preserva CSS personalizado do usuário.
+3. A raiz GTK tornou-se novamente apenas o import das camadas de cores e
+   materiais geradas, impedindo que azul antigo sobrescreva a paleta atual.
+4. Foram adicionados testes de migração/idempotência e renderização de referência
+   em GTK 3.
+5. README, arquitetura, guia atual, ADR, TODO e roteiro de screenshots agora
+   descrevem Dashboard, Settings, skins, teclado, monitor preview e limites de
+   escopo atuais.
+
+**Resultado:**
+- Thunar e outros widgets GTK passam a usar a mesma paleta efetiva do Shell.
+- Usuários podem manter regras GTK próprias sem reintroduzir cores Kamalen
+  antigas.
+- As pendências atuais vivem em `docs/TODO.md`; o changelog permanece histórico.
+
+---
+
+## Próximas validações
+
+Consulte [docs/TODO.md](../../docs/TODO.md) para a lista priorizada, incluindo
+capturas de demonstração, teste físico multi-monitor, aceitação GTK por skin e
+revisão de barra em telas estreitas. Titlebars e docks permanecem fora do escopo
+do motor de skins atual.
