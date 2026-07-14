@@ -1,7 +1,7 @@
 import QtQuick
 import ".."
 
-Item {
+FocusScope {
     id: root
 
     property string label: ""
@@ -10,11 +10,25 @@ Item {
 
     height: Skins.controlHeight
     width: parent.width
+    activeFocusOnTab: true
+    Accessible.role: Accessible.CheckBox
+    Accessible.name: root.label
+    Accessible.checked: root.checked
+    Accessible.focusable: true
+
+    Keys.onPressed: event => {
+        if (event.isAutoRepeat) return
+        if (event.key === Qt.Key_Space || event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+            root.toggled(!root.checked)
+            event.accepted = true
+        }
+    }
 
     MaterialSurface {
         anchors.fill: parent
         role: "control"
         hovered: rowMa.containsMouse
+        focused: root.activeFocus
         materialEnabled: Skins.currentId === "commonality"
     }
 
@@ -62,6 +76,7 @@ Item {
         anchors.fill: parent
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
+        onPressed: root.forceActiveFocus()
         onClicked: root.toggled(!root.checked)
     }
 }

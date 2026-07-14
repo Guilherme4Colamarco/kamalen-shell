@@ -7,8 +7,11 @@ Item {
     property bool hovered: false
     property bool pressed: false
     property bool active: false
+    property bool focused: false
     property bool materialEnabled: true
     property real fillOpacity: 1
+    property real outlineWidth: -1
+    property color outlineColor: "transparent"
     property string skinId: ""
     readonly property string resolvedSkinId: skinId !== "" ? skinId : Skins.currentId
     readonly property var skinRecipe: Skins.recipe(resolvedSkinId)
@@ -23,8 +26,12 @@ Item {
         anchors.fill: parent
         radius: root.cornerRadius
         color: Skins.roleBase(root.role, root.active)
-        border.width: root.materialEnabled ? Metrics.dp(root.skinRecipe.borderWidth) : 0
-        border.color: root.active ? Colors.accent : Skins.bevelDark(root.pressed)
+        border.width: root.outlineWidth >= 0
+            ? root.outlineWidth
+            : (root.materialEnabled ? Metrics.dp(root.skinRecipe.borderWidth) : 0)
+        border.color: root.outlineWidth >= 0
+            ? root.outlineColor
+            : (root.active ? Colors.accent : Skins.bevelDark(root.pressed))
         gradient: Gradient {
             GradientStop { position: 0; color: Skins.materialTop(root.role, root.pressed, root.active, root.resolvedSkinId) }
             GradientStop { position: 1; color: Skins.materialBottom(root.role, root.pressed, root.active, root.resolvedSkinId) }
@@ -76,6 +83,17 @@ Item {
         radius: root.cornerRadius
         color: root.hovered ? Colors.a(Colors.fg, 0.05) : "transparent"
         Behavior on color { ColorAnimation { duration: Animations.fast } }
+    }
+
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: Metrics.dp(2)
+        radius: Math.max(0, root.cornerRadius - Metrics.dp(2))
+        color: "transparent"
+        border.width: root.focused ? Metrics.dp(2) : 0
+        border.color: Colors.accent
+        opacity: root.focused ? 0.9 : 0
+        Behavior on opacity { NumberAnimation { duration: Animations.fast } }
     }
 
     Item { id: contentHost; anchors.fill: parent }

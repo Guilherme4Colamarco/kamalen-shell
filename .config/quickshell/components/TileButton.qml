@@ -8,6 +8,7 @@ MaterialButton {
     property string sublabel
     height: Skins.rowHeight
     role: "raised"
+    accessibleName: label
 
     Row {
         anchors { left: parent.left; leftMargin: Metrics.dp(14); verticalCenter: parent.verticalCenter }

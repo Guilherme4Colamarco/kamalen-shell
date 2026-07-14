@@ -275,6 +275,31 @@ PillButton {
 
 ---
 
+## Fase 12 — Interação, layers e lifecycle refinados
+**Data:** 13 jul 2026
+
+**Objetivo:** Tornar o shell mais previsível no uso diário, acessível por teclado e robusto durante recargas.
+
+**Solução:**
+1. Um bridge IPC multiplexa os eventos de launcher, dashboard, settings, mídia, clipboard, layouts, energia, wallpaper e lock em um único watcher.
+2. Processos persistentes agora rodam em grupos supervisionados e são encerrados com seus descendentes quando o QuickShell sai.
+3. Estado e estatísticas de aplicativos passam por escrita JSON atômica, eliminando arquivos parciais em interrupções.
+4. Dashboard e calendário ganharam layer fullscreen transparente, clique externo para fechar e foco explícito de teclado.
+5. Overlays transitórios são mutuamente exclusivos; abrir um fecha os demais sem acumular layers.
+6. Dashboard oferece navegação por `1/2/3`, setas ou Vim, `Esc`, `?`, botão de ajuda e uma referência visual dos atalhos globais.
+7. Settings aceita `Ctrl+1…5`, `Ctrl+Tab`, `Ctrl+W`, `Esc` e mantém a navegação Vim opcional.
+8. Botões, toggles e sliders compartilhados ganharam foco visível, semântica de acessibilidade e operação completa por teclado.
+9. A geometria das superfícies ativas agora vem da skin; o antigo controle paralelo de arredondamento saiu da Dashboard.
+10. Todos os modos da barra usam uma borda dinâmica ligada à mesma cor adaptativa do foco das janelas Mango.
+
+**Resultado:**
+- Menos processos e nenhum novo watcher órfão após fechar ou recarregar o shell.
+- Popups não se sobrepõem silenciosamente e podem ser descartados pelo teclado ou por clique externo.
+- Operação diária mais rápida por atalhos, com descoberta dentro da própria interface.
+- Barra e janelas acompanham juntas a paleta automática do wallpaper.
+
+---
+
 ## Próximas fases (planejadas)
 
 - **Fase 4:** Padronizar hover (eliminar underline restante)

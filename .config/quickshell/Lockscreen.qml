@@ -16,7 +16,7 @@ PanelWindow {
     property string timeText: ""
     property string dateText: ""
 
-    property real br:   UIState.borderRadius
+    property real br:   Skins.containerRadius
     property real brSm: Math.round(br * 0.625)
 
     property string wallPath: ""

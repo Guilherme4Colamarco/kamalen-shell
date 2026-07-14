@@ -1,7 +1,7 @@
 import QtQuick
 import ".."
 
-Item {
+FocusScope {
     id: root
 
     property string label: ""
@@ -16,6 +16,10 @@ Item {
 
     height: Metrics.dp(54)
     width: parent.width
+    activeFocusOnTab: true
+    Accessible.role: Accessible.Slider
+    Accessible.name: root.label
+    Accessible.focusable: true
 
     onValueChanged: root.currentValue = root.value
 
@@ -33,6 +37,31 @@ Item {
         var rounded = Math.round(v)
         if (Math.abs(v - rounded) < 0.0001) return rounded.toString()
         return v.toFixed(2)
+    }
+
+    function _commit(v) {
+        root.currentValue = Math.max(root.minValue, Math.min(root.maxValue, root._snap(v)))
+        root.valueModified(root.currentValue)
+    }
+
+    Keys.onPressed: event => {
+        var delta = root.stepSize > 0 ? root.stepSize : (root.maxValue - root.minValue) / 100
+        if (event.key === Qt.Key_Left || event.key === Qt.Key_Down) {
+            root._commit(root.currentValue - delta)
+        } else if (event.key === Qt.Key_Right || event.key === Qt.Key_Up) {
+            root._commit(root.currentValue + delta)
+        } else if (event.key === Qt.Key_Home) {
+            root._commit(root.minValue)
+        } else if (event.key === Qt.Key_End) {
+            root._commit(root.maxValue)
+        } else if (event.key === Qt.Key_PageDown) {
+            root._commit(root.currentValue - delta * 10)
+        } else if (event.key === Qt.Key_PageUp) {
+            root._commit(root.currentValue + delta * 10)
+        } else {
+            return
+        }
+        event.accepted = true
     }
 
     Text {
@@ -69,6 +98,17 @@ Item {
             }
         }
 
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: -Metrics.dp(5)
+            radius: Skins.radius(Skins.controlRadius, height)
+            color: "transparent"
+            border.width: root.activeFocus ? Metrics.dp(2) : 0
+            border.color: Colors.accent
+            opacity: root.activeFocus ? 0.8 : 0
+            Behavior on opacity { NumberAnimation { duration: Animations.fast } }
+        }
+
         MaterialSurface {
             x: {
                 var range = root.maxValue - root.minValue
@@ -99,8 +139,16 @@ Item {
             cursorShape: Qt.PointingHandCursor
             preventStealing: true
 
-            onPressed: mouse => root.currentValue = root._valueFromX(mouse.x)
-            onPositionChanged: mouse => { if (pressed) root.currentValue = root._valueFromX(mouse.x) }
+            onPressed: mouse => {
+                root.forceActiveFocus()
+                var point = sliderMa.mapToItem(trackArea, mouse.x, mouse.y)
+                root.currentValue = root._valueFromX(point.x)
+            }
+            onPositionChanged: mouse => {
+                if (!pressed) return
+                var point = sliderMa.mapToItem(trackArea, mouse.x, mouse.y)
+                root.currentValue = root._valueFromX(point.x)
+            }
             onReleased: root.valueModified(root.currentValue)
         }
     }

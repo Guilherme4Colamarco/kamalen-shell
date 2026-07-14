@@ -26,9 +26,9 @@ PanelWindow {
     property bool wasPlaying: false
     property string vinylAsset: "file://" + Quickshell.env("HOME") + "/.config/quickshell/assets/Vinyl.png"
 
-    property real br:     UIState.borderRadius
-    property real brCard: Math.round(br * 0.75)
-    property real brSm:   Math.round(br * 0.625)
+    property real br:     Skins.containerRadius
+    property real brCard: Skins.cardRadius
+    property real brSm:   Skins.controlRadius
     property real brTile: Math.round(br * 0.875)
 
     visible: _visible

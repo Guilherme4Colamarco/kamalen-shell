@@ -728,6 +728,8 @@ anchors.leftMargin:   barReady ? 8 : parent.width * 0.4
                 anchors.bottomMargin: Metrics.dp(3)
                 role: "background"
                 fillOpacity: UIState.barOpacity
+                outlineWidth: Math.max(Metrics.dp(1), Skins.borderWidth)
+                outlineColor: Colors.accent
                 opacity: barReady ? 1 : 0
                 scale:   barReady ? 1 : 0.94
 
@@ -783,6 +785,8 @@ enabled: !attachedVisible
 y: attachedVisible ? 0 : -implicitHeight
                 role: "background"
                 fillOpacity: UIState.transparencyEnabled ? 0.88 : 1
+                outlineWidth: Math.max(Metrics.dp(1), Skins.borderWidth)
+                outlineColor: Colors.accent
                 Behavior on y     { NumberAnimation { duration: Animations.medium; easing.type: Easing.OutExpo } }
 
                 Rectangle {
@@ -832,6 +836,8 @@ color: "transparent"
                 anchors.fill: parent
                 role: "background"
                 fillOpacity: UIState.transparencyEnabled ? 0.88 : 1
+                outlineWidth: Math.max(Metrics.dp(1), Skins.borderWidth)
+                outlineColor: Colors.accent
 
                 Rectangle {
                     anchors.bottom: parent.bottom
@@ -1107,6 +1113,8 @@ color: "transparent"
                 role: "background"
                 active: true
                 fillOpacity: UIState.barOpacity
+                outlineWidth: Math.max(Metrics.dp(1), Skins.borderWidth)
+                outlineColor: Colors.accent
                 opacity: barReady ? 1 : 0
                 scale:   barReady ? 1 : 0.9
 

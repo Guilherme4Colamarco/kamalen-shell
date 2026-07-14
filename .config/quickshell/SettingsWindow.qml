@@ -29,7 +29,16 @@ FloatingWindow {
 
     onVisibleChanged: {
         if (!visible && UIState.settingsVisible) UIState.closeSettings()
-        if (visible) pfpListProc.running = true
+        if (visible) {
+            pfpListProc.running = true
+            focusDelay.restart()
+        }
+    }
+
+    Timer {
+        id: focusDelay
+        interval: 40
+        onTriggered: settingsSurface.forceActiveFocus()
     }
 
     function cycleBlur() {
@@ -43,21 +52,11 @@ FloatingWindow {
     function getBlurLabel() {
         return UIState.blurProfile === "frosted" ? L10n.tr("frosted", "Strong") : UIState.blurProfile === "balanced" ? L10n.tr("balanced_blur", "Medium") : UIState.blurProfile === "subtle" ? L10n.tr("subtle", "Subtle") : L10n.tr("none", "None")
     }
-    function cycleBorderRadius() {
-        var values = [0, 8, 16]
-        UIState.setBorderRadius(values[(values.indexOf(UIState.borderRadius) + 1) % values.length])
-    }
-    function getBorderRadiusIcon() { return UIState.borderRadius === 0 ? "󰝤" : UIState.borderRadius === 8 ? "󰄱" : "󰄰" }
-    function getBorderRadiusLabel() { return UIState.borderRadius === 0 ? L10n.tr("flat", "Flat") : UIState.borderRadius === 8 ? L10n.tr("rounded_short", "Round.") : L10n.tr("rounded", "Rounded") }
-
     QtObject {
         id: settingsHelpers
         function cycleBlur() { root.cycleBlur() }
         function getBlurIcon() { return root.getBlurIcon() }
         function getBlurLabel() { return root.getBlurLabel() }
-        function cycleBorderRadius() { root.cycleBorderRadius() }
-        function getBorderRadiusIcon() { return root.getBorderRadiusIcon() }
-        function getBorderRadiusLabel() { return root.getBorderRadiusLabel() }
         function openPfpPicker() { root.pfpPicker = true }
     }
 
@@ -71,12 +70,32 @@ FloatingWindow {
     }
 
     MaterialSurface {
+        id: settingsSurface
         anchors.fill: parent
-        focus: UIState.vimNavigationEnabled
+        focus: root.visible
         role: "background"
         fillOpacity: UIState.transparencyEnabled ? 0.96 : 1
+        Keys.priority: Keys.BeforeItem
 
         Keys.onPressed: event => {
+            var control = (event.modifiers & Qt.ControlModifier) !== 0
+            if (event.key === Qt.Key_Escape || (control && event.key === Qt.Key_W)) {
+                if (root.pfpPicker) root.pfpPicker = false
+                else UIState.closeSettings()
+                event.accepted = true
+                return
+            }
+            if (control && event.key >= Qt.Key_1 && event.key <= Qt.Key_5) {
+                root.activeSection = event.key - Qt.Key_1
+                event.accepted = true
+                return
+            }
+            if (control && event.key === Qt.Key_Tab) {
+                var direction = (event.modifiers & Qt.ShiftModifier) !== 0 ? -1 : 1
+                root.activeSection = (root.activeSection + direction + root.sections.length) % root.sections.length
+                event.accepted = true
+                return
+            }
             var shiftedLast = event.text === "G" && event.modifiers === Qt.ShiftModifier
             if (!UIState.vimNavigationEnabled || (event.modifiers !== Qt.NoModifier && !shiftedLast)) return
             if (event.text === "j" || event.text === "l") {
@@ -126,6 +145,7 @@ FloatingWindow {
                             height: Metrics.dp(52)
                             role: "control"
                             active: root.activeSection === index
+                            accessibleName: modelData.label
                             onClicked: root.activeSection = index
 
                             Row {
@@ -150,10 +170,22 @@ FloatingWindow {
                     anchors.margins: Metrics.dp(22)
                     spacing: Metrics.dp(14)
 
-                    Text {
-                        text: root.sections[root.activeSection].label
-                        color: Colors.fg
-                        font { pixelSize: Metrics.sp(22); family: "JetBrainsMono Nerd Font"; bold: true }
+                    RowLayout {
+                        Layout.fillWidth: true
+
+                        Text {
+                            text: root.sections[root.activeSection].label
+                            color: Colors.fg
+                            font { pixelSize: Metrics.sp(22); family: "JetBrainsMono Nerd Font"; bold: true }
+                        }
+
+                        Item { Layout.fillWidth: true }
+
+                        Text {
+                            text: "Ctrl+" + (root.activeSection + 1) + "  ·  Esc"
+                            color: Colors.a(Colors.fg, 0.42)
+                            font { pixelSize: Metrics.sp(9); family: "JetBrainsMono Nerd Font" }
+                        }
                     }
 
                     StackLayout {

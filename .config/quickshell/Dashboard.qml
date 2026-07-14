@@ -14,14 +14,12 @@ PanelWindow {
     property real panelHeight: screen ? Math.min(820, Math.max(600, screen.height * 0.82)) : 720
 
     visible: _visible
-    anchors { top: true }
-    margins { top: 62 }
-    implicitWidth:  panelWidth
-    implicitHeight: panelHeight
+    anchors { top: true; right: true; bottom: true; left: true }
     color: "transparent"
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "dashboard"
+    WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
 
     function a(c, o) { return Qt.rgba(c.r, c.g, c.b, o) }
 
@@ -41,6 +39,20 @@ PanelWindow {
         { icon: "󰎆", label: L10n.tr("media", "Media") },
         { icon: "󰒓", label: L10n.tr("system", "System") }
     ]
+    property var shortcutRows: [
+        { keys: "Super + A", action: "Dashboard" },
+        { keys: "Super + D", action: "Aplicativos" },
+        { keys: "Super + W", action: "Wallpapers" },
+        { keys: "Super + Shift + M", action: "Mídia" },
+        { keys: "Super + V", action: "Área de transferência" },
+        { keys: "Super + ,", action: "Configurações" },
+        { keys: "Super + Shift + E", action: "Energia" },
+        { keys: "Super + Ctrl + Espaço", action: "Layouts" },
+        { keys: "Super + X", action: "Bloquear" },
+        { keys: "Super + Shift + /", action: "Atalhos" },
+        { keys: "1 / 2 / 3", action: "Abas da dashboard" },
+        { keys: "? / Esc", action: "Ajuda / fechar" }
+    ]
 
     property string powerMode: "balanced"
 
@@ -54,10 +66,17 @@ PanelWindow {
             _visible = true
             uptimeProc.running = true
             checkPowerModeProc.running = true
+            focusDelay.restart()
         } else {
             powerMenuResetDelay.start()
             closeDelay.start()
         }
+    }
+
+    Timer {
+        id: focusDelay
+        interval: 40
+        onTriggered: bg.forceActiveFocus()
     }
 
     Timer {
@@ -169,25 +188,6 @@ PanelWindow {
         return L10n.tr("fixed", "Fixed")
     }
 
-    function cycleBorderRadius() {
-        var radii = [0, 8, 16]
-        var idx   = radii.indexOf(UIState.borderRadius)
-        var next  = radii[(idx + 1) % radii.length]
-        UIState.setBorderRadius(next)
-    }
-
-    function getBorderRadiusIcon() {
-        if (UIState.borderRadius === 0)  return "󰝤"
-        if (UIState.borderRadius === 8)  return "󰄱"
-        return "󰄰"
-    }
-
-    function getBorderRadiusLabel() {
-        if (UIState.borderRadius === 0)  return L10n.tr("flat", "Flat")
-        if (UIState.borderRadius === 8)  return L10n.tr("rounded_short", "Round.")
-        return L10n.tr("rounded", "Rounded")
-    }
-
     QtObject {
         id: dashHelpers
         function cyclePowerMode()      { dashboard.cyclePowerMode() }
@@ -200,22 +200,67 @@ PanelWindow {
         function cycleBarMode()        { dashboard.cycleBarMode() }
         function getBarModeIcon()      { return dashboard.getBarModeIcon() }
         function getBarModeLabel()     { return dashboard.getBarModeLabel() }
-        function cycleBorderRadius()   { dashboard.cycleBorderRadius() }
-        function getBorderRadiusIcon() { return dashboard.getBorderRadiusIcon() }
-        function getBorderRadiusLabel(){ return dashboard.getBorderRadiusLabel() }
         function openPfpPicker()       { dashboard.pfpPicker = true }
     }
 
     Rectangle {
+        anchors.fill: parent
+        color: Colors.a(Colors.bg, dashboard.showing ? 0.18 : 0)
+        visible: dashboard._visible
+        Behavior on color { ColorAnimation { duration: Animations.medium } }
+    }
+
+    MouseArea {
+        id: outsideDismissArea
+        anchors.fill: parent
+        enabled: dashboard.showing
+        onClicked: UIState.closeDropdowns()
+    }
+
+    MaterialSurface {
         id: bg
-        width:   parent.width
-        height:  parent.height
-        y:       showing ? 0 : -panelHeight - 20
+        width: panelWidth
+        height: panelHeight
+        anchors.horizontalCenter: parent.horizontalCenter
+        y: showing ? Metrics.dp(62) : -panelHeight - Metrics.dp(20)
         opacity: showing ? 1 : 0
         scale:   showing ? 1 : 0.97
         transformOrigin: Item.Top
-        color:  a(Colors.bg, UIState.transparencyEnabled ? 0.82 : 1)
-        radius: br
+        role: "background"
+        fillOpacity: UIState.transparencyEnabled ? 0.9 : 1
+        cornerRadius: br
+        focus: showing
+        Keys.priority: Keys.BeforeItem
+
+        Keys.onPressed: event => {
+            if (event.key === Qt.Key_Escape) {
+                if (UIState.shortcutHelpVisible) UIState.shortcutHelpVisible = false
+                else if (pfpPicker) pfpPicker = false
+                else if (powerMenu) powerMenu = false
+                else UIState.closeDropdowns()
+                event.accepted = true
+            } else if (event.key >= Qt.Key_1 && event.key <= Qt.Key_3) {
+                activeTab = event.key - Qt.Key_1
+                event.accepted = true
+            } else if (event.key === Qt.Key_Left || (UIState.vimNavigationEnabled && event.text === "h")) {
+                activeTab = (activeTab + tabs.length - 1) % tabs.length
+                event.accepted = true
+            } else if (event.key === Qt.Key_Right || (UIState.vimNavigationEnabled && event.text === "l")) {
+                activeTab = (activeTab + 1) % tabs.length
+                event.accepted = true
+            } else if (event.key === Qt.Key_Question || event.text === "?") {
+                UIState.shortcutHelpVisible = !UIState.shortcutHelpVisible
+                event.accepted = true
+            } else if (event.key === Qt.Key_S && event.modifiers === Qt.NoModifier) {
+                UIState.openSettings()
+                event.accepted = true
+            }
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.AllButtons
+        }
 
         Behavior on y {
             NumberAnimation {
@@ -235,8 +280,7 @@ PanelWindow {
                 easing.type: Animations.profile === "extraslow" ? Easing.InOutQuart : Easing.OutCubic
             }
         }
-        Behavior on color  { ColorAnimation  { duration: Animations.slow } }
-        Behavior on radius { NumberAnimation { duration: Animations.medium; easing.type: Easing.OutCubic } }
+        Behavior on cornerRadius { NumberAnimation { duration: Animations.medium; easing.type: Easing.OutCubic } }
 
         Item {
             anchors.fill: parent
@@ -431,14 +475,37 @@ height: Metrics.dp(52)
                 }
 
                 // ── Tab bar ─────────────────────────────────────────────────────
-                TileButton {
-                    id: settingsButton
+                Row {
                     width: parent.width
-                    icon: "󰒓"
-                    label: L10n.tr("settings", "Settings")
-                    sublabel: L10n.tr("settings_open", "Open the configuration window")
-                    active: UIState.settingsVisible
-                    onClicked: UIState.openSettings()
+                    height: settingsButton.height
+                    spacing: Metrics.dp(8)
+
+                    TileButton {
+                        id: settingsButton
+                        width: parent.width - shortcutButton.width - parent.spacing
+                        icon: "󰒓"
+                        label: L10n.tr("settings", "Settings")
+                        sublabel: L10n.tr("settings_open", "Open the configuration window")
+                        active: UIState.settingsVisible
+                        onClicked: UIState.openSettings()
+                    }
+
+                    MaterialButton {
+                        id: shortcutButton
+                        width: height
+                        height: settingsButton.height
+                        role: "raised"
+                        active: UIState.shortcutHelpVisible
+                        accessibleName: "Atalhos de teclado"
+                        onClicked: UIState.shortcutHelpVisible = !UIState.shortcutHelpVisible
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "?"
+                            color: UIState.shortcutHelpVisible ? Colors.accent : Colors.fg
+                            font { pixelSize: Metrics.sp(17); family: "JetBrainsMono Nerd Font"; bold: true }
+                        }
+                    }
                 }
 
                 Rectangle {
@@ -672,6 +739,119 @@ source: "file://" + modelData
                                     cursorShape: Qt.PointingHandCursor
                                     onClicked: { UIState.setPfpIndex(index); pfpPicker = false }
                                 }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Item {
+            id: shortcutHelpOverlay
+            anchors.fill: parent
+            visible: UIState.shortcutHelpVisible
+            z: 30
+
+            Rectangle {
+                anchors.fill: parent
+                color: Colors.a(Colors.bg, 0.58)
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: UIState.shortcutHelpVisible = false
+            }
+
+            MaterialSurface {
+                id: shortcutCard
+                anchors.centerIn: parent
+                width: Math.min(parent.width - Metrics.dp(28), Metrics.dp(344))
+                height: shortcutColumn.implicitHeight + Metrics.dp(30)
+                role: "raised"
+                outlineWidth: Metrics.dp(1)
+                outlineColor: Colors.a(Colors.accent, 0.7)
+
+                MouseArea { anchors.fill: parent }
+
+                Column {
+                    id: shortcutColumn
+                    anchors {
+                        left: parent.left
+                        right: parent.right
+                        top: parent.top
+                        margins: Metrics.dp(15)
+                    }
+                    spacing: Metrics.dp(7)
+
+                    Row {
+                        width: parent.width
+                        height: Metrics.dp(30)
+
+                        Column {
+                            width: parent.width - closeShortcutButton.width
+                            Text {
+                                text: "Atalhos do shell"
+                                color: Colors.fg
+                                font { pixelSize: Metrics.sp(14); family: "JetBrainsMono Nerd Font"; bold: true }
+                            }
+                            Text {
+                                text: "Disponíveis em qualquer janela"
+                                color: Colors.a(Colors.fg, 0.42)
+                                font { pixelSize: Metrics.sp(8); family: "JetBrainsMono Nerd Font" }
+                            }
+                        }
+
+                        MaterialButton {
+                            id: closeShortcutButton
+                            width: Metrics.dp(30)
+                            height: width
+                            accessibleName: "Fechar ajuda de atalhos"
+                            onClicked: UIState.shortcutHelpVisible = false
+                            Text {
+                                anchors.centerIn: parent
+                                text: "󰅖"
+                                color: Colors.fg
+                                font { pixelSize: Metrics.sp(12); family: "JetBrainsMono Nerd Font" }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        width: parent.width
+                        height: Metrics.dp(1)
+                        color: Colors.a(Colors.fg, 0.1)
+                    }
+
+                    Repeater {
+                        model: dashboard.shortcutRows
+
+                        Row {
+                            required property var modelData
+                            width: parent.width
+                            height: Metrics.dp(25)
+                            clip: true
+
+                            MaterialSurface {
+                                width: Metrics.dp(150)
+                                height: Metrics.dp(23)
+                                role: "control"
+                                cornerRadius: Skins.radius(Skins.controlRadius, height)
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: modelData.keys
+                                    color: Colors.accent
+                                    font { pixelSize: Metrics.sp(8); family: "JetBrainsMono Nerd Font"; bold: true }
+                                }
+                            }
+
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: parent.width - x
+                                leftPadding: Metrics.dp(10)
+                                text: modelData.action
+                                color: Colors.a(Colors.fg, 0.72)
+                                elide: Text.ElideRight
+                                font { pixelSize: Metrics.sp(9); family: "JetBrainsMono Nerd Font" }
                             }
                         }
                     }

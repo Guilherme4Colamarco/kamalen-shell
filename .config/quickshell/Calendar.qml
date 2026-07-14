@@ -20,15 +20,12 @@ PanelWindow {
                                 "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
     property var longDayNames: ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"]
 
-    property real br:     UIState.borderRadius
-    property real brCard: Math.round(br * 0.75)
-    property real brSm:   Math.round(br * 0.625)
+    property real br:     Skins.containerRadius
+    property real brCard: Skins.cardRadius
+    property real brSm:   Skins.controlRadius
 
     visible: _visible
-    anchors { top: true; left: true }
-    margins.top: 44
-    implicitWidth:  Metrics.dp(312)
-implicitHeight: card.height + 16
+    anchors { top: true; right: true; bottom: true; left: true }
     color: "transparent"
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.layer: WlrLayer.Overlay
@@ -95,13 +92,19 @@ implicitHeight: card.height + 16
         onTriggered: _visible = false
     }
 
-    Rectangle {
+    MouseArea {
+        anchors.fill: parent
+        enabled: showing
+        onClicked: UIState.closeDropdowns()
+    }
+
+    MaterialSurface {
         id: card
         width:  Metrics.dp(280)
 height: dateSection.height + monthGrid.height + 52
         anchors.top: parent.top
-        anchors.topMargin: Metrics.dp(8)
-        x:       showing ? 16 : -card.width - 12
+        anchors.topMargin: Metrics.dp(52)
+        x:       showing ? Metrics.dp(16) : -card.width - Metrics.dp(12)
         opacity: showing ? 1 : 0
 
         Behavior on x {
@@ -110,17 +113,15 @@ height: dateSection.height + monthGrid.height + 52
         Behavior on opacity {
             NumberAnimation { duration: Animations.medium; easing.type: Easing.OutCubic }
         }
-        Behavior on color {
-            ColorAnimation { duration: Animations.slow }
-        }
-        Behavior on radius {
+        Behavior on cornerRadius {
             NumberAnimation { duration: Animations.medium; easing.type: Easing.OutCubic }
         }
 
-        radius: br
-        color:  a(Colors.bg, UIState.transparencyEnabled ? 0.92 : 1)
-        border.width: 1
-        border.color: a(Colors.fg, 0.08)
+        role: "background"
+        cornerRadius: br
+        fillOpacity: UIState.transparencyEnabled ? 0.92 : 1
+        outlineWidth: Metrics.dp(1)
+        outlineColor: a(Colors.fg, 0.1)
 
         MouseArea { anchors.fill: parent }
 

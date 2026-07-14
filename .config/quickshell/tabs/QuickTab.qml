@@ -23,8 +23,7 @@ Item {
         { icon: "",  iconOff: "",  label: "",         active: () => Animations.profile !== "none", toggle: function() { if (helpers) helpers.cycleAnimations() } },
         { icon: "",  iconOff: "",  label: "",         active: () => UIState.transparencyEnabled && UIState.blurProfile !== "none", toggle: function() { if (helpers) helpers.cycleBlur() } },
         { icon: "",  iconOff: "",  label: "",         active: () => true,                          toggle: function() { if (helpers) helpers.cyclePowerMode() } },
-        { icon: "",  iconOff: "",  label: "",         active: () => true,   toggle: function() { if (helpers) helpers.cycleBarMode() } },
-        { icon: "",  iconOff: "",  label: "",         active: () => UIState.borderRadius > 0,      toggle: function() { if (helpers) helpers.cycleBorderRadius() } }
+        { icon: "",  iconOff: "",  label: "",         active: () => true,   toggle: function() { if (helpers) helpers.cycleBarMode() } }
     ]
 
     function isGroupExpanded(app) { return expandedGroups[app] === true }
@@ -198,12 +197,11 @@ Item {
                         property bool isBlurTile:    index === 7
                         property bool isPowerTile:   index === 8
                         property bool isBarModeTile: index === 9
-                        property bool isBorderTile:  index === 10
                         property bool isOn:          modelData.active()
 
                         width:  (qsGrid.width - 24) / 4
                         height: Metrics.dp(58)
-radius: UIState.borderRadius * 0.875
+                        radius: Skins.radius(Skins.cardRadius, height)
                         color:  isOn ? Colors.a(Colors.accent, 0.15) : qsMa.containsMouse ? Colors.a(Colors.fg, 0.07) : Colors.a(Colors.surface, 0.8)
                         border.width: isOn ? 1 : 0
                         border.color: Colors.a(Colors.accent, 0.25)
@@ -226,7 +224,6 @@ radius: UIState.borderRadius * 0.875
                                     if (isBlurTile)    return helpers ? helpers.getBlurIcon() : ""
                                     if (isPowerTile)   return helpers ? helpers.getPowerModeIcon() : ""
                                     if (isBarModeTile) return helpers ? helpers.getBarModeIcon() : ""
-                                    if (isBorderTile)  return helpers ? helpers.getBorderRadiusIcon() : ""
                                     return isOn ? modelData.icon : modelData.iconOff
                                 }
                                 color: isOn ? Colors.accent : Colors.a(Colors.fg, 0.35)
@@ -241,7 +238,6 @@ radius: UIState.borderRadius * 0.875
                                     if (isBlurTile)    return helpers ? helpers.getBlurLabel() : ""
                                     if (isPowerTile)   return helpers ? helpers.getPowerModeLabel() : ""
                                     if (isBarModeTile) return helpers ? helpers.getBarModeLabel() : ""
-                                    if (isBorderTile)  return helpers ? helpers.getBorderRadiusLabel() : ""
                                     return modelData.label
                                 }
                                 color: isOn ? Colors.accent : Colors.a(Colors.fg, 0.25)
@@ -283,7 +279,7 @@ radius: UIState.borderRadius * 0.875
         }
 
         Rectangle {
-            width:  36; height: 16; radius: UIState.borderRadius * 0.625
+            width:  36; height: 16; radius: Skins.radius(Skins.controlRadius, height)
             anchors.horizontalCenter: parent.horizontalCenter
             color:    expandMa.containsMouse ? Colors.a(Colors.fg, 0.08) : Colors.a(Colors.fg, 0.04)
             rotation: qsExpanded ? 180 : 0
@@ -351,7 +347,7 @@ radius: UIState.borderRadius * 0.875
 
             Rectangle {
                 anchors.fill: parent
-                radius: UIState.borderRadius * 0.75
+                radius: Skins.radius(Skins.cardRadius, height)
                 color:  Colors.a(Colors.surface, 0.5)
                 Behavior on radius { NumberAnimation { duration: Animations.medium; easing.type: Easing.OutCubic } }
             }
@@ -423,7 +419,7 @@ boundsBehavior: Flickable.StopAtBounds
                             id: groupHeader
                             width:  parent.width
                             height: Metrics.dp(36)
-radius: UIState.borderRadius * 0.75
+                            radius: Skins.radius(Skins.cardRadius, height)
                             color:  groupHeaderMa.containsMouse ? Colors.a(Colors.accent, 0.1) : Colors.a(Colors.fg, 0.04)
                             border.width: 1
                             border.color: groupHeaderMa.containsMouse ? Colors.a(Colors.accent, 0.15) : "transparent"
@@ -471,7 +467,7 @@ radius: UIState.borderRadius * 0.75
                                 Rectangle {
                                     id: countBadge
                                     width:  countText.implicitWidth + 12
-                                    height: 20; radius: UIState.borderRadius * 0.625
+                                    height: 20; radius: Skins.radius(Skins.controlRadius, height)
                                     color:  Colors.a(Colors.accent, 0.12)
                                     anchors.verticalCenter: parent.verticalCenter
 
@@ -525,7 +521,7 @@ hoverEnabled: true
                             visible: !groupDelegate.expanded
                             width:   parent.width
                             height:  visible ? previewContent.implicitHeight + 16 : 0
-                            radius:  UIState.borderRadius * 0.625
+                            radius:  Skins.radius(Skins.controlRadius, height)
                             color:   previewMa.containsMouse ? Colors.a(Colors.fg, 0.045) : Colors.a(Colors.fg, 0.025)
                             Behavior on color  { ColorAnimation { duration: Animations.fast } }
                             Behavior on radius { NumberAnimation { duration: Animations.medium; easing.type: Easing.OutCubic } }
@@ -591,7 +587,7 @@ hoverEnabled: true
 
                                         width:  parent.width
                                         height: nTitle.implicitHeight + (nBody.visible ? nBody.implicitHeight + 6 : 0) + 32
-                                        radius: UIState.borderRadius * 0.75
+                                        radius: Skins.radius(Skins.cardRadius, height)
                                         color:  nItemMa.containsMouse ? Colors.a(Colors.fg, 0.055) : Colors.a(Colors.fg, 0.03)
                                         border.width: nItemMa.containsMouse ? 1 : 0
                                         border.color: Colors.a(Colors.accent, 0.12)

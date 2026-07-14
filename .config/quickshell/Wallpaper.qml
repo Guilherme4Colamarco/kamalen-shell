@@ -67,9 +67,9 @@ PanelWindow {
     property string cachePath: Quickshell.env("HOME") + "/.cache/wallpaper-thumbs"
     property string wallDir:   Quickshell.env("HOME") + "/wallpapers"
 
-    property real br:     UIState.borderRadius
-    property real brCard: Math.round(br * 0.75)
-    property real brSm:   Math.round(br * 0.625)
+    property real br:     Skins.containerRadius
+    property real brCard: Skins.cardRadius
+    property real brSm:   Skins.controlRadius
 
     property real cardW: Math.min(screen ? screen.width * 0.46 : 680, 860)
     property real cardH: Math.round(cardW / 1.6)
