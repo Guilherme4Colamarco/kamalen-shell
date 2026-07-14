@@ -194,6 +194,23 @@ class QmlIntegrationTests(unittest.TestCase):
         self.assertIn("recommendedMode", appearance)
         self.assertIn("recommendedPreset", appearance)
 
+    def test_skeuos_uses_semantic_materials_instead_of_generic_studs(self) -> None:
+        skins = (QML_DIR / "Skins.qml").read_text(encoding="utf-8")
+        surface = (QML_DIR / "components" / "MaterialSurface.qml").read_text(encoding="utf-8")
+        button = (QML_DIR / "components" / "MaterialButton.qml").read_text(encoding="utf-8")
+        settings = (QML_DIR / "SettingsWindow.qml").read_text(encoding="utf-8")
+        materials = QML_DIR / "assets" / "materials"
+
+        self.assertTrue((materials / "skeuos-metal.svg").is_file())
+        self.assertIn("function materialRole", skins)
+        self.assertIn("function glossOpacityForRole", skins)
+        self.assertIn('property string materialVariant: ""', surface)
+        self.assertIn("root.resolvedMaterialRole === \"wood\"", surface)
+        self.assertIn('property string materialVariant: ""', button)
+        self.assertIn("materialVariant: root.materialVariant", button)
+        for material in ("wood", "paper", "metal"):
+            self.assertIn('materialVariant: "' + material + '"', settings)
+
     def test_appearance_exposes_skin_color_motion_and_interface(self) -> None:
         appearance = (QML_DIR / "tabs" / "LookTab.qml").read_text(encoding="utf-8")
 
