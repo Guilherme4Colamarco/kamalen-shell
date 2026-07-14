@@ -103,6 +103,10 @@ O seletor inclui abas Local, Wallhaven e Live. A aba Live filtra o DesktopHut pe
 
 <p align="center"><sub>Um pipeline de cores, quatro superfícies — a paleta continua responsiva enquanto o material muda.</sub></p>
 
+| Visão geral do desktop | Wallpapers locais |
+| --- | --- |
+| ![Visão geral do desktop Kamalen](docs/assets/screenshots/desktop-overview.webp) | ![Carrossel de wallpapers locais](docs/assets/screenshots/wallpaper-local-carousel.webp) |
+
 | Aparência e materiais | Configuração de monitores |
 | --- | --- |
 | ![Configurações de aparência](docs/assets/screenshots/settings-appearance.webp) | ![Configurações de monitores](docs/assets/screenshots/settings-monitors.webp) |

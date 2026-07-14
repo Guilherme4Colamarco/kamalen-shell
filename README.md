@@ -103,6 +103,10 @@ The wallpaper picker includes Local, Wallhaven, and Live tabs. The Live tab filt
 
 <p align="center"><sub>One color pipeline, four surfaces — the palette stays responsive while the material changes.</sub></p>
 
+| Desktop overview | Local wallpaper browsing |
+| --- | --- |
+| ![Kamalen desktop overview](docs/assets/screenshots/desktop-overview.webp) | ![Local wallpaper carousel](docs/assets/screenshots/wallpaper-local-carousel.webp) |
+
 | Appearance and materials | Monitor configuration |
 | --- | --- |
 | ![Appearance settings](docs/assets/screenshots/settings-appearance.webp) | ![Monitor settings](docs/assets/screenshots/settings-monitors.webp) |

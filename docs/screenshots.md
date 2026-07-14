@@ -4,6 +4,13 @@ These captures come from the live Kamalen Shell session and document the current
 surface design rather than mockups. Assets are optimized WebP copies of the
 selected originals from `~/screenshots`.
 
+## Desktop overview
+
+![Kamalen Shell desktop overview with bar, terminal, and widgets](assets/screenshots/desktop-overview.webp)
+
+The shell stays visually cohesive outside Settings: the bar, notification,
+terminal, clock, and system widget share the same adaptive border treatment.
+
 ## Appearance and materials
 
 ![Appearance settings with all four skin previews](assets/screenshots/settings-appearance.webp)
@@ -33,3 +40,10 @@ that the same Settings window follows a different automatic palette.
 
 The wallpaper picker combines Local, Wallhaven, and Live sources. Selecting a
 wallpaper updates the visual pipeline described in [architecture.md](architecture.md).
+
+## Local wallpaper browsing
+
+![Local wallpaper carousel with the selected wallpaper previewed](assets/screenshots/wallpaper-local-carousel.webp)
+
+The Local tab uses a focused carousel so a wallpaper can be previewed before it
+is applied. Its material and accent colors remain part of the live palette.
