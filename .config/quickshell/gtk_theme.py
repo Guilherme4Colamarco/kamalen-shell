@@ -10,16 +10,31 @@ from pathlib import Path
 import tempfile
 
 IMPORTS = ('@import url("kamalen-colors.css");', '@import url("kamalen-material.css");')
+MANAGED_COLOR_NAMES = frozenset({
+    "accent_color", "accent_bg_color", "accent_fg_color",
+    "destructive_color", "destructive_bg_color", "destructive_fg_color",
+    "success_color", "success_bg_color", "success_fg_color",
+    "warning_color", "warning_bg_color", "warning_fg_color",
+    "window_bg_color", "window_fg_color", "view_bg_color", "view_fg_color",
+    "headerbar_bg_color", "headerbar_fg_color", "headerbar_border_color",
+    "popover_bg_color", "popover_fg_color", "dialog_bg_color", "dialog_fg_color",
+    "sidebar_bg_color", "sidebar_fg_color", "card_bg_color", "card_fg_color", "borders",
+})
 
 
 def color_css(p: dict[str, str]) -> str:
     names = {
         "accent_color": p["accent"], "accent_bg_color": p["accent"], "accent_fg_color": p["bg"],
-        "destructive_color": p["red"], "success_color": p["green"], "warning_color": p["yellow"],
+        "destructive_color": p["red"], "destructive_bg_color": p["red"], "destructive_fg_color": p["bg"],
+        "success_color": p["green"], "success_bg_color": p["green"], "success_fg_color": p["bg"],
+        "warning_color": p["yellow"], "warning_bg_color": p["yellow"], "warning_fg_color": p["bg"],
         "window_bg_color": p["bg"], "window_fg_color": p["fg"], "view_bg_color": p["surface"],
         "view_fg_color": p["fg"], "headerbar_bg_color": p["surface"], "headerbar_fg_color": p["fg"],
-        "popover_bg_color": p["surface"], "popover_fg_color": p["fg"], "card_bg_color": p["surface"],
-        "card_fg_color": p["fg"], "borders": p["dim"],
+        "headerbar_border_color": p["dim"],
+        "popover_bg_color": p["surface"], "popover_fg_color": p["fg"],
+        "dialog_bg_color": p["bg"], "dialog_fg_color": p["fg"],
+        "sidebar_bg_color": p["surface"], "sidebar_fg_color": p["fg"],
+        "card_bg_color": p["surface"], "card_fg_color": p["fg"], "borders": p["dim"],
     }
     return "\n".join(f"@define-color {name} {value};" for name, value in names.items()) + "\n"
 
@@ -219,7 +234,16 @@ def _atomic_write(path: Path, content: str) -> None:
 
 def _ensure_imports(css: str) -> str:
     generated = ("kamalen-colors.css", "kamalen-material.css", "kamalen-aesthetic.css")
-    lines = [line for line in css.splitlines() if not any(name in line for name in generated)]
+    lines = []
+    for line in css.splitlines():
+        if any(name in line for name in generated):
+            continue
+        stripped = line.lstrip()
+        if stripped.startswith("@define-color "):
+            parts = stripped.split(None, 2)
+            if len(parts) >= 2 and parts[1] in MANAGED_COLOR_NAMES:
+                continue
+        lines.append(line)
     body = "\n".join(lines).lstrip("\n")
     return "\n".join(IMPORTS) + "\n" + (body + "\n" if body else "")
 
