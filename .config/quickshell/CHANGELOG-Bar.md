@@ -300,6 +300,28 @@ PillButton {
 
 ---
 
+## Fase 13 — Aqua 2009 e materiais skeuomórficos
+**Data:** 13 jul 2026
+
+**Objetivo:** Adicionar duas skins completas ao motor visual sem congelar a paleta do usuário nem invadir o escopo futuro de decoração de janelas e docks.
+
+**Solução:**
+1. Referências do r/unixporn orientaram Aqua 2009 (metal escovado, vidro e gloss) e Skeuos Workshop (madeira, papel/couro e metal físico).
+2. `Skins.qml` agora possui receitas próprias para as duas skins, com geometria, textura, brilho, linha interna, ferragens e raio Mango independentes.
+3. Skeuos usa papéis semânticos (`wood`, `paper`, `metal`) para evitar uma textura única aplicada indiscriminadamente em toda a interface.
+4. `MaterialSurface` resolve material por função e mantém cada preview isolado da skin ativa.
+5. Texturas SVG monocromáticas tonalizam a paleta efetiva do Iris em vez de introduzir cores estáticas.
+6. O GTK recebeu materiais completos para botões, entradas, listas, cards, sliders, progressos, switches e scrollbars; nenhuma titlebar ou dock foi criada.
+7. Nord e Gruvbox aparecem apenas como sugestões adaptativas opcionais para Aqua e Skeuos, respectivamente.
+
+**Resultado:**
+- Aqua apresenta superfícies frias, escovadas e glossy em shell e GTK.
+- Skeuos diferencia estrutura de madeira, conteúdo fibroso e controles metálicos, sem repetir o visual Commonality com ornamentos decorativos.
+- O modo automático continua sendo preservado ao trocar de skin; aplicar a paleta sugerida exige ação explícita.
+- CSS GTK 3/4, previews e recipes passam pelos testes de integração e validação visual isolada.
+
+---
+
 ## Próximas fases (planejadas)
 
 - **Fase 4:** Padronizar hover (eliminar underline restante)

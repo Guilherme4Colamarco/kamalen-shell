@@ -120,6 +120,7 @@ FocusScope {
             width: Skins.sliderThumbWidth
             height: Skins.sliderThumbSize
             role: "raised"
+            materialVariant: "metal"
             active: true
             pressed: sliderMa.pressed
             hovered: sliderMa.containsMouse

@@ -74,6 +74,7 @@ FloatingWindow {
         anchors.fill: parent
         focus: root.visible
         role: "background"
+        materialVariant: "wood"
         fillOpacity: UIState.transparencyEnabled ? 0.96 : 1
         Keys.priority: Keys.BeforeItem
 
@@ -122,6 +123,7 @@ FloatingWindow {
                 Layout.fillHeight: true
                 Layout.preferredWidth: root.compactNavigation ? Metrics.dp(72) : Metrics.dp(230)
                 role: "panel"
+                materialVariant: "wood"
 
                 Column {
                     anchors.fill: parent
@@ -144,6 +146,7 @@ FloatingWindow {
                             width: parent.width
                             height: Metrics.dp(52)
                             role: "control"
+                            materialVariant: "metal"
                             active: root.activeSection === index
                             accessibleName: modelData.label
                             onClicked: root.activeSection = index
@@ -164,6 +167,7 @@ FloatingWindow {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 role: "raised"
+                materialVariant: "paper"
 
                 ColumnLayout {
                     anchors.fill: parent
@@ -206,6 +210,7 @@ FloatingWindow {
             anchors.fill: parent
             visible: root.pfpPicker
             role: "background"
+            materialVariant: "paper"
             fillOpacity: 0.97
             z: 10
 

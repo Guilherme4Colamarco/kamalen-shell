@@ -27,8 +27,9 @@ Item {
         MaterialSurface {
             anchors.fill: parent
             role: "control"
+            materialVariant: "metal"
             hovered: headerMa.containsMouse
-            materialEnabled: Skins.currentId === "commonality"
+            materialEnabled: Skins.rowMaterial
         }
 
         Text {

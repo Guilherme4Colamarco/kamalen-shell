@@ -22,8 +22,9 @@ Item {
         id: bg
         anchors.fill: parent
         role: "control"
+        materialVariant: "paper"
         hovered: rowMa.containsMouse
-        materialEnabled: Skins.currentId === "commonality"
+        materialEnabled: Skins.rowMaterial
     }
 
     Text {

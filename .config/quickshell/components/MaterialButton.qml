@@ -6,6 +6,7 @@ FocusScope {
     property string role: "raised"
     property bool active: false
     property string skinId: ""
+    property string materialVariant: ""
     property string accessibleName: ""
     default property alias content: contentHost.data
     signal clicked()
@@ -31,6 +32,7 @@ FocusScope {
         active: root.active
         focused: root.activeFocus
         skinId: root.skinId
+        materialVariant: root.materialVariant
         opacity: root.enabled ? 1 : 0.5
         Item { id: contentHost; anchors.fill: parent }
     }

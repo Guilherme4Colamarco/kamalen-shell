@@ -12,6 +12,16 @@ Item {
     property var colorModeLabels: ["Automático", "Preset adaptativo", "Preset fixo"]
     property var colorPresetIds: ["catppuccin", "gruvbox", "nord", "solarized"]
     property var colorPresetLabels: ["Catppuccin", "Gruvbox", "Nord", "Solarized"]
+    readonly property var currentSkinProfile: Skins.profile(UIState.skinProfile)
+    readonly property bool suggestedColorsPending:
+        currentSkinProfile.recommendedMode !== UIState.colorMode
+        || (currentSkinProfile.recommendedMode !== "auto"
+            && currentSkinProfile.recommendedPreset !== UIState.colorPreset)
+
+    function presetLabel(presetId) {
+        var index = root.colorPresetIds.indexOf(presetId)
+        return index >= 0 ? root.colorPresetLabels[index] : presetId
+    }
 
     Flickable {
         anchors.fill: parent
@@ -47,14 +57,16 @@ Item {
 
                 TileButton {
                     width: parent.width
-                    visible: UIState.skinProfile === "commonality"
-                        && (UIState.colorMode !== "adaptive-preset" || UIState.colorPreset !== "solarized")
+                    visible: root.suggestedColorsPending
                     icon: "󰏘"
                     label: "Usar cores sugeridas"
-                    sublabel: "Solarized adaptativo"
+                    sublabel: root.currentSkinProfile.recommendedMode === "auto"
+                        ? "Automático pelo wallpaper"
+                        : root.presetLabel(root.currentSkinProfile.recommendedPreset) + " adaptativo"
                     onClicked: {
-                        UIState.setColorPreset("solarized")
-                        UIState.setColorMode("adaptive-preset")
+                        if (root.currentSkinProfile.recommendedMode !== "auto")
+                            UIState.setColorPreset(root.currentSkinProfile.recommendedPreset)
+                        UIState.setColorMode(root.currentSkinProfile.recommendedMode)
                     }
                 }
             }

@@ -8,11 +8,21 @@ MaterialButton {
     property var recipe: Skins.recipe(profileId)
     active: UIState.skinProfile === profileId
     role: "raised"
+    materialVariant: "wood"
     skinId: root.profileId
     height: Metrics.dp(118)
     clip: true
 
+    MaterialSurface {
+        anchors.fill: parent
+        anchors.margins: Metrics.dp(10)
+        role: "raised"
+        materialVariant: "paper"
+        skinId: root.profileId
+    }
+
     Column {
+        z: 1
         anchors { fill: parent; margins: Metrics.dp(12) }
         spacing: Metrics.dp(7)
         Text {
@@ -29,6 +39,7 @@ MaterialButton {
                 width: Metrics.dp(72)
                 height: Metrics.dp(26)
                 role: "control"
+                materialVariant: "metal"
                 active: true
                 skinId: root.profileId
                 Text {
@@ -42,6 +53,7 @@ MaterialButton {
                 width: Math.max(Metrics.dp(56), parent.width - Metrics.dp(80))
                 height: Metrics.dp(26)
                 role: "sunken"
+                materialVariant: "paper"
                 skinId: root.profileId
                 Text {
                     anchors { left: parent.left; leftMargin: Metrics.dp(8); verticalCenter: parent.verticalCenter }
@@ -67,6 +79,7 @@ MaterialButton {
                 width: Metrics.dp(root.recipe.switchWidth)
                 height: Metrics.dp(root.recipe.switchHeight)
                 role: "control"
+                materialVariant: "metal"
                 active: true
                 skinId: root.profileId
                 MaterialSurface {
@@ -74,6 +87,7 @@ MaterialButton {
                     width: Metrics.dp(root.recipe.switchThumbSize)
                     height: width
                     role: "raised"
+                    materialVariant: "metal"
                     skinId: root.profileId
                 }
             }

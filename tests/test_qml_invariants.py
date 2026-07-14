@@ -165,7 +165,7 @@ class QmlIntegrationTests(unittest.TestCase):
         self.assertIn("skinId: root.profileId", preview)
         self.assertIn('property string skinId: ""', surface)
         self.assertIn("Skins.recipe(resolvedSkinId)", surface)
-        self.assertIn("Skins.materialTop(root.role, root.pressed, root.active, root.resolvedSkinId)", surface)
+        self.assertIn("Skins.materialTop(root.resolvedMaterialRole, root.pressed, root.active, root.resolvedSkinId)", surface)
         self.assertIn('property string skinId: ""', track)
         self.assertNotIn("Skins.currentId === root.profileId", preview)
 
@@ -178,7 +178,7 @@ class QmlIntegrationTests(unittest.TestCase):
             self.assertTrue((materials / asset).is_file(), asset)
         self.assertIn("function textureForRole", skins)
         self.assertIn("function textureOpacityForRole", skins)
-        self.assertIn("Skins.textureForRole(root.resolvedSkinId, root.role)", surface)
+        self.assertIn("Skins.textureForRole(root.resolvedSkinId, root.resolvedMaterialRole)", surface)
         self.assertIn("root.skinRecipe.glossOpacity", surface)
         self.assertIn("root.skinRecipe.innerLineWidth", surface)
         self.assertIn("root.skinRecipe.hardwareSize", surface)

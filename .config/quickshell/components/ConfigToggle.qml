@@ -27,9 +27,10 @@ FocusScope {
     MaterialSurface {
         anchors.fill: parent
         role: "control"
+        materialVariant: "paper"
         hovered: rowMa.containsMouse
         focused: root.activeFocus
-        materialEnabled: Skins.currentId === "commonality"
+        materialEnabled: Skins.rowMaterial
     }
 
     Text {
@@ -63,6 +64,7 @@ FocusScope {
             width: Skins.switchThumbSize
             height: Skins.switchThumbSize
             role: "raised"
+            materialVariant: "metal"
             cornerRadius: Skins.radius(Skins.controlRadius, height)
 
             Behavior on x {
