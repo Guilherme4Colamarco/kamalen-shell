@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/assets/screenshots/desktop-overview.webp) | ![Local wallpaper carousel](docs/assets/screenshots/wallpaper-local-carousel.webp" width="880">
+  <img src="docs/assets/screenshots/desktop-overview.webp" alt="Kamalen desktop overview" width="880">
 </p>
 
 <p align="center">
@@ -68,7 +68,7 @@ For Debian/Ubuntu, preview and verify through the dedicated installer:
 
 ### Optional SDDM theme
 
-If SDDM is already installed, the regular/config installation offers the Kamalen login theme. It mirrors the current wallpaper and Iris palette using static, optimized assets. Installation does not activate the theme unless confirmed and never restarts SDDM during the active session.
+If SDDM is already installed, the regular/config installation offers the Kamalen login theme. It mirrors the current wallpaper and Iris palette using static, optimized assets. Installation does no[...]
 
 ```bash
 ./install.sh --dry-run sddm
@@ -78,7 +78,7 @@ scripts/install/sddm-theme.sh verify
 scripts/install/sddm-theme.sh uninstall
 ```
 
-The theme lives under `/usr/share/sddm/themes/kamalen`; synchronized user data is isolated in `/var/lib/kamalen-sddm`. Activation uses only `/etc/sddm.conf.d/99-kamalen-theme.conf`, so uninstalling it reveals the previously configured theme without editing its files.
+The theme lives under `/usr/share/sddm/themes/kamalen`; synchronized user data is isolated in `/var/lib/kamalen-sddm`. Activation uses only `/etc/sddm.conf.d/99-kamalen-theme.conf`, so uninstallin[...]
 
 ## Everyday use
 
@@ -97,7 +97,7 @@ The theme lives under `/usr/share/sddm/themes/kamalen`; synchronized user data i
 
 More bindings are available in `.config/mango/conf.d/binds.conf`.
 
-The wallpaper picker includes Local, Wallhaven, and Live tabs. The Live tab filters DesktopHut results by title, accepts only HTTPS downloads from its allowed `/files/` host path, and shows the original source page before applying a wallpaper.
+The wallpaper picker includes Local, Wallhaven, and Live tabs. The Live tab filters DesktopHut results by title, accepts only HTTPS downloads from its allowed `/files/` host path, and shows the o[...]
 
 ## Screenshots
 
@@ -170,12 +170,12 @@ Kamalen Shell is an integration project; it does not claim ownership of the tech
 - [mango-ext](https://github.com/ernestoCruz05/mango-ext) is the MangoWM fork used by this configuration.
 - [Quickshell](https://github.com/outfoxxed/quickshell) provides the Qt Modeling Language (QML) shell runtime.
 - [Catppuccin](https://github.com/catppuccin/catppuccin) informs the base palette used by the color system.
-- [Wallhaven](https://wallhaven.cc/) and [DesktopHut](https://www.desktophut.com/) are optional wallpaper discovery sources; their content remains subject to their respective terms and creator attribution.
+- [Wallhaven](https://wallhaven.cc/) and [DesktopHut](https://www.desktophut.com/) are optional wallpaper discovery sources; their content remains subject to their respective terms and creator at[...]
 - The NixOS/Home Manager work is an experimental port of this repository, maintained in `nix port tests/`.
-- The SDDM synchronization boundary was inspired by [iNiR's Pixel SDDM sync helper](https://github.com/snowarch/iNiR/blob/main/scripts/sddm/sync-pixel-sddm.py); Kamalen uses its own implementation and keeps greeter code root-owned.
-- Dynamic Island patterns were studied from [Dynamic-island-for-arch](https://github.com/patheonsceo/Dynamic-island-for-arch), [Tide-island](https://github.com/enhaoswen/Tide-island), [quickshell-DynamicIsland](https://github.com/HandsomeMJZ/quickshell-DynamicIsland), [Dynamic-Bar](https://github.com/turbogoomba/Dynamic-Bar), and [dynamic-island-bar](https://github.com/SergioM26/dynamic-island-bar). They are design and architecture references, not copied code; the retained notes are in [docs/archive/quickshell](docs/archive/quickshell/).
+- The SDDM synchronization boundary was inspired by [iNiR's Pixel SDDM sync helper](https://github.com/snowarch/iNiR/blob/main/scripts/sddm/sync-pixel-sddm.py); Kamalen uses its own implementatio[...]
+- Dynamic Island patterns were studied from [Dynamic-island-for-arch](https://github.com/patheonsceo/Dynamic-island-for-arch), [Tide-island](https://github.com/enhaoswen/Tide-island), [quickshell[...]
 - The broader Linux customization community, including r/unixporn, has influenced the visual language and workflow ideas.
 
 ## License
 
-Kamalen Shell is distributed under the [MIT License](LICENSE). See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution terms. Third-party projects, wallpapers, fonts, and downloaded media retain their own licenses and terms.
+Kamalen Shell is distributed under the [MIT License](LICENSE). See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution terms. Third-party projects, wallpapers, fonts, and downloaded media retain [...]
